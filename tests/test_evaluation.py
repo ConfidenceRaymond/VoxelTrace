@@ -161,3 +161,22 @@ def test_frozen_eval_set_detects_changes(tmp_path):
     (d / "examples.jsonl").write_text(json.dumps({**rec, "target": {"status": "SUPPORTED"}}) + "\n")
     with pytest.raises(ValueError, match="changed"):
         load_frozen(fs)
+
+
+def test_explanation_cannot_override_deterministic_verdict():
+    from voxeltrace.evaluation.runner import validate_explanation
+
+    det = {"pair_verdict": "NOT_ASSESSABLE", "comparability": "NOT_COMPARABLE"}
+    ok = validate_explanation(
+        "The pair is NOT_ASSESSABLE because the reconstruction filter "
+        "differs (NOT COMPARABLE protocols).",
+        det,
+    )
+    assert ok.accepted, ok.reasons
+    bad = validate_explanation("Despite the filter change the pair is assessable.", det)
+    assert not bad.accepted and "ASSESSABLE" in bad.reasons[0]
+    bad2 = validate_explanation("Protocols are comparable with warnings.", det)
+    assert not bad2.accepted
+    e = ex("CLAIM_VERIFICATION", {"status": "SUPPORTED"})
+    worse = validate_explanation("NOT_ASSESSABLE. The patient has cancer.", det, example=e)
+    assert not worse.accepted and any("blocked" in r for r in worse.reasons)

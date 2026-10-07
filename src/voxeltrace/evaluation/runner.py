@@ -172,3 +172,47 @@ def load_frozen(eval_set: dict[str, Any]) -> list[dict[str, Any]]:
     if len(out) != len(ids):
         raise ValueError("frozen evaluation set ids not all present")
     return out
+
+
+VERDICT_LABELS = (
+    "ASSESSABLE_WITH_WARNINGS",
+    "NOT_ASSESSABLE",
+    "INSUFFICIENT_INFORMATION",
+    "ASSESSABLE",
+    "COMPARABLE_WITH_WARNINGS",
+    "NOT_COMPARABLE",
+    "COMPARABLE",
+    "PARTIALLY_SUPPORTED",
+    "NOT_ESTABLISHED",
+    "CONTRADICTED",
+    "SUPPORTED",
+)
+
+
+def validate_explanation(
+    response_text: str, deterministic: dict[str, str], example: dict[str, Any] | None = None
+) -> GateResult:
+    """Gate for AI *explanations* of deterministic results (PairAssessabilityResult,
+    ComparabilityAssessment, ClaimEvidence). The AI may explain, never override: any verdict /
+    category / status label in the text must equal one of the deterministic labels; plus all
+    checks of ``validate_response`` (invented numbers, blocked assertions, injection echo)."""
+    import re
+
+    reasons: list[str] = []
+    allowed = {v.upper() for v in deterministic.values()}
+    pattern = re.compile(
+        r"(?<![A-Z_])("
+        + "|".join(lab.replace("_", r"[ _-]") for lab in VERDICT_LABELS)
+        + r")(?![A-Z_])"
+    )
+    mentioned = {re.sub(r"[ -]", "_", m) for m in pattern.findall(response_text.upper())}
+    # labels that are substrings of an allowed label (e.g. ASSESSABLE in NOT_ASSESSABLE) are
+    # matched whole-label by the alternation order above
+    changed = sorted(mentioned - allowed)
+    if changed:
+        reasons.append(
+            f"changes a deterministic verdict: mentions {changed}, deterministic {sorted(allowed)}"
+        )
+    if example is not None:
+        reasons += validate_response(example, response_text).reasons
+    return GateResult(accepted=not reasons, reasons=reasons)
