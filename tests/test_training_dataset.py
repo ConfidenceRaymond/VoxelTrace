@@ -220,3 +220,34 @@ def test_zero_suv_segment_flagged_without_changing_metrics():
     assert les.suv_mean == pytest.approx(4.0 / 3)  # definition unchanged: zeros included
     w = next(x for x in les.warnings if x.code == "SEGMENT_VOXELS_ZERO_SUV")
     assert "2/3" in w.message and "entirely at 0: [1]" in w.message
+
+
+def test_no_negative_labels_when_seg_not_decoded(tmp_path):
+    from dicom_factory import write_seg
+
+    info = build_pet_ct_seg_case(tmp_path / "case")
+    for f in (tmp_path / "case" / "c_seg").glob("*.dcm"):
+        f.unlink()
+    write_seg(
+        tmp_path / "case" / "c_seg" / "rot.dcm",
+        study_uid=info["study"],
+        for_uid=info["for"],
+        referenced_series_uid=info["pet"],
+        rows=4,
+        cols=5,
+        pixel_spacing=(2.0, 3.0),
+        frames=[(1, -6.0, info["mask"])],
+        orientation=(0.0, 1.0, 0.0, 1.0, 0.0, 0.0),
+    )  # refused by the strict decoder
+    res = build_case_dataset(
+        tmp_path / "case",
+        tmp_path / "out",
+        subject="NOSEG",
+        dataset="synthetic",
+        license="synthetic",
+        citation=None,
+        evidence_dir=tmp_path / "ev",
+    )
+    assert res["negatives"] == []
+    assert not [e for e in res["examples"] if e.example_class == "VISUAL_LOCALIZATION"]
+    assert "reference segmentation decoded: False" in " ".join(res["manifest"].notes)

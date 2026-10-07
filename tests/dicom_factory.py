@@ -166,6 +166,8 @@ def write_seg(
     frames: Sequence[tuple[int, float, np.ndarray]],
     segmentation_type: str = "BINARY",
     labels: Sequence[str] = ("Lesion",),
+    orientation: Sequence[float] = AXIAL,
+    xy0: tuple[float, float] = (0.0, 0.0),
 ) -> Path:
     """Write a multi-frame DICOM SEG. ``frames`` = (segment number, z position, 2-D 0/1 mask)."""
     ds = _base(SEG_SOP, "SEG", study_uid, generate_uid(), for_uid)
@@ -204,7 +206,7 @@ def write_seg(
     pms.SliceThickness = 4.0
     shared.PixelMeasuresSequence = DicomSequence([pms])
     pos_ori = Dataset()
-    pos_ori.ImageOrientationPatient = list(AXIAL)
+    pos_ori.ImageOrientationPatient = list(orientation)
     shared.PlaneOrientationSequence = DicomSequence([pos_ori])
     ds.SharedFunctionalGroupsSequence = DicomSequence([shared])
     per_frame = []
@@ -214,7 +216,7 @@ def write_seg(
         sis.ReferencedSegmentNumber = seg_num
         fg.SegmentIdentificationSequence = DicomSequence([sis])
         pp = Dataset()
-        pp.ImagePositionPatient = [0.0, 0.0, z]
+        pp.ImagePositionPatient = [xy0[0], xy0[1], z]
         fg.PlanePositionSequence = DicomSequence([pp])
         per_frame.append(fg)
     ds.PerFrameFunctionalGroupsSequence = DicomSequence(per_frame)

@@ -103,7 +103,10 @@ def build_case_dataset(
     renderer = Renderer(gtc, arrays, evidence_text)
     excluded: list[tuple[int, str, str]] = []
     positives = select_positive_slices(gtc, excluded)
-    negatives = select_negative_slices(arrays) if ct_on_pet is not None else []
+    # "No reference-segmented target" may only be asserted when the reference SEG was actually
+    # decoded (possibly empty). A missing or refused SEG never yields negative labels.
+    seg_decoded = run.seg is not None and run.seg_masks is not None
+    negatives = select_negative_slices(arrays) if ct_on_pet is not None and seg_decoded else []
     examples = build_examples(
         gtc,
         renderer,
@@ -188,6 +191,7 @@ def build_case_dataset(
             "never commit to Git.",
             "Negative slices mean 'no reference-segmented target', not 'normal'.",
             "Synthetic perturbations are flagged per example (synthetic_perturbation).",
+            f"reference segmentation decoded: {seg_decoded} (negatives only if decoded)",
             "QC-excluded positive slices (reference mask over zero PET): "
             + (", ".join(f"k={e[0]}" for e in excluded) or "none"),
         ],

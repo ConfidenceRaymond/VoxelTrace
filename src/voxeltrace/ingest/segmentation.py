@@ -283,33 +283,64 @@ def decode_dicom_seg(path: str | os.PathLike[str], reference: ImagingSeries) -> 
         raise refuse("BINARY SEG contains values other than 0/1")
 
     ref_dir = np.asarray(ref_geom.direction).reshape(3, 3)
-    ref_ori = np.concatenate([ref_dir[:, 0], ref_dir[:, 1]])
-    normal = ref_dir[:, 2]
+    row_dir, col_dir, normal = ref_dir[:, 0], ref_dir[:, 1], ref_dir[:, 2]
     origin = np.asarray(ref_geom.origin)
     positions = np.asarray(ref_geom.slice_positions_mm)
+    dx, dy = float(ref_geom.spacing_ijk[0]), float(ref_geom.spacing_ijk[1])
     known = {s.number for s in meta.segments}
     nz, ny, nx = len(positions), ref_geom.shape_ijk[1], ref_geom.shape_ijk[0]
     masks: dict[int, np.ndarray] = {n: np.zeros((nz, ny, nx), dtype=bool) for n in known}
     seen: set[tuple[int, int]] = set()
+    mirrored = False
+    grid_tol = 0.01  # voxel units: frame pixels must land on reference voxel centres
     for f in range(n_frames):
         seg_num, pos, ori = _frame_info(ds, f)
         if seg_num is None or seg_num not in known:
             raise refuse(f"frame {f}: missing/unknown ReferencedSegmentNumber")
         if pos is None or ori is None:
             raise refuse(f"frame {f}: missing plane position/orientation")
-        if np.abs(np.asarray(ori) - ref_ori).max() > ORIENTATION_TOL:
-            raise refuse(f"frame {f}: orientation differs from reference")
+        fx, fy = np.asarray(ori[:3]), np.asarray(ori[3:])
+        # Only axis-aligned mirroring is supported (no rotation/transposition/obliquity).
+        sx = (
+            1
+            if np.abs(fx - row_dir).max() <= ORIENTATION_TOL
+            else (-1 if np.abs(fx + row_dir).max() <= ORIENTATION_TOL else 0)
+        )
+        sy = (
+            1
+            if np.abs(fy - col_dir).max() <= ORIENTATION_TOL
+            else (-1 if np.abs(fy + col_dir).max() <= ORIENTATION_TOL else 0)
+        )
+        if sx == 0 or sy == 0:
+            raise refuse(f"frame {f}: orientation differs from reference (not a pure mirror)")
+        mirrored |= sx < 0 or sy < 0
         p = np.asarray(pos)
-        in_plane = (p - origin) - ((p - origin) @ normal) * normal
-        if np.abs(in_plane).max() > max(POSITION_TOL_MM, 0.01 * min(ref_geom.spacing_ijk[:2])):
-            raise refuse(f"frame {f}: in-plane offset from reference grid")
+        i0 = float((p - origin) @ row_dir) / dx
+        j0 = float((p - origin) @ col_dir) / dy
+        if abs(i0 - round(i0)) > grid_tol or abs(j0 - round(j0)) > grid_tol:
+            raise refuse(f"frame {f}: pixel grid offset from reference voxel centres")
+        i_idx = round(i0) + sx * np.arange(cols)  # type: ignore[operator]
+        j_idx = round(j0) + sy * np.arange(rows)  # type: ignore[operator]
+        if i_idx.min() < 0 or i_idx.max() >= nx or j_idx.min() < 0 or j_idx.max() >= ny:
+            raise refuse(f"frame {f}: frame extends outside the reference grid")
         k = int(np.argmin(np.abs(positions - p @ normal)))
         if abs(positions[k] - p @ normal) > POSITION_TOL_MM * 10:
             raise refuse(f"frame {f}: position does not match any reference slice")
         if (seg_num, k) in seen:
             raise refuse(f"frame {f}: duplicate frame for segment {seg_num} slice {k}")
         seen.add((seg_num, k))
-        masks[seg_num][k] = frames[f].astype(bool)
+        masks[seg_num][k][np.ix_(j_idx, i_idx)] = frames[f].astype(bool)
+    if mirrored:
+        warnings.append(
+            QCWarning(
+                code="SEG_FRAMES_MIRRORED",
+                severity="info",
+                path=str(path),
+                series_uid=meta.series_uid,
+                message="SEG frames are stored with mirrored row/column direction relative to the "
+                "reference; mapped voxel-exactly via frame geometry (no interpolation)",
+            )
+        )
     meta.pixel_decoding = "DECODED"
     meta.geometry_matches_reference = True
     return DecodedSeg(masks, ref_geom, meta, warnings)

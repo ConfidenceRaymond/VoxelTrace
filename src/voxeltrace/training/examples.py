@@ -79,6 +79,8 @@ SELECTION_RULES = [
     "PET signal on >= 5 % of voxels, CT body (> -500 HU) on >= 5 % of voxels; "
     f"quantiles {NEG_QUANTILES} of eligible slices",
     "negative label means 'no reference-segmented target in this slice', not 'normal'",
+    "negatives are generated ONLY if the reference segmentation was decoded (possibly empty); "
+    "a missing or refused SEG yields no negative labels",
     f"positive candidates are EXCLUDED when > {ZERO_SUV_EXCLUDE:.0%} of the segment's in-slice "
     "voxels have SUV exactly 0 (reference mask over masked/zeroed PET, e.g. outside the body); "
     "such slices are kept only in the human-review audit",

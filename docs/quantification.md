@@ -143,6 +143,25 @@ Codes include:
 - **TLG = MTV [mL] × SUVmean [g/mL]**, in grams. It is based on the supplied segmentation and
   is not comparable with TLG from threshold-defined volumes.
 
+## 6b. Segmentation quality flags (Milestone 5)
+
+- **`SEGMENT_VOXELS_ZERO_SUV`** (warning): some supplied-segment voxels have SUV exactly 0, for
+  example where the PET was masked outside the body (`DerivationDescription: Region masked`).
+  - The metric definitions are **unchanged**: MTV, SUVmean and TLG still include these voxels,
+    because the definition is the supplied mask.
+  - The warning reports the count, the fraction and any component lying entirely at 0.
+  - Per-component `zero_suv_voxels` is recorded.
+  - Observed rates:
+    - PETCT_0011f3deaf: 89 of 1299 voxels (6.9 %);
+    - PETCT_bd52fdf529: 313 of 1182 (26.5 %).
+- **DICOM SEG frames stored with mirrored row/column directions** (for example
+  IOP 1,0,0,0,−1,0 on the SOMATOM Definition AS cases) are mapped voxel-exactly through the
+  frame geometry. This produces `SEG_FRAMES_MIRRORED`.
+  - Rotations, transpositions, obliquity, off-grid pixels and frames outside the reference grid
+    are still refused.
+  - Verified against highdicom's independent spatial decode on PETCT_bd52fdf529: identical 1182
+    voxels and identical metrics.
+
 ## 7. SUVpeak (implemented, explicit definition)
 
 This follows the QIBA FDG-PET/CT Profile and PERCIST ("maximum average SUV within a 1 cm³

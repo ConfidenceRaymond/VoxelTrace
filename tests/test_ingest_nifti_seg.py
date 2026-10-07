@@ -131,3 +131,71 @@ def test_seg_decode_refuses_wrong_reference_and_fractional(tmp_path):
     )
     with pytest.raises(IngestError, match="does not match any reference slice"):
         decode_dicom_seg(off, series[info["pet"]])
+
+
+def test_seg_with_mirrored_rows_decodes_voxel_exactly(tmp_path):
+    info = build_pet_ct_seg_case(tmp_path / "case")
+    pet = next(s for s in discover_dicom(tmp_path / "case").series if s.series_uid == info["pet"])
+    # Same mask stored upside-down: column direction -y, first pixel row at y = (4-1)*2 mm.
+    flipped = info["mask"][::-1, :]
+    path = write_seg(
+        tmp_path / "mirror.dcm",
+        study_uid=info["study"],
+        for_uid=info["for"],
+        referenced_series_uid=info["pet"],
+        rows=4,
+        cols=5,
+        pixel_spacing=(2.0, 3.0),
+        frames=[(1, -6.0, flipped)],
+        orientation=(1.0, 0.0, 0.0, 0.0, -1.0, 0.0),
+        xy0=(0.0, 6.0),
+    )
+    dec = decode_dicom_seg(path, pet)
+    assert dec.masks[1][1].astype(np.uint8).tolist() == info["mask"].tolist()
+    assert any(w.code == "SEG_FRAMES_MIRRORED" for w in dec.warnings)
+
+
+def test_seg_mirrored_but_offgrid_or_rotated_refused(tmp_path):
+    info = build_pet_ct_seg_case(tmp_path / "case")
+    pet = next(s for s in discover_dicom(tmp_path / "case").series if s.series_uid == info["pet"])
+    offgrid = write_seg(
+        tmp_path / "off.dcm",
+        study_uid=info["study"],
+        for_uid=info["for"],
+        referenced_series_uid=info["pet"],
+        rows=4,
+        cols=5,
+        pixel_spacing=(2.0, 3.0),
+        frames=[(1, -6.0, info["mask"])],
+        orientation=(1.0, 0.0, 0.0, 0.0, -1.0, 0.0),
+        xy0=(0.0, 5.0),
+    )
+    with pytest.raises(IngestError, match="offset from reference voxel centres"):
+        decode_dicom_seg(offgrid, pet)
+    rotated = write_seg(
+        tmp_path / "rot.dcm",
+        study_uid=info["study"],
+        for_uid=info["for"],
+        referenced_series_uid=info["pet"],
+        rows=4,
+        cols=5,
+        pixel_spacing=(2.0, 3.0),
+        frames=[(1, -6.0, info["mask"])],
+        orientation=(0.0, 1.0, 0.0, 1.0, 0.0, 0.0),
+    )
+    with pytest.raises(IngestError, match="not a pure mirror"):
+        decode_dicom_seg(rotated, pet)
+    outside = write_seg(
+        tmp_path / "out.dcm",
+        study_uid=info["study"],
+        for_uid=info["for"],
+        referenced_series_uid=info["pet"],
+        rows=4,
+        cols=5,
+        pixel_spacing=(2.0, 3.0),
+        frames=[(1, -6.0, info["mask"])],
+        orientation=(1.0, 0.0, 0.0, 0.0, -1.0, 0.0),
+        xy0=(0.0, 2.0),
+    )
+    with pytest.raises(IngestError, match="outside the reference grid"):
+        decode_dicom_seg(outside, pet)
