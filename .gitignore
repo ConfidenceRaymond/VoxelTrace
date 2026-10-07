@@ -1,0 +1,44 @@
+# Medical / research data
+data/
+*.dcm
+*.nii
+*.nii.gz
+*.nrrd
+*.mha
+*.mhd
+*.raw
+
+# Model weights / local caches
+models/
+.cache/
+*.safetensors
+*.bin
+*.gguf
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Generated artifacts
+outputs/
+logs/
+tmp/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
