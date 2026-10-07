@@ -40,10 +40,9 @@ None of these changed a validated number.
 
 ## Outside A–Q (Parts R/S)
 
-- **Qwen3-VL-8B download:** in progress, pinned revision, under `../models`. See the final report.
-- **Inference stack:** in progress in the `../tmp/vlm-venv` venv.
-- **Baseline:** not run yet. It is run only after the download completes and the runtime is
-  verified.
+- **Qwen3-VL-8B download:** COMPLETE and SHA-256 verified.
+- **Inference stack:** COMPLETE.
+- **Baseline:** COMPLETE (see Step 21 below).
 
 ## Trial comparability workstream (follow-up prompt, Steps 2–22)
 
@@ -67,6 +66,6 @@ None of these changed a validated number.
 | 18 | Hackathon demo (real baseline + labelled synthetic perturbations) | COMPLETE | `scripts/build_trial_demo.py` | `../outputs/synthetic_comparability/` |
 | 19 | Model download verified | COMPLETE | `../models/Qwen3-VL-8B-Instruct` (+ `.manifest.json`) | all 16 files SHA-256 verified against revision 0c351dd |
 | 20 | Inference stack | COMPLETE | `../tmp/vlm-venv` (torch 2.14.1+cu130, transformers 5.19.0) | GB10 sm_121 BF16 verified |
-| 21 | Baseline (no fine-tuning) | see final report | `scripts/run_baseline_vlm.py` | `../outputs/baseline_qwen3vl8b/` |
+| 21 | Baseline (no fine-tuning) | COMPLETE | `scripts/run_baseline_vlm.py`, `scripts/analyze_baseline.py` | 70 examples on frozen `dev_v1`; results read-only in `../outputs/baseline_qwen3vl8b/`; summary in `docs/baseline_qwen3vl8b.md` |
 | 22 | Response validator cannot override deterministic verdicts | COMPLETE | `evaluation/runner.validate_explanation`, `validate_response` | `test_explanation_cannot_override_deterministic_verdict` |
 | 23 | No fine-tuning | COMPLETE (by design) | — | no LoRA or QLoRA code was run |
