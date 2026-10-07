@@ -25,7 +25,7 @@ talks only to a loopback OpenAI-compatible endpoint (default `http://127.0.0.1:8
 e.g. vLLM on the GB10), refuses non-local endpoints by default, has no cloud fallback,
 and needs no API key.
 
-## Hackathon status: milestone 0/1 (foundation)
+## Hackathon status: milestone 2 (PET/CT/SEG ingestion)
 
 Currently implemented:
 
@@ -37,16 +37,40 @@ Currently implemented:
   is a placeholder that raises `NotImplementedError`.
 - Streamlit landing page showing runtime info, local AI status and a smoke test on a
   **synthetic** array.
+- `voxeltrace.ingest` (milestone 2):
+  - **DICOM discovery:** recursive, header-only, grouped by Study/Series UID. Series are
+    classified PET/CT/SEG/OTHER from `Modality`/`SOPClassUID` only, never from file paths.
+    Malformed files produce warnings rather than crashes.
+  - **PET metadata extraction:** fields are recorded exactly as found. Absent, empty, invalid
+    and inconsistent fields are reported. Nothing is defaulted and units are not converted.
+  - **PET/CT volume loading:** slices are sorted by `ImagePositionPatient` along the slice
+    normal. The loader records affine, spacing and extent. It refuses duplicate slice positions
+    and missing or inconsistent geometry, and warns on non-uniform slice spacing. The output was
+    cross-checked against SimpleITK in tests.
+  - **NIfTI:** images and label masks are loaded with nibabel. Mask content is validated and the
+    mask grid is compared to the target image without resampling.
+  - **DICOM SEG:** segment metadata and references are read. **BINARY** SEG is decoded strictly
+    onto the referenced PET/CT grid; FRACTIONAL SEG and anything ambiguous is refused.
+- `scripts/inspect_case.py`: a CLI inspector with text or JSON output. Pass `--load-pixels`
+  to also load volumes and decode SEG.
+- Streamlit **Imaging Ingestion** page.
+- `scripts/fetch_tcia_subject.py`: a bounded download of one subject from TCIA.
 
-**Not yet implemented:** DICOM/NIfTI/BIDS ingestion, SUV computation, segmentation/ROI
-metrics, QC, AI interpretation. No model is downloaded; no dataset is downloaded.
+**Not yet implemented:** SUV (see [docs/suv_requirements.md](docs/suv_requirements.md)),
+lesion/ROI metrics, BIDS ingestion, multi-frame (enhanced) image loading, and AI
+interpretation. No model has been downloaded. One public subject from FDG-PET-CT-Lesions is
+stored locally, outside Git.
 
-## Planned datasets
+## Datasets
 
-- FDG-PET-CT-Lesions (TCIA)
-- NSCLC-Radiogenomics (TCIA)
-- ACRIN-NSCLC-FDG-PET (TCIA)
-- OpenNeuro PET datasets
+These datasets serve different purposes and must not be naïvely pooled. See
+[docs/datasets.md](docs/datasets.md).
+
+- FDG-PET-CT-Lesions (TCIA): the primary lesion and PET/CT demonstration. One subject is stored
+  locally; see [docs/first_demo_case_plan.md](docs/first_demo_case_plan.md).
+- NSCLC-Radiogenomics (TCIA): later, for radiomics with clinical context.
+- OpenNeuro PET: for research use, BIDS ingestion and QC.
+- ACRIN-NSCLC-FDG-PET (TCIA): later, for longitudinal response analysis.
 
 ## Architecture
 
@@ -54,7 +78,7 @@ metrics, QC, AI interpretation. No model is downloaded; no dataset is downloaded
 PET/CT/SEG/BIDS
       |
       v
-VoxelTrace ingestion                 (planned)
+VoxelTrace ingestion                 (DICOM PET/CT/SEG + NIfTI)
       |
       v
 Deterministic quantitative engine    (initial stats implemented)
@@ -94,6 +118,13 @@ make lint             # ruff check
 
 ```bash
 make app              # http://127.0.0.1:8501
+```
+
+## Inspect a case
+
+```bash
+.venv/bin/python scripts/inspect_case.py ../data/fdg_pet_ct_lesions/PETCT_0011f3deaf
+.venv/bin/python scripts/inspect_case.py <dir> --load-pixels --json > ../outputs/case.json
 ```
 
 ## Other scripts

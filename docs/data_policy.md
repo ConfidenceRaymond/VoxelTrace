@@ -25,6 +25,14 @@ Patient or public imaging data must **never** be pushed to GitHub.
 Dependency caches are redirected into this tree where practical
 (`PIP_CACHE_DIR=../tmp/pip-cache`, `HF_HOME=../models/hf-cache`; see `.env.example`).
 
+## Manifest and test fixtures
+
+- Every real download is recorded in `../data/manifest.json` with collection, subject, source,
+  timestamp, file count, bytes, SHA-256 checksums and licence.
+- Tests create **synthetic** DICOM and NIfTI fixtures at runtime under `../tmp/pytest`. No real
+  images are used in tests or committed.
+- UI and CLI output never read or show PatientName, PatientID or BirthDate.
+
 ## Dataset licences
 
 Public datasets (TCIA, OpenNeuro) are used under their own data-use terms.

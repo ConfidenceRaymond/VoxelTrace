@@ -4,10 +4,10 @@ PIP    := $(VENV)/bin/pip
 HACK   := $(abspath ..)
 export PIP_CACHE_DIR := $(HACK)/tmp/pip-cache
 
-.PHONY: help venv install test lint format app env-snapshot audit
+.PHONY: help venv install test lint format app env-snapshot audit inspect
 
 help:
-	@echo "targets: venv install test lint format app env-snapshot audit"
+	@echo "targets: venv install test lint format app env-snapshot audit inspect CASE=<dir>"
 
 venv:
 	test -d $(VENV) || python3 -m venv $(VENV)
@@ -32,3 +32,6 @@ env-snapshot:
 
 audit:
 	scripts/cleanup_audit.sh
+
+inspect:
+	$(PY) scripts/inspect_case.py $(CASE)

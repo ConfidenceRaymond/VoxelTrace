@@ -39,15 +39,27 @@ env | grep -E '^(VOXELTRACE_|PIP_CACHE_DIR|HF_HOME|HF_HUB_CACHE|HUGGINGFACE_HUB_
   | sed -E 's/(API_KEY|TOKEN|SECRET)=.*/\1=<redacted>/' || echo "(none set)"
 
 hr "Redirected caches inside the hackathon tree"
-for c in "$HACK/tmp/pip-cache" "$HACK/models/hf-cache" "$HACK/models/vllm-cache"; do
+for c in "$HACK/tmp/pip-cache" "$HACK/tmp/pytest" "$HACK/models/hf-cache" "$HACK/models/vllm-cache"; do
   [ -e "$c" ] && du -sh "$c" || echo "absent: $c"
 done
 
 hr "Possible leakage OUTSIDE the hackathon tree (inspect manually)"
-for p in "$HOME/.streamlit" "$HOME/.cache/pip" "$HOME/.cache/huggingface" "$HOME/.cache/vllm" "$HOME/.config/gh"; do
+for p in "$HOME/.streamlit" "$HOME/.cache/pip" "$HOME/.cache/huggingface" "$HOME/.cache/vllm" \
+         "$HOME/.config/gh" "/tmp/pytest-of-$(whoami)" "$HOME/.claude"; do
   [ -e "$p" ] && echo "present: $p ($(du -sh "$p" 2>/dev/null | cut -f1)) - check whether VoxelTrace created it" \
     || echo "absent:  $p"
 done
+
+echo "Notes: ~/.claude holds Claude Code session state (expected; remove at departure)."
+echo "       ~/.config/gh holds the GitHub CLI login (log out with 'gh auth logout' at departure)."
+
+hr "Public data manifest"
+if [ -f "$HACK/data/manifest.json" ]; then
+  python3 -c 'import json,sys; m=json.load(open(sys.argv[1]))
+for d in m["datasets"]: print(f"  {d[\"collection\"]} {d[\"subject_id\"]}: {d[\"file_count_total\"]} files, {d[\"bytes_total\"]:,} bytes")' "$HACK/data/manifest.json"
+else
+  echo "  none"
+fi
 
 hr "Docker objects named *voxeltrace*"
 if command -v docker >/dev/null 2>&1; then

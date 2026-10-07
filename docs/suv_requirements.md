@@ -1,0 +1,44 @@
+# SUV requirements (preparation for Milestone 3)
+
+**Milestone 2 does not compute SUV.** This document defines what VoxelTrace will require
+before computing body-weight SUV (SUVbw), and when it must **refuse**.
+
+SUVbw = C(t) / (D_inj · 2^(−Δt / T½) / W)
+
+with C(t) the decay-corrected activity concentration, D_inj the injected activity, Δt the time
+from injection to the decay-correction reference, T½ the radionuclide half-life, W the body
+weight. All quantities come from headers; nothing is defaulted, guessed or user-"assumed".
+
+## Required inputs
+
+| Input | DICOM source | Requirement |
+|---|---|---|
+| Activity concentration units | `Units` (0054,1001) | Must be `BQML`. Other values (`CNTS`, `GML`, `PROPCPS`, …) → refuse (no silent conversion). |
+| Pixel scaling | `RescaleSlope`, `RescaleIntercept` per instance | Present and finite on **every** slice; applied per slice. Per-slice slopes are allowed. |
+| Patient weight | `PatientWeight` (0010,1030), kg | Present, finite, > 0. Plausibility range check (e.g. 20–300 kg) → warning, never edited. |
+| Injected dose | `RadionuclideTotalDose` (0018,1074), Bq | Present, finite, > 0. Plausibility check against radionuclide (e.g. FDG 37–1000 MBq) → warning. |
+| Radionuclide half-life | `RadionuclideHalfLife` (0018,1075), s | Present, finite, > 0. Cross-check with radionuclide code/name (F-18 ≈ 6586–6588 s); mismatch → refuse. |
+| Injection time | `RadiopharmaceuticalStartDateTime` (0018,1078) preferred; else `RadiopharmaceuticalStartTime` (0018,1072) + a date | Must resolve to a full datetime. Time-only with no unambiguous date → refuse. |
+| Decay-correction reference time | `DecayCorrection` (0054,1102) + `SeriesDate/SeriesTime` (START) or per-frame `AcquisitionDateTime`/`FrameReferenceTime` (ADMIN/NONE handling) | `START` → reference = series start. `ADMIN` → already corrected to injection, Δt = 0. `NONE` → refuse unless per-slice acquisition times allow explicit correction (later). |
+| Correction state | `CorrectedImage` (0028,0051) | Must include `ATTN` and `DECY`; otherwise refuse. |
+| Radiopharmaceutical | `RadiopharmaceuticalInformationSequence` | Exactly one item, or refuse (multiple tracers ambiguous). |
+
+## Refusal cases (SUV must not be produced)
+
+1. Any required field absent, empty, non-numeric, NaN/inf, or ≤ 0.
+2. `Units` ≠ `BQML`.
+3. Required field inconsistent across slices of the series (weight, units, dose, times, decay correction).
+4. Injection datetime after the decay-correction reference time, or Δt > ~24 h for F-18 (likely date error).
+5. Injection time without an unambiguous date (e.g. crossing midnight with only TM values).
+6. `DecayCorrection` = `NONE` or unknown value.
+7. `CorrectedImage` lacks `ATTN` or `DECY`.
+8. Half-life inconsistent with the declared radionuclide.
+9. Vendor private-tag dependence (e.g. Philips SUV scale factors, GE private decay data) without an explicit, tested vendor rule → refuse rather than guess.
+10. More than one radiopharmaceutical item.
+11. Geometry QC errors (duplicate/missing slices) for the series.
+
+## Output contract (Milestone 3)
+
+The SUV result will be an evidence object that carries every input value used, its source tag,
+the computed decay factor, and any warnings — so each number can be audited and the AI layer
+can cite, but not alter, it.
