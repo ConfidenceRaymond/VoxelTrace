@@ -71,3 +71,11 @@ def test_refusal_exit_code_and_stale_result_removed(tmp_path):
     ev = json.loads((out / "evidence.json").read_text())
     assert ev["measured"]["suv_status"] == "REFUSED" and ev["measured"]["lesions"] == []
     assert ev["refusal_reasons"][0]["code"] == "UNSUPPORTED_UNITS"
+    for f in FILES:
+        assert (out / f).exists()
+    claims = json.loads((out / "claim_evidence.json").read_text())["claims"]
+    assert all(
+        c["status"] != "SUPPORTED" for c in claims if c["claim_type"] == "QUANTITATIVE_VALUE"
+    )
+    qc = json.loads((out / "protocol_qc.json").read_text())
+    assert qc["usable_for"]["suv"] is False

@@ -25,7 +25,7 @@ talks only to a loopback OpenAI-compatible endpoint (default `http://127.0.0.1:8
 e.g. vLLM on the GB10), refuses non-local endpoints by default, has no cloud fallback,
 and needs no API key.
 
-## Hackathon status: milestone 3 (strict SUV + lesion quantification)
+## Hackathon status: milestone 4 (protocol evidence + claim gating)
 
 Currently implemented:
 
@@ -71,6 +71,22 @@ Currently implemented:
   - **Validation:** checked against hand-calculated oracles and an independent reimplementation
     (`scripts/crosscheck_quant.py`).
 - `scripts/quantify_case.py` (CLI) and the Streamlit **Quantitative PET** page.
+- `voxeltrace.evidence` (milestone 4). This step is header-only and reads standard DICOM tags
+  only:
+  - **Evidence types:** typed scanner, acquisition, reconstruction and correction evidence.
+    Each field is PRESENT, MISSING, PRESENT_BUT_AMBIGUOUS or UNSUPPORTED, and records its
+    DICOM source.
+  - **Protocol QC:** maps each gap to what it blocks (SUV, lesion metrics, cross-scan
+    comparison) instead of failing the whole case.
+  - **`compare_protocols`:** classifies a pair of scans as COMPARABLE,
+    COMPARABLE_WITH_WARNINGS, NOT_COMPARABLE or INSUFFICIENT_INFORMATION.
+  - **Claim gating:** deterministic `ClaimEvidence` with the statuses SUPPORTED,
+    PARTIALLY_SUPPORTED, NOT_ESTABLISHED and CONTRADICTED. Diagnosis, treatment response and
+    image noise are always NOT_ESTABLISHED.
+  - **Documentation:** [docs/protocol_evidence.md](docs/protocol_evidence.md),
+    [docs/reconstruction_evidence.md](docs/reconstruction_evidence.md),
+    [docs/comparability.md](docs/comparability.md) and [docs/claims.md](docs/claims.md).
+  - **UI:** the Streamlit **Protocol & Claims** page.
 
 Quantitative correctness is validated **only for the implemented DICOM path**, not for all
 vendor PET DICOM variants.
@@ -100,10 +116,16 @@ PET/CT/SEG/BIDS
 VoxelTrace ingestion                 (DICOM PET/CT/SEG + NIfTI)
       |
       v
-Deterministic quantitative engine    (initial stats implemented)
+Deterministic quantitative engine    (strict SUVbw, lesion metrics)
+      |
+      v
+Protocol / reconstruction evidence   (scanner, acquisition, recon, corrections, QC)
       |
       v
 Structured evidence object           (Pydantic schemas)
+      |
+      v
+Claim gating                         (deterministic, no LLM)
       |
       v
 Local AI on GB10                     (client skeleton)
@@ -152,6 +174,8 @@ make app              # http://127.0.0.1:8501
 .venv/bin/python scripts/quantify_case.py ../data/fdg_pet_ct_lesions/PETCT_0011f3deaf \
     --subject PETCT_0011f3deaf --dataset FDG-PET-CT-Lesions
 # writes ../outputs/PETCT_0011f3deaf/{suv_input_audit,suv_result|suv_refusal,lesion_metrics,evidence}.json
+# also writes scanner_evidence, acquisition_protocol, reconstruction_protocol,
+#   correction_evidence, protocol_qc and claim_evidence JSON
 # exit 0 = SUV computed, 2 = refused (reasons printed and written)
 ```
 

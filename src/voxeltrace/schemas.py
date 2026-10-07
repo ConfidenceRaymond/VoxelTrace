@@ -467,3 +467,36 @@ class QuantEvidence(BaseModel):
             "clinical significance of any measurement",
         ]
     )
+
+
+# --------------------------------------------------------------------------------------
+# Protocol evidence (milestone 4). One field = one value + where it came from + its status.
+# --------------------------------------------------------------------------------------
+
+FieldStatus = Literal["PRESENT", "MISSING", "PRESENT_BUT_AMBIGUOUS", "UNSUPPORTED"]
+Derivation = Literal[
+    "standard_tag",
+    "standard_enumeration",
+    "free_text_pattern",
+    "derived_from_geometry",
+    "derived_from_timing",
+    "validated_suv_input",
+    "not_applicable",
+]
+
+
+class EvidenceField(BaseModel):
+    """A protocol fact. ``MISSING`` never carries a guessed value."""
+
+    name: str
+    status: FieldStatus
+    value: str | float | int | bool | list[str] | list[float] | None = None
+    unit: str | None = None
+    source: str | None = Field(default=None, description="DICOM tag(s) or derivation rule.")
+    derivation: Derivation | None = None
+    n_distinct_across_slices: int | None = None
+    note: str | None = None
+
+    @property
+    def known(self) -> bool:
+        return self.status in ("PRESENT", "PRESENT_BUT_AMBIGUOUS") and self.value is not None

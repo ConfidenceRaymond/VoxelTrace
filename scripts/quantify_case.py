@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Strict SUVbw + lesion quantification for a local PET case. Deterministic; no AI.
+"""Strict SUVbw + lesion quantification + protocol/claim evidence for a local PET case.
 
 Usage:
     python scripts/quantify_case.py /path/to/case [--subject ID] [--dataset NAME] [--out DIR]
@@ -15,6 +15,7 @@ import sys
 from pathlib import Path
 
 from voxeltrace.config import REPO_ROOT
+from voxeltrace.evidence.outputs import write_protocol_outputs
 from voxeltrace.ingest import build_case
 from voxeltrace.quant.evidence import quantify_case, summary_text, write_outputs
 
@@ -51,7 +52,19 @@ def main(argv: list[str] | None = None) -> int:
         return 1
     out = args.out or DEFAULT_OUTPUTS / (args.subject or root.name)
     written = write_outputs(run, out)
+    proto_files, proto = write_protocol_outputs(run, out)
+    written += proto_files
     print(summary_text(run))
+    qc = proto["qc"]
+    print(
+        "PROTOCOL QC: "
+        + ", ".join(f"{k}={v}" for k, v in qc.status_counts.items())
+        + " | usable for: "
+        + ", ".join(k for k, v in qc.usable_for.items() if v)
+    )
+    print("CLAIMS (deterministic, no LLM):")
+    for c in proto["claims"] + proto["demos"]:
+        print(f"  [{c.status:19}] {c.statement}")
     print("written:")
     for p in written:
         print(f"  {p}")

@@ -229,3 +229,54 @@ FrameReferenceTime. It is **refused** with `SCAN_REFERENCE_AMBIGUOUS`, as design
 - Lesions near image edges (SUVpeak excluded there).
 - Inter-software agreement with established tools (e.g. 3D Slicer PET-IndiC, LIFEx). This is
   recommended next.
+
+## Milestone 4: protocol and reconstruction evidence, comparability, claim gating (2026-10-07)
+
+### Automated tests: `pytest` reports 183 passed
+
+- **`tests/test_protocol_evidence.py` (25 tests)**
+  - Free-text parsing, including `<N>i<M>s` edge cases. An absent TOF/PSF token gives MISSING,
+    never False.
+  - Structured Enhanced-PET attributes take precedence over free text.
+  - Missing scanner metadata: QC flags it, and only cross-scan comparison is blocked.
+  - Missing reconstruction info.
+  - CorrectedImage absent gives MISSING (not False); an unlisted flag gives False.
+  - Site and device identifiers are never copied.
+  - Uptake outside the QIBA window gets a QC warning.
+- **Comparability scenarios (part of the same file):**
+  - same scanner and reconstruction: COMPARABLE;
+  - different scanner: NOT_COMPARABLE;
+  - changed voxel size, filter or iterations: NOT_COMPARABLE;
+  - uptake +5 min: COMPARABLE (within ±10 min); uptake +20 min: NOT_COMPARABLE;
+  - correction mismatch (SCAT): NOT_COMPARABLE;
+  - missing model and method: INSUFFICIENT_INFORMATION;
+  - software and activity differences: COMPARABLE_WITH_WARNINGS.
+- **`tests/test_claims.py` (14 tests)**
+  - Value claims: supported, contradicted, and the stated-precision tolerance.
+  - Unmeasured value or refused SUV: NOT_ESTABLISHED.
+  - Protocol facts: supported, contradicted, unknown.
+  - Uptake change:
+    - SUPPORTED: comparable protocols, confirmed target, −50 %;
+    - CONTRADICTED: an increase;
+    - NOT_ESTABLISHED: no target correspondence, NOT_COMPARABLE, or a single scan;
+    - PARTIALLY_SUPPORTED: comparable with warnings.
+  - Treatment response stays NOT_ESTABLISHED even when a decrease is SUPPORTED.
+  - A diagnosis claim is NOT_ESTABLISHED.
+- **`tests/test_quantify_cli.py`**
+  - Protocol, QC and claim JSON files are written for both PASS and refused cases.
+  - On a refused case, no quantitative claim is SUPPORTED.
+
+### Real case PETCT_0011f3deaf
+
+- **Protocol QC:**
+  - 61 PRESENT, 3 PRESENT_BUT_AMBIGUOUS, 12 MISSING, 0 UNSUPPORTED fields.
+  - Usable for SUV, lesion metrics and cross-scan comparison.
+- **Claims:**
+  - 6 value claims SUPPORTED: SUVmax 19.113, SUVmean 5.955, SUVmedian 4.774, SUVpeak 12.235,
+    MTV 16.161 mL, TLG 96.234 g.
+  - Attenuation, scatter and randoms correction SUPPORTED (standard CorrectedImage flags).
+  - TOF and PSF PARTIALLY_SUPPORTED (from vendor free text).
+  - Uptake change, treatment response, diagnosis and image noise NOT_ESTABLISHED.
+  - The wrong-value demonstration (SUVmax 23.89) is CONTRADICTED.
+- **Streamlit:** AppTest of the Protocol & Claims page on the real case and the refused
+  fixture shows no exceptions. The other three pages also show no exceptions.
