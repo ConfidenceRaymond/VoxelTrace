@@ -7,7 +7,7 @@ PET/CT/SEG/BIDS
 VoxelTrace ingestion                    (voxeltrace.ingest - DICOM PET/CT/SEG, NIfTI)
       |
       v
-Deterministic quantitative engine       (voxeltrace.quant - whole-array stats implemented)
+Deterministic quantitative engine       (voxeltrace.quant - strict SUVbw, lesion metrics, SUVpeak)
       |
       v
 Structured evidence object              (voxeltrace.schemas - Pydantic models)
@@ -24,6 +24,7 @@ Evidence-grounded interpretation        (planned)
 | Layer | Package | Rule |
 |---|---|---|
 | Quantitative engine | `voxeltrace.quant` | Pure, deterministic NumPy. No AI. Same input gives the same output. Invalid data is counted or rejected, never silently repaired. |
+| Quantification | `voxeltrace.quant` | `dicom_time.py` parses DA/TM/DT strictly. `suv.py` holds the eligibility validator, timing policy and SUVbw. `lesions.py` computes per-segment MTV/SUV statistics/TLG/SUVpeak. `evidence.py` builds the `QuantEvidence` and output files. See [quantification.md](quantification.md). |
 | Evidence | `voxeltrace.schemas` | Typed, frozen Pydantic models. The only thing handed to the AI layer. |
 | AI reasoning | `voxeltrace.ai` | Talks to a local OpenAI-compatible server (default `http://127.0.0.1:8000/v1`). Non-loopback endpoints are refused unless explicitly enabled. No cloud fallback. No API key required. The model interprets evidence; it never produces measurements. |
 | Ingestion | `voxeltrace.ingest` | `dicom.py` handles discovery, PET metadata, geometry and volumes. `nifti.py` loads NIfTI. `segmentation.py` handles NIfTI masks and DICOM SEG. `case.py` builds a `VoxelTraceCase`. Header-first: pixels are read only on request. Missing means missing. Ambiguous geometry raises `IngestError`. |
@@ -49,4 +50,6 @@ Implemented: `compute_image_stats`, `ImageStats`/`AIServerStatus` schemas, `Loca
 
 Milestone 2 added: DICOM/NIfTI/SEG ingestion (see above).
 
-Planned: BIDS ingestion, SUV conversion, ROI/segmentation-based metrics, QC checks, `LocalAIClient.reason_structured()` (currently raises `NotImplementedError`), vLLM deployment on GB10.
+Milestone 3 added: strict SUVbw, lesion metrics and the evidence object (see quantification.md).
+
+Planned: BIDS ingestion, ROI/segmentation-based metrics, QC checks, `LocalAIClient.reason_structured()` (currently raises `NotImplementedError`), vLLM deployment on GB10.

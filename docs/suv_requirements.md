@@ -1,7 +1,19 @@
-# SUV requirements (preparation for Milestone 3)
+# SUV requirements
 
-**Milestone 2 does not compute SUV.** This document defines what VoxelTrace will require
-before computing body-weight SUV (SUVbw), and when it must **refuse**.
+> **Status: implemented in Milestone 3** (`src/voxeltrace/quant/suv.py`, calculation version
+> `suvbw-strict-1`). The exact implemented policy, including the timing rules, is in
+> [quantification.md](quantification.md). Where the implementation is stricter than this
+> original plan, the implementation applies:
+> - `DecayCorrection` **ADMIN and NONE are refused** (not implemented), rather than handled.
+> - The scan reference time is the PET Series Date/Time. It is accepted only when it agrees
+>   with the earliest acquisition time (≤ 1 s), or when per-slice FrameReferenceTime confirms
+>   it. Otherwise SUV is refused.
+> - The vendor `DecayFactor`, when present, must equal 2^(FrameReferenceTime/T½) within 10⁻³.
+> - Implausible dose (outside 1 MBq–100 GBq) and implausible weight (outside 1–500 kg) are
+>   **refused** as probable unit errors. Weight outside 20–300 kg is a warning.
+
+This document defines what VoxelTrace requires before computing body-weight SUV (SUVbw), and
+when it must **refuse**.
 
 SUVbw = C(t) / (D_inj · 2^(−Δt / T½) / W)
 
@@ -37,8 +49,9 @@ weight. All quantities come from headers; nothing is defaulted, guessed or user-
 10. More than one radiopharmaceutical item.
 11. Geometry QC errors (duplicate/missing slices) for the series.
 
-## Output contract (Milestone 3)
+## Output contract (implemented)
 
-The SUV result will be an evidence object that carries every input value used, its source tag,
-the computed decay factor, and any warnings — so each number can be audited and the AI layer
-can cite, but not alter, it.
+The SUV result (`SUVResult`) and the `QuantEvidence` object carry every input value used, its
+DICOM tag and per-slice consistency, the timing sources, the computed decay factor and scale
+factor, the per-slice rescale factors, and all warnings. Each number can therefore be audited,
+and the AI layer can cite these numbers but not alter them.

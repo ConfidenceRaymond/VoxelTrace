@@ -253,3 +253,217 @@ class VoxelTraceCase(BaseModel):
 
     def series_by_category(self, category: SeriesCategory) -> list[ImagingSeries]:
         return [s for s in self.series if s.category == category]
+
+
+# --------------------------------------------------------------------------------------
+# Quantification models (milestone 3). Every number carries its source.
+# --------------------------------------------------------------------------------------
+
+SUV_PATH = "SUVbw: Units=BQML, DecayCorrection=START, CorrectedImage⊇{ATTN,DECY}"
+
+
+class QuantField(BaseModel):
+    """One DICOM value used (or inspected) for quantification, with its consistency audit."""
+
+    name: str
+    tag: str
+    value: str | None = Field(description="Raw value from the first slice (as recorded).")
+    unit: str | None = None
+    slices_present: int
+    slices_total: int
+    distinct_values: list[str] = Field(default_factory=list, description="Up to 5 shown.")
+    n_distinct: int = 0
+
+
+class CheckResult(BaseModel):
+    name: str
+    passed: bool
+    detail: str
+
+
+class SUVRefusalReason(BaseModel):
+    code: str
+    message: str
+    field: str | None = None
+
+
+class SUVValidation(BaseModel):
+    eligible: bool
+    supported_path: str = SUV_PATH
+    checks: list[CheckResult] = Field(default_factory=list)
+    reasons: list[SUVRefusalReason] = Field(default_factory=list)
+    warnings: list[QCWarning] = Field(default_factory=list)
+
+
+class SUVInputs(BaseModel):
+    """Validated inputs. ``None`` means not established (and SUV is then refused)."""
+
+    units: str | None = None
+    decay_correction: str | None = None
+    corrected_image: list[str] | None = None
+    patient_weight_kg: float | None = None
+    radionuclide_total_dose_bq: float | None = None
+    radionuclide_half_life_s: float | None = None
+    radionuclide: str | None = None
+    injection_datetime: str | None = None
+    injection_datetime_source: str | None = None
+    scan_reference_datetime: str | None = None
+    scan_reference_datetime_source: str | None = None
+    earliest_acquisition_datetime: str | None = None
+    series_datetime: str | None = None
+    decay_interval_s: float | None = None
+    fields: list[QuantField] = Field(default_factory=list)
+
+
+class SUVScaleFactors(BaseModel):
+    """SUVbw = C[Bq/mL] × suv_per_bqml, suv_per_bqml = W[g] / (D[Bq] · 2^(−Δt/T½))."""
+
+    patient_weight_g: float
+    injected_dose_bq: float
+    half_life_s: float
+    decay_interval_s: float
+    dose_decay_factor: float = Field(description="2^(−Δt/T½), dimensionless.")
+    decayed_dose_bq: float
+    suv_per_bqml: float = Field(description="g/Bq; multiply Bq/mL to obtain SUVbw in g/mL.")
+    formula: str = "SUVbw = C_PET[Bq/mL] * W[g] / (D_inj[Bq] * 2^(-Δt[s]/T½[s]))"
+
+
+class RescaleAudit(BaseModel):
+    """Per-slice modality LUT factors (stored → Bq/mL), in volume slice order k."""
+
+    n_slices: int
+    n_distinct_slopes: int
+    slope_min: float | None
+    slope_max: float | None
+    n_distinct_intercepts: int
+    intercepts: list[float] = Field(default_factory=list, description="Distinct, up to 5.")
+    per_slice: list[tuple[int, str | None, float | None, float | None]] = Field(
+        default_factory=list, description="(k, SOPInstanceUID, RescaleSlope, RescaleIntercept)"
+    )
+
+
+class QuantitativeProvenance(BaseModel):
+    calculation: str
+    calculation_version: str
+    voxeltrace_version: str
+    git_commit: str | None = None
+    git_dirty: bool | None = None
+    computed_at: str
+    dataset: str | None = None
+    subject_pseudonym: str | None = None
+    pet_series_uid: str | None = None
+    seg_series_uid: str | None = None
+    assumptions: list[str] = Field(default_factory=list)
+    references: list[str] = Field(default_factory=list)
+
+
+class SUVResult(BaseModel):
+    status: Literal["PASS"] = "PASS"
+    units: str = "g/mL"
+    inputs: SUVInputs
+    scale: SUVScaleFactors
+    validation: SUVValidation
+    rescale: RescaleAudit
+    activity_units: str = "Bq/mL"
+    volume_shape_kji: tuple[int, int, int]
+    suv_stats: ImageStats
+    provenance: QuantitativeProvenance
+
+
+class SUVRefusal(BaseModel):
+    status: Literal["REFUSED"] = "REFUSED"
+    reasons: list[SUVRefusalReason]
+    validation: SUVValidation
+    inputs: SUVInputs
+    provenance: QuantitativeProvenance
+
+
+class SUVPeak(BaseModel):
+    status: Literal["COMPUTED", "NOT_AVAILABLE"]
+    value: float | None = None
+    definition: str = (
+        "max over candidate centres (voxel centres inside the segment) of the mean SUV of all "
+        "image voxels whose centres lie within r=(3/(4π))^(1/3) cm of the centre (1.0 cm³ sphere)"
+    )
+    sphere_volume_ml: float = 1.0
+    radius_mm: float
+    kernel_voxel_count: int
+    kernel_effective_volume_ml: float
+    center_kji: tuple[int, int, int] | None = None
+    center_patient_mm: tuple[float, float, float] | None = None
+    fraction_of_sphere_voxels_in_segment: float | None = None
+    candidates_evaluated: int = 0
+    candidates_excluded_at_image_edge: int = 0
+    note: str | None = None
+
+
+class LesionComponent(BaseModel):
+    index: int
+    voxel_count: int
+    volume_ml: float
+    suv_max: float
+    suv_mean: float
+
+
+class LesionMetrics(BaseModel):
+    """Metrics for one supplied segment. MTV is the volume of the supplied mask."""
+
+    segment_number: int
+    segment_label: str | None = None
+    voxel_count: int
+    voxel_volume_ml: float
+    mtv_ml: float
+    suv_min: float | None = None
+    suv_max: float | None = None
+    suv_mean: float | None = None
+    suv_median: float | None = None
+    suv_std: float | None = Field(default=None, description="Population SD (ddof=0).")
+    suv_p10: float | None = None
+    suv_p25: float | None = None
+    suv_p75: float | None = None
+    suv_p90: float | None = None
+    tlg: float | None = Field(default=None, description="MTV[mL] × SUVmean (g).")
+    n_components: int = 0
+    connectivity: str = "26-connected (face, edge and corner neighbours)"
+    components: list[LesionComponent] = Field(default_factory=list)
+    suv_peak: SUVPeak | None = None
+    warnings: list[QCWarning] = Field(default_factory=list)
+
+
+class LesionSummary(BaseModel):
+    n_segments: int
+    n_nonempty_segments: int
+    total_mtv_ml: float
+    total_tlg: float
+    max_suv_max: float | None = None
+    max_suv_max_segment: int | None = None
+
+
+class EvidenceMeasured(BaseModel):
+    suv_status: Literal["PASS", "REFUSED"]
+    suv_volume_stats: ImageStats | None = None
+    lesions: list[LesionMetrics] = Field(default_factory=list)
+    lesion_summary: LesionSummary | None = None
+
+
+class QuantEvidence(BaseModel):
+    """Structured evidence for later (local) AI interpretation. JSON-serialisable."""
+
+    schema_version: str = "voxeltrace.quant-evidence/1"
+    disclaimer: str
+    measured: EvidenceMeasured
+    provenance: QuantitativeProvenance
+    quantitative_inputs: SUVInputs
+    scale_factors: SUVScaleFactors | None = None
+    refusal_reasons: list[SUVRefusalReason] = Field(default_factory=list)
+    warnings: list[QCWarning] = Field(default_factory=list)
+    not_established: list[str] = Field(
+        default_factory=lambda: [
+            "diagnosis",
+            "histology",
+            "treatment response",
+            "prognosis",
+            "lesion malignancy",
+            "clinical significance of any measurement",
+        ]
+    )

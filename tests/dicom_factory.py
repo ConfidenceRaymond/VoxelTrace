@@ -58,8 +58,17 @@ def write_image_series(
     drop: Sequence[str] = (),
     slope: float = 2.0,
     intercept: float = -1.0,
+    slopes: Sequence[float] | None = None,
+    intercepts: Sequence[float] | None = None,
+    stored: np.ndarray | None = None,
+    rp_overrides: dict | None = None,
+    per_slice: dict[int, dict] | None = None,
 ) -> tuple[str, list[Path]]:
     """Write a single-frame series. Pixel value at slice k = stored k*10 + row + col.
+
+    ``slopes``/``intercepts``/``stored`` (shape n×rows×cols) override pixel scaling per slice
+    (index k is geometric order). ``rp_overrides`` set radiopharmaceutical-item attributes
+    (bytes = raw DS). ``per_slice[k]`` sets top-level attributes on slice k only.
 
     Files are named so that alphabetical order is the REVERSE of geometric order, and
     InstanceNumber is deliberately scrambled, so tests prove geometry-based sorting.
@@ -87,9 +96,10 @@ def write_image_series(
         ds.PhotometricInterpretation = "MONOCHROME2"
         ds.BitsAllocated, ds.BitsStored, ds.HighBit, ds.PixelRepresentation = 16, 16, 15, 0
         rr, cc = np.mgrid[0:rows, 0:cols]
-        ds.PixelData = (k * 10 + rr + cc).astype(np.uint16).tobytes()
-        ds.RescaleSlope = slope
-        ds.RescaleIntercept = intercept
+        pix = stored[k] if stored is not None else k * 10 + rr + cc
+        ds.PixelData = np.asarray(pix).astype(np.uint16).tobytes()
+        ds.RescaleSlope = slopes[k] if slopes is not None else slope
+        ds.RescaleIntercept = intercepts[k] if intercepts is not None else intercept
         if modality == "PT":
             _add_pet_fields(ds)
             for key, val in (pet_overrides or {}).items():
@@ -98,6 +108,15 @@ def write_image_series(
                     ds._dict[tag] = RawDataElement(tag, "DS", len(val), val, 0, False, True)
                 else:
                     setattr(ds, key, val)
+            rp = ds.RadiopharmaceuticalInformationSequence[0]
+            for key, val in (rp_overrides or {}).items():
+                if isinstance(val, bytes):
+                    tag = Tag(key)
+                    rp._dict[tag] = RawDataElement(tag, "DS", len(val), val, 0, False, True)
+                else:
+                    setattr(rp, key, val)
+        for key, val in (per_slice or {}).get(k, {}).items():
+            setattr(ds, key, val)
         for kw in drop:
             if kw in ds:
                 del ds[kw]
@@ -120,12 +139,16 @@ def _add_pet_fields(ds: Dataset) -> None:
     ds.SeriesDate = "20200101"
     ds.SeriesTime = "101500"
     ds.AcquisitionDate = "20200101"
-    ds.AcquisitionTime = "101530"
+    ds.AcquisitionTime = "101500"
     rp = Dataset()
     rp.Radiopharmaceutical = "Fluorodeoxyglucose"
     rp.RadionuclideTotalDose = "300000000"
     rp.RadionuclideHalfLife = "6586.2"
     rp.RadiopharmaceuticalStartTime = "091500"
+    rp.RadiopharmaceuticalStartDateTime = "20200101091500"
+    code = Dataset()
+    code.CodeValue, code.CodingSchemeDesignator, code.CodeMeaning = "C-111A1", "SRT", "^18^Fluorine"
+    rp.RadionuclideCodeSequence = DicomSequence([code])
     ds.RadiopharmaceuticalInformationSequence = DicomSequence([rp])
     ds.ReconstructionMethod = "SYNTHETIC OSEM"
     ds.ReconstructionDiameter = "600"

@@ -175,7 +175,13 @@ def test_pet_missing_fields_reported_not_defaulted(tmp_path):
         tmp_path,
         modality="PT",
         study_uid=generate_uid(),
-        drop=["PatientWeight", "Units", "RadionuclideTotalDose", "RadiopharmaceuticalStartTime"],
+        drop=[
+            "PatientWeight",
+            "Units",
+            "RadionuclideTotalDose",
+            "RadiopharmaceuticalStartTime",
+            "RadiopharmaceuticalStartDateTime",
+        ],
     )
     (s,) = discover_dicom(tmp_path).series
     meta, _ = extract_pet_metadata(s)

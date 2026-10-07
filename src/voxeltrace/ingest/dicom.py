@@ -684,6 +684,11 @@ class LoadedVolume:
     geometry: ImageGeometry
     warnings: list[QCWarning]
     rescaled: bool
+    # Per-slice audit trail, in the same (geometry-sorted) order as ``array[k]``.
+    slice_sop_instance_uids: list[str | None] = field(default_factory=list)
+    slice_paths: list[str] = field(default_factory=list)
+    slice_rescale_slopes: list[float | None] = field(default_factory=list)
+    slice_rescale_intercepts: list[float | None] = field(default_factory=list)
 
 
 def load_series_volume(series: ImagingSeries) -> LoadedVolume:
@@ -699,6 +704,8 @@ def load_series_volume(series: ImagingSeries) -> LoadedVolume:
             "; ".join(w.message for w in warns if w.severity == "error") or "geometry unavailable"
         )
     slices: list[np.ndarray] = []
+    slopes: list[float | None] = []
+    intercepts: list[float | None] = []
     rescaled_all = True
     for inst in sg.ordered:
         try:
@@ -716,6 +723,8 @@ def load_series_volume(series: ImagingSeries) -> LoadedVolume:
         else:
             raise IngestError(f"only one of RescaleSlope/RescaleIntercept present in {inst.path}")
         slices.append(arr)
+        slopes.append(slope[0] if slope else None)
+        intercepts.append(intercept[0] if intercept else None)
     if not rescaled_all:
         warns.append(
             QCWarning(
@@ -724,4 +733,27 @@ def load_series_volume(series: ImagingSeries) -> LoadedVolume:
                 message="some slices have no RescaleSlope/Intercept; stored values used unchanged",
             )
         )
-    return LoadedVolume(series.series_uid, np.stack(slices), sg.geometry, warns, rescaled_all)
+    return LoadedVolume(
+        series.series_uid,
+        np.stack(slices),
+        sg.geometry,
+        warns,
+        rescaled_all,
+        slice_sop_instance_uids=[i.sop_instance_uid for i in sg.ordered],
+        slice_paths=[i.path for i in sg.ordered],
+        slice_rescale_slopes=slopes,
+        slice_rescale_intercepts=intercepts,
+    )
+
+
+def ordered_instances(series: ImagingSeries) -> list[DicomInstance]:
+    """Instances in geometric slice order (same order as ``load_series_volume`` arrays).
+
+    Raises IngestError if the geometry is missing or ambiguous.
+    """
+    sg, warns = _series_geometry(series)
+    if sg is None or any(w.severity == "error" for w in warns):
+        raise IngestError(
+            "; ".join(w.message for w in warns if w.severity == "error") or "geometry unavailable"
+        )
+    return sg.ordered

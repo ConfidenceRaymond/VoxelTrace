@@ -25,7 +25,7 @@ talks only to a loopback OpenAI-compatible endpoint (default `http://127.0.0.1:8
 e.g. vLLM on the GB10), refuses non-local endpoints by default, has no cloud fallback,
 and needs no API key.
 
-## Hackathon status: milestone 2 (PET/CT/SEG ingestion)
+## Hackathon status: milestone 3 (strict SUV + lesion quantification)
 
 Currently implemented:
 
@@ -56,8 +56,27 @@ Currently implemented:
 - Streamlit **Imaging Ingestion** page.
 - `scripts/fetch_tcia_subject.py`: a bounded download of one subject from TCIA.
 
-**Not yet implemented:** SUV (see [docs/suv_requirements.md](docs/suv_requirements.md)),
-lesion/ROI metrics, BIDS ingestion, multi-frame (enhanced) image loading, and AI
+- `voxeltrace.quant` (milestone 3), documented in [docs/quantification.md](docs/quantification.md):
+  - **Strict SUVbw** for one path only: Units BQML, DecayCorrection START, CorrectedImage
+    including ATTN and DECY. The validator checks that path and returns structured refusal
+    reasons.
+  - **Timing:** times are parsed strictly. The decay reference time must be cross-validated
+    against acquisition times, and midnight crossings follow an explicit documented rule.
+  - **Rescale:** applied per slice, with every factor recorded for audit.
+  - **Lesion metrics** per supplied segment: MTV, SUVmin/max/mean/median/SD/percentiles, TLG,
+    connected components.
+  - **SUVpeak:** a 1.0 cm³ sphere (r = 6.2035 mm) positioned to maximise the mean.
+  - **Evidence object:** a typed `QuantEvidence` split into measured, provenance, warnings and
+    not-established sections.
+  - **Validation:** checked against hand-calculated oracles and an independent reimplementation
+    (`scripts/crosscheck_quant.py`).
+- `scripts/quantify_case.py` (CLI) and the Streamlit **Quantitative PET** page.
+
+Quantitative correctness is validated **only for the implemented DICOM path**, not for all
+vendor PET DICOM variants.
+
+**Not yet implemented:** DecayCorrection ADMIN/NONE, non-BQML units, SUVlbm/SUVbsa,
+automatic segmentation, BIDS ingestion, multi-frame (enhanced) image loading, and AI
 interpretation. No model has been downloaded. One public subject from FDG-PET-CT-Lesions is
 stored locally, outside Git.
 
@@ -127,6 +146,15 @@ make app              # http://127.0.0.1:8501
 .venv/bin/python scripts/inspect_case.py <dir> --load-pixels --json > ../outputs/case.json
 ```
 
+## Quantify a case (strict SUV + lesions)
+
+```bash
+.venv/bin/python scripts/quantify_case.py ../data/fdg_pet_ct_lesions/PETCT_0011f3deaf \
+    --subject PETCT_0011f3deaf --dataset FDG-PET-CT-Lesions
+# writes ../outputs/PETCT_0011f3deaf/{suv_input_audit,suv_result|suv_refusal,lesion_metrics,evidence}.json
+# exit 0 = SUV computed, 2 = refused (reasons printed and written)
+```
+
 ## Other scripts
 
 - `scripts/check_environment.sh` - regenerate `docs/environment_snapshot.md` (`make env-snapshot`).
@@ -135,7 +163,11 @@ make app              # http://127.0.0.1:8501
 ## Safety and limitations
 
 - Research prototype; no clinical validation of any kind.
-- The only quantitative function so far is generic array statistics; it is not a PET/SUV metric.
+- SUVbw and lesion metrics are research measurements. They are validated only for the
+  implemented DICOM path (BQML/START) on synthetic oracles and one public case, not for all
+  scanners or vendors.
+- MTV, TLG and SUVpeak depend on the supplied segmentation. No automatic segmentation is
+  performed.
 - AI outputs, once implemented, are interpretations of supplied evidence and may still be wrong.
 
 ## Data policy
