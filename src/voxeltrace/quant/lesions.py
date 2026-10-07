@@ -116,6 +116,7 @@ def _components(mask: np.ndarray, suv: np.ndarray, voxel_ml: float) -> list[Lesi
                 volume_ml=vals.size * voxel_ml,
                 suv_max=float(vals.max()),
                 suv_mean=float(vals.mean()),
+                zero_suv_voxels=int((vals == 0).sum()),
             )
         )
     return sorted(out, key=lambda c: -c.voxel_count)
@@ -168,6 +169,22 @@ def quantify_segments(
         lm.tlg = lm.mtv_ml * lm.suv_mean
         lm.components = _components(m, suv, voxel_ml)
         lm.n_components = len(lm.components)
+        n_zero = int((vals == 0).sum())
+        if n_zero:
+            full = [
+                rank
+                for rank, c in enumerate(lm.components, start=1)  # rank by size
+                if c.zero_suv_voxels == c.voxel_count
+            ]
+            lm.warnings.append(
+                QCWarning(
+                    code="SEGMENT_VOXELS_ZERO_SUV",
+                    message=f"segment {number}: {n_zero}/{vals.size} voxels "
+                    f"({n_zero / vals.size:.1%}) have SUV exactly 0 (PET masked or outside the "
+                    "body?); metrics include them per the supplied-mask definition"
+                    + (f"; components (size rank) entirely at 0: {full}" if full else ""),
+                )
+            )
         if lm.n_components > 1:
             lm.warnings.append(
                 QCWarning(

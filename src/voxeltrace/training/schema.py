@@ -131,6 +131,7 @@ class GroundTruthComponent(BaseModel):
     centroid_kji: GTValue
     bbox_kji: GTValue = Field(description="[[k0,j0,i0],[k1,j1,i1]] inclusive")
     slices_k: GTValue
+    zero_suv_voxels: GTValue | None = None
 
 
 class GroundTruthLesion(BaseModel):
@@ -155,6 +156,9 @@ class GroundTruthLesion(BaseModel):
     suvpeak_center_patient_mm: GTValue
     slices_k: GTValue
     voxels_per_slice: GTValue = Field(description="{k: voxel count} for slices with voxels")
+    zero_suv_voxels_per_slice: GTValue | None = Field(
+        default=None, description="{k: count of segment voxels with SUV exactly 0}"
+    )
     components: list[GroundTruthComponent] = Field(default_factory=list)
 
 

@@ -403,6 +403,9 @@ class LesionComponent(BaseModel):
     volume_ml: float
     suv_max: float
     suv_mean: float
+    zero_suv_voxels: int = Field(
+        default=0, description="Voxels with SUV exactly 0 (e.g. PET masked / outside body)."
+    )
 
 
 class LesionMetrics(BaseModel):

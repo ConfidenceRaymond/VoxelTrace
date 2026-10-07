@@ -225,3 +225,29 @@ def add_footer(
         draw.text((6, y), line, fill=(230, 230, 230), font=_font())
         y += line_h
     return np.concatenate([rgb, np.asarray(footer, dtype=np.uint8)], axis=0)
+
+
+def compose_grid(
+    rows: list[list[tuple[str, np.ndarray]]], *, title: str, tile: int = 240, gap: int = 6
+) -> np.ndarray:
+    """Contact sheet: each tile is fitted (nearest-neighbour, aspect kept) into tile×tile."""
+    ncols = max(len(r) for r in rows)
+    w = ncols * (tile + gap) + gap
+    h = 30 + len(rows) * (tile + 20 + gap) + gap
+    sheet = Image.new("RGB", (w, h), (20, 20, 20))
+    draw = ImageDraw.Draw(sheet)
+    draw.text((gap, 8), title, fill=(255, 255, 255), font=_font(14))
+    y = 30
+    for row in rows:
+        x = gap
+        for label, rgb in row:
+            im = Image.fromarray(rgb, "RGB")
+            f = min(tile / im.width, tile / im.height)
+            im = im.resize(
+                (max(1, int(im.width * f)), max(1, int(im.height * f))), Image.Resampling.NEAREST
+            )
+            sheet.paste(im, (x, y + 18))
+            draw.text((x, y + 2), label, fill=(200, 200, 200), font=_font(11))
+            x += tile + gap
+        y += tile + 20 + gap
+    return np.asarray(sheet, dtype=np.uint8)
