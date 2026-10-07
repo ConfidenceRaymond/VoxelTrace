@@ -61,6 +61,7 @@ def main() -> int:
     ap.add_argument("--datasets", type=Path, nargs="+", required=True)
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--max-new-tokens", type=int, default=384)
+    ap.add_argument("--ids", type=Path, help="JSON list of example ids to run (exact set)")
     args = ap.parse_args()
     args.out.mkdir(parents=True, exist_ok=True)
 
@@ -75,7 +76,11 @@ def main() -> int:
     todo = []
     for d in args.datasets:
         recs = [json.loads(x) for x in (d / "examples_qwen3vl.jsonl").read_text().splitlines()]
-        todo += [(d, r) for r in select(recs)]
+        if args.ids is not None:
+            wanted = set(json.loads(args.ids.read_text()))
+            todo += [(d, r) for r in sorted(recs, key=lambda r: r["id"]) if r["id"] in wanted]
+        else:
+            todo += [(d, r) for r in select(recs)]
     rows = []
     for d, rec in todo:
         msgs, _ = to_messages(rec, d)
@@ -111,7 +116,8 @@ def main() -> int:
         "cuda": torch.version.cuda,
         "device": torch.cuda.get_device_name(0),
         "peak_gpu_mem_gb": round(torch.cuda.max_memory_allocated() / 1e9, 2),
-        "selection": f"<= {PER_CLASS} per class per subject + all ADVERSARIAL, sorted by id",
+        "selection": (f"explicit id list {args.ids}" if args.ids is not None else
+                      f"<= {PER_CLASS} per class per subject + all ADVERSARIAL, sorted by id"),
         "datasets": [str(d) for d in args.datasets],
         "examples_sha256": {
             str(d): hashlib.sha256((d / "examples_qwen3vl.jsonl").read_bytes()).hexdigest()
