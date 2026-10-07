@@ -256,3 +256,15 @@ def test_verification_fails_on_mismatch(mutate):
         s["anns"][0].value.value = [0, 0, 1, 1]
     with pytest.raises(RenderVerificationError):
         verify_axial_render(**s)
+
+
+def test_suvpeak_marker_verified_against_peak_centre():
+    s = _scene()
+    m = s["m"]
+    c = peak_circle((2, 4, 5), 2, 4.0, m, 2.0 / 3, "t")
+    s["anns"] = s["anns"] + [c]
+    verify_axial_render(**s, suvpeak_kji=(2, 4, 5), slice_spacing_mm=4.0, mm_per_px=2.0 / 3)
+    with pytest.raises(RenderVerificationError, match="SUVpeak marker centre"):
+        verify_axial_render(**s, suvpeak_kji=(2, 4, 6), slice_spacing_mm=4.0, mm_per_px=2.0 / 3)
+    with pytest.raises(RenderVerificationError, match="radius"):
+        verify_axial_render(**s, suvpeak_kji=(3, 4, 5), slice_spacing_mm=4.0, mm_per_px=2.0 / 3)

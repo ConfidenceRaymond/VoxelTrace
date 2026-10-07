@@ -239,6 +239,7 @@ def _contact_sheet(renderer: Renderer, gtc, positives, audit_dir: Path, subject:
             ("pet", False, False, "PET"),
             ("ct", False, False, "CT"),
             ("fused", False, False, "PET/CT"),
+            ("suvheat", False, False, "SUV heat map"),
             ("pet", True, False, "segmentation"),
             ("pet", True, True, "SUVmax + SUVpeak"),
         ):
@@ -269,7 +270,14 @@ def _contact_sheet(renderer: Renderer, gtc, positives, audit_dir: Path, subject:
             {
                 "sha256": sha256_bytes(data),
                 "slices": priority,
-                "columns": ["PET", "CT", "PET/CT", "segmentation", "SUVmax + SUVpeak"],
+                "columns": [
+                    "PET",
+                    "CT",
+                    "PET/CT",
+                    "SUV heat map",
+                    "segmentation",
+                    "SUVmax + SUVpeak",
+                ],
                 "note": "derived medical images: keep local, never commit",
             },
             indent=2,

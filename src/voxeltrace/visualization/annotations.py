@@ -153,6 +153,9 @@ def verify_axial_render(
     suvmax_kji: tuple[int, int, int] | None,
     suv_max: float | None,
     displayed: list[dict[str, Any]],
+    suvpeak_kji: tuple[int, int, int] | None = None,
+    slice_spacing_mm: float | None = None,
+    mm_per_px: float | None = None,
     evidence_json_text: str,
     outline_drawn: bool,
 ) -> None:
@@ -176,6 +179,17 @@ def verify_axial_render(
             vi, vj = m.px_to_voxel(*a.value.value)
             if (k, vj, vi) != tuple(suvmax_kji) or suv[k, vj, vi] != suv_max:
                 raise RenderVerificationError("SUVmax marker does not map to the SUVmax voxel")
+        if a.kind == "circle" and a.target == "suvpeak_sphere":
+            if suvpeak_kji is None or slice_spacing_mm is None or mm_per_px is None:
+                raise RenderVerificationError("SUVpeak marker without SUVpeak centre")
+            x, y, r_px = a.value.value
+            vi, vj = m.px_to_voxel(int(x), int(y))
+            if (vj, vi) != (suvpeak_kji[1], suvpeak_kji[2]):
+                raise RenderVerificationError("SUVpeak marker centre != SUVpeak centre voxel")
+            dz = abs(k - suvpeak_kji[0]) * slice_spacing_mm
+            expect = math.sqrt(max(PEAK_RADIUS_MM**2 - dz**2, 0.0)) / mm_per_px
+            if dz > PEAK_RADIUS_MM or abs(r_px - round(expect, 4)) > 1e-9:
+                raise RenderVerificationError("SUVpeak circle radius inconsistent with sphere")
     if outline_drawn and mask_px.any():
         c = contour(mask_px)
         if not np.all(rgb[: mask_px.shape[0]][c] == np.array(CYAN, np.uint8)):

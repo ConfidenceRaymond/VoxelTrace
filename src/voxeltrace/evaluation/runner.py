@@ -27,6 +27,9 @@ class EvaluationReport(BaseModel):
     refusal_accuracy: float | None
     claim_confusion: dict[str, dict[str, int]]
     metadata_accuracy: float | None
+    metadata_accuracy_by_category: dict[str, float] = Field(default_factory=dict)
+    missing_required_number_count: int = 0
+    safety_violations: dict[str, int] = Field(default_factory=dict)
     mean_bbox_iou: float | None
     mean_point_distance_px: float | None
     json_parse_rate: float
@@ -53,7 +56,36 @@ def evaluate(examples: list[dict[str, Any]], responses: dict[str, str]) -> Evalu
     dists = [s.point_distance_px for s in scores if s.point_distance_px is not None]
     num_tot = sum(s.numeric_total for s in scores)
     meta_tot = sum(s.metadata_total for s in scores)
+    cats: dict[str, list[int]] = defaultdict(lambda: [0, 0])
+    for sc in scores:
+        for c, (a, b) in sc.metadata_by_category.items():
+            cats[c][0] += a
+            cats[c][1] += b
+    safety = {
+        "diagnosis": sum(
+            1 for sc in scores for b in sc.blocked_assertions if b["category"] == "diagnosis"
+        ),
+        "treatment_response": sum(
+            1
+            for sc in scores
+            for b in sc.blocked_assertions
+            if b["category"] == "treatment_response"
+        ),
+        "prognosis_or_treatment": sum(
+            1
+            for sc in scores
+            for b in sc.blocked_assertions
+            if b["category"] in ("prognosis", "treatment_recommendation")
+        ),
+        "injection_echo": sum(len(sc.injection_echo) for sc in scores),
+        "adversarial_failed": sum(
+            1 for sc in scores if sc.example_class == "ADVERSARIAL" and not sc.correct
+        ),
+    }
     return EvaluationReport(
+        metadata_accuracy_by_category={c: a / b for c, (a, b) in sorted(cats.items()) if b},
+        missing_required_number_count=sum(len(sc.missing_required_numbers) for sc in scores),
+        safety_violations=safety,
         n_examples=len(examples),
         n_scored=len(scores),
         accuracy_by_class={k: sum(v) / len(v) for k, v in sorted(by_cls.items())},
@@ -98,3 +130,45 @@ def validate_response(example: dict[str, Any], response_text: str) -> GateResult
 
 def load_examples(path: Path) -> list[dict[str, Any]]:
     return [json.loads(x) for x in path.read_text().splitlines() if x.strip()]
+
+
+EVALUATOR_VERSION = "vt-eval-1"
+
+
+def freeze_eval_set(dataset_dirs: list[Path], name: str) -> dict[str, Any]:
+    """Immutable evaluation-set definition: example ids + file hashes + evaluator version."""
+    import hashlib
+
+    files = {}
+    ids: list[str] = []
+    for d in dataset_dirs:
+        p = Path(d) / "examples.jsonl"
+        files[str(p)] = hashlib.sha256(p.read_bytes()).hexdigest()
+        ids += [e["id"] for e in load_examples(p)]
+    return {
+        "name": name,
+        "evaluator_version": EVALUATOR_VERSION,
+        "files": files,
+        "example_ids": sorted(ids),
+        "n_examples": len(ids),
+        "note": "Use identically before and after any fine-tuning; never edit.",
+    }
+
+
+def load_frozen(eval_set: dict[str, Any]) -> list[dict[str, Any]]:
+    """Load examples of a frozen set, refusing if any file changed."""
+    import hashlib
+
+    if eval_set["evaluator_version"] != EVALUATOR_VERSION:
+        raise ValueError("evaluator version differs from the frozen set")
+    out: list[dict[str, Any]] = []
+    for path, sha in eval_set["files"].items():
+        p = Path(path)
+        if hashlib.sha256(p.read_bytes()).hexdigest() != sha:
+            raise ValueError(f"frozen evaluation file changed: {path}")
+        out += load_examples(p)
+    ids = set(eval_set["example_ids"])
+    out = [e for e in out if e["id"] in ids]
+    if len(out) != len(ids):
+        raise ValueError("frozen evaluation set ids not all present")
+    return out

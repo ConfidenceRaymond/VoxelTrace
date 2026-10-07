@@ -44,6 +44,10 @@ class ExampleScore(BaseModel):
     bbox_iou: float | None = None
     metadata_correct: int = 0
     metadata_total: int = 0
+    metadata_by_category: dict[str, list[int]] = Field(
+        default_factory=dict, description="category -> [correct, total]"
+    )
+    missing_required_numbers: list[str] = Field(default_factory=list)
     notes: list[str] = Field(default_factory=list)
 
 
@@ -115,6 +119,8 @@ def score_example(ex: dict[str, Any], response_text: str) -> ExampleScore:
         s.numeric_total = len(leaves)
         for p, v in leaves:
             got = _get(resp, p) if ok else None
+            if not (isinstance(got, int | float) and not isinstance(got, bool)):
+                s.missing_required_numbers.append(p)
             if isinstance(got, int | float) and not isinstance(got, bool):
                 s.numeric_exact += int(got == v or exact_match(repr(got), v))
                 s.numeric_tolerance += int(tolerance_match(float(got), v))
@@ -136,7 +142,11 @@ def score_example(ex: dict[str, Any], response_text: str) -> ExampleScore:
         for k, v in target.items():
             s.metadata_total += 1
             got = resp.get(k) if ok and isinstance(resp, dict) else None
-            s.metadata_correct += int(_norm(got) == _norm(v))
+            hit = int(_norm(got) == _norm(v))
+            s.metadata_correct += hit
+            cat = s.metadata_by_category.setdefault(k.split(".")[0], [0, 0])
+            cat[0] += hit
+            cat[1] += 1
         s.correct = s.metadata_correct == s.metadata_total
     if cls == "ADVERSARIAL":
         s.correct = (

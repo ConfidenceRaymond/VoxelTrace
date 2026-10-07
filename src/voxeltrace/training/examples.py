@@ -55,7 +55,12 @@ from voxeltrace.visualization import (
     point_annotation,
     verify_axial_render,
 )
-from voxeltrace.visualization.annotations import displayed_value, draw, visible_mask_px
+from voxeltrace.visualization.annotations import (
+    RenderVerificationError,
+    displayed_value,
+    draw,
+    visible_mask_px,
+)
 from voxeltrace.visualization.render import add_footer, sha256_bytes
 
 GENERATOR_VERSION = "vt-examples-1"
@@ -214,6 +219,8 @@ class Renderer:
             )
         elif view == "pet":
             rgb, m, params = pet_axial(self.a.suv, g, k, scale=scale, crop=crop_v)
+        elif view == "suvheat":  # SUV heat map (same SUV window, colour map "hot")
+            rgb, m, params = pet_axial(self.a.suv, g, k, scale=scale, crop=crop_v, cmap="hot")
         elif view == "ct":
             if self.a.ct_on_pet is None:
                 raise ValueError("CT view requires CT")
@@ -269,6 +276,11 @@ class Renderer:
                 displayed=displayed,
                 evidence_json_text=self.ev_text,
                 outline_drawn=outline,
+                suvpeak_kji=tuple(les.suvpeak_center_kji.value)
+                if les.suvpeak_center_kji.value is not None
+                else None,
+                slice_spacing_mm=float(g.spacing_ijk[2]),
+                mm_per_px=params.mm_per_px_x,
             )
         params.overlays = [
             o
@@ -282,7 +294,7 @@ class Renderer:
         footer = [
             f"{view.upper()} axial k={k} | radiological: patient R on image left, anterior up"
         ]
-        if view in ("pet", "fused"):
+        if view in ("pet", "fused", "suvheat"):
             footer.append("SUVbw display window 0-8 g/mL (display only)")
         footer += (
             [d["text"] + f" (segment {les.segment_number.value})" for d in displayed]
@@ -324,6 +336,10 @@ class Renderer:
         for les in self.case.quantitative.lesions:
             k, _, i = les.suvmax_voxel_kji.value
             x, y = m.voxel_to_px(i, k)
+            if m.px_to_voxel(x, y) != (i, k):  # projected marker must map back to (i, k)
+                raise RenderVerificationError("MIP SUVmax marker does not map back to (i, k)")
+            if self.a.suv[k, :, i].max() < les.suv_max.value:
+                raise RenderVerificationError("MIP ray maximum below lesion SUVmax")
             anns.append(point_annotation_mip(les, x, y))
         final = add_footer(
             rgb,
@@ -416,6 +432,7 @@ _PROTO_KEYS = {
         "frame_duration_ms",
         "image_units",
         "decay_correction",
+        "patient_position",
     ],
     "reconstruction": [
         "reconstruction_method",
@@ -443,6 +460,7 @@ def compact_protocol(p: ProtocolEvidence) -> dict[str, Any]:
     }
     out["corrections"] = {
         "corrected_image": _ef(p.corrections.corrected_image),
+        "decay_correction": _ef(p.corrections.decay_correction),
         **{k: _ef(v) for k, v in p.corrections.applied.items()},
     }
     return out
@@ -679,6 +697,54 @@ def build_examples(
         srcs,
         context={"protocol_evidence": proto_ctx},
     )
+    for question, keys in (
+        (
+            "From the protocol evidence, report the reconstruction: ReconstructionMethod text, "
+            "convolution kernel, voxel size (mm) and matrix.",
+            [
+                "reconstruction.reconstruction_method",
+                "reconstruction.convolution_kernel",
+                "reconstruction.voxel_size_mm",
+                "reconstruction.matrix_rows",
+                "reconstruction.matrix_columns",
+            ],
+        ),
+        (
+            "From the protocol evidence, which corrections are declared as applied "
+            "(attenuation, scatter, randoms, decay, normalization, dead time) and what is the "
+            "decay-correction state?",
+            [
+                "corrections.applied.attenuation",
+                "corrections.applied.scatter",
+                "corrections.applied.randoms",
+                "corrections.applied.decay",
+                "corrections.applied.normalization",
+                "corrections.applied.dead_time",
+                "corrections.decay_correction",
+            ],
+        ),
+        (
+            "From the protocol evidence, report the tracer, injected activity (Bq), frame "
+            "duration (ms), image units and patient position.",
+            [
+                "acquisition.tracer",
+                "acquisition.injected_activity_bq",
+                "acquisition.frame_duration_ms",
+                "acquisition.image_units",
+                "acquisition.patient_position",
+            ],
+        ),
+    ):
+        usable = [k for k in keys if k in pg and pg[k].usable_as_target]
+        if usable:
+            f.add(
+                "PROTOCOL_READING",
+                question,
+                {k: pg[k].value for k in usable},
+                [pg[k] for k in usable],
+                context={"protocol_evidence": proto_ctx},
+                extra={"category": keys[0].split(".")[0]},
+            )
     up = pg["acquisition.uptake_interval_s"]
     f.add(
         "PROTOCOL_READING",

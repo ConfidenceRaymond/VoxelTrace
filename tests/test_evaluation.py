@@ -147,3 +147,17 @@ def test_gate_and_report():
     )
     assert r.accuracy_by_class == {"CLAIM_VERIFICATION": 1.0, "REFUSAL": 0.0}
     assert r.refusal_accuracy == 0.0 and r.json_parse_rate == 1.0
+
+
+def test_frozen_eval_set_detects_changes(tmp_path):
+    from voxeltrace.evaluation.runner import freeze_eval_set, load_frozen
+
+    d = tmp_path / "ds"
+    d.mkdir()
+    rec = ex("REFUSAL", {"status": "NOT_ESTABLISHED"})
+    (d / "examples.jsonl").write_text(json.dumps(rec) + "\n")
+    fs = freeze_eval_set([d], "t")
+    assert [e["id"] for e in load_frozen(fs)] == ["e1"]
+    (d / "examples.jsonl").write_text(json.dumps({**rec, "target": {"status": "SUPPORTED"}}) + "\n")
+    with pytest.raises(ValueError, match="changed"):
+        load_frozen(fs)

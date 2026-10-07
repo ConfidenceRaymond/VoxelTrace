@@ -39,19 +39,28 @@ env | grep -E '^(VOXELTRACE_|PIP_CACHE_DIR|HF_HOME|HF_HUB_CACHE|HUGGINGFACE_HUB_
   | sed -E 's/(API_KEY|TOKEN|SECRET)=.*/\1=<redacted>/' || echo "(none set)"
 
 hr "Redirected caches inside the hackathon tree"
-for c in "$HACK/tmp/pip-cache" "$HACK/tmp/pytest" "$HACK/models/hf-cache" "$HACK/models/vllm-cache"; do
+for c in "$HACK/tmp/pip-cache" "$HACK/tmp/pytest" "$HACK/models/hf-cache" "$HACK/models/hf-home" \
+         "$HACK/models/vllm-cache" "$HACK/tmp/vlm-venv" "$HACK/tmp/crosscheck-venv" \
+         "$HACK/tmp/torch-home" "$HACK/tmp/triton-cache" "$HACK/tmp/xdg-cache" \
+         "$HACK/tmp/cuda-cache"; do
   [ -e "$c" ] && du -sh "$c" || echo "absent: $c"
 done
 
 hr "Possible leakage OUTSIDE the hackathon tree (inspect manually)"
 for p in "$HOME/.streamlit" "$HOME/.cache/pip" "$HOME/.cache/huggingface" "$HOME/.cache/vllm" \
-         "$HOME/.config/gh" "/tmp/pytest-of-$(whoami)" "$HOME/.claude"; do
+         "$HOME/.config/gh" "/tmp/pytest-of-$(whoami)" "$HOME/.claude" "$HOME/.cache/torch" \
+         "$HOME/.triton" "$HOME/.nv" "$HOME/.cache/matplotlib" "$HOME/.cache/qwen-vl-utils"; do
   [ -e "$p" ] && echo "present: $p ($(du -sh "$p" 2>/dev/null | cut -f1)) - check whether VoxelTrace created it" \
     || echo "absent:  $p"
 done
 
 echo "Notes: ~/.claude holds Claude Code session state (expected; remove at departure)."
 echo "       ~/.config/gh holds the GitHub CLI login (log out with 'gh auth logout' at departure)."
+
+hr "Local models"
+if [ -d "$HACK/models" ]; then
+  for m in "$HACK"/models/*/; do [ -d "$m" ] && du -sh "$m"; done
+fi
 
 hr "Public data manifest"
 if [ -f "$HACK/data/manifest.json" ]; then
