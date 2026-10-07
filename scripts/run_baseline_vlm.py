@@ -116,8 +116,11 @@ def main() -> int:
         "cuda": torch.version.cuda,
         "device": torch.cuda.get_device_name(0),
         "peak_gpu_mem_gb": round(torch.cuda.max_memory_allocated() / 1e9, 2),
-        "selection": (f"explicit id list {args.ids}" if args.ids is not None else
-                      f"<= {PER_CLASS} per class per subject + all ADVERSARIAL, sorted by id"),
+        "selection": (
+            f"explicit id list {args.ids}"
+            if args.ids is not None
+            else f"<= {PER_CLASS} per class per subject + all ADVERSARIAL, sorted by id"
+        ),
         "datasets": [str(d) for d in args.datasets],
         "examples_sha256": {
             str(d): hashlib.sha256((d / "examples_qwen3vl.jsonl").read_bytes()).hexdigest()
