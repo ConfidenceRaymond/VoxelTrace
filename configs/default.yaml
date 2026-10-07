@@ -1,0 +1,17 @@
+# VoxelTrace default configuration.
+# Environment variables prefixed with VOXELTRACE_ override these values
+# (e.g. VOXELTRACE_AI_BASE_URL). Nested keys are not used.
+
+# Local OpenAI-compatible endpoint (e.g. vLLM on the GB10). No cloud fallback.
+ai_base_url: "http://127.0.0.1:8000/v1"
+ai_model: null            # null = use first model reported by /v1/models
+ai_timeout_s: 5.0
+# Refuse non-loopback endpoints unless explicitly enabled.
+ai_allow_remote: false
+
+# Hackathon-local storage, relative to the repository root.
+data_dir: "../data"
+models_dir: "../models"
+outputs_dir: "../outputs"
+logs_dir: "../logs"
+tmp_dir: "../tmp"

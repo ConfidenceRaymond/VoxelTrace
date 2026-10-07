@@ -42,3 +42,19 @@ tmp/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Additional model-weight formats
+*.pt
+*.pth
+*.ckpt
+
+# Packaging / test artifacts
+*.egg-info/
+build/
+dist/
+.coverage
+htmlcov/
+*.log
+
+# Streamlit local secrets
+.streamlit/secrets.toml
