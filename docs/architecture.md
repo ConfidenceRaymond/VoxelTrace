@@ -17,6 +17,9 @@ GROUND TRUTH + VISUALIZATION            voxeltrace.training (L1-L5 targets, exam
   ↓                                     voxeltrace.visualization (deterministic PNG + annotations)
 EVALUATION HARNESS                      voxeltrace.evaluation (numeric, claims, grounding, policy)
   ↓
+TRIAL COMPARABILITY AUDIT               voxeltrace.rules (PERCIST/QIBA/EANM, versioned, cited)
+  ↓                                     voxeltrace.trial (timepoints, pairs, II taxonomy, CSV/JSON)
+  ↓
 LOCAL AI (planned)                      Qwen3-VL-8B baseline via local runtime (not yet run)
 ```
 

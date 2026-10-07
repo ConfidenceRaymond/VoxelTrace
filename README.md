@@ -25,7 +25,7 @@ talks only to a loopback OpenAI-compatible endpoint (default `http://127.0.0.1:8
 e.g. vLLM on the GB10), refuses non-local endpoints by default, has no cloud fallback,
 and needs no API key.
 
-## Hackathon status: milestone 5 (ground truth, visualization, multimodal evaluation foundation)
+## Hackathon status: milestone 5+ (multimodal evaluation foundation + trial comparability audit)
 
 Currently implemented:
 
@@ -200,6 +200,29 @@ make app              # http://127.0.0.1:8501
 # also writes scanner_evidence, acquisition_protocol, reconstruction_protocol,
 #   correction_evidence, protocol_qc and claim_evidence JSON
 # exit 0 = SUV computed, 2 = refused (reasons printed and written)
+```
+
+## Trial comparability audit (deterministic, no AI)
+
+- Analysis covers subject × timepoint × site under **one explicitly selected, source-cited
+  rule set**: `qiba-fdg-1.14`, `percist-1.0` or `eanm-fdg-2.0`. Each rule set also includes
+  explicit VoxelTrace prerequisites.
+- **Verdicts:** ASSESSABLE / ASSESSABLE_WITH_WARNINGS / NOT_ASSESSABLE /
+  INSUFFICIENT_INFORMATION, each with actionable reason codes.
+- **Also included:**
+  - strict SUL (LBMJAMES128 / LBMJANMA);
+  - a supplied-region liver reference measurement;
+  - an anonymization-loss audit;
+  - creator-checked vendor private attributes.
+- **Output:** JSON + CSV.
+- **Not assessed:** biological or treatment response.
+- **Documentation:** [docs/trial_audit.md](docs/trial_audit.md) and
+  [docs/trial_rules.md](docs/trial_rules.md).
+
+```bash
+.venv/bin/python scripts/build_trial_demo.py   # real baseline + SYNTHETIC_PERTURBATION follow-ups
+# -> ../outputs/synthetic_comparability/audit_<ruleset>/{trial_audit.json,
+#    subject_timepoint_matrix.csv,pair_checks.csv,site_summary.json}
 ```
 
 ## Build a development example dataset (no model involved)

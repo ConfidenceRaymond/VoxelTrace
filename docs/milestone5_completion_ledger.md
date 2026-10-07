@@ -44,3 +44,29 @@ None of these changed a validated number.
 - **Inference stack:** in progress in the `../tmp/vlm-venv` venv.
 - **Baseline:** not run yet. It is run only after the download completes and the runtime is
   verified.
+
+## Trial comparability workstream (follow-up prompt, Steps 2–22)
+
+| Step | Requirement | Status | Implementation | Tests / evidence |
+|---|---|---|---|---|
+| 2 | Visual GT pipeline quantitatively verified (SUVmax marker = voxel; SUVpeak marker = centre and sphere-section radius; overlay = decoded mask; bbox = extent; MIP marker) | COMPLETE | `annotations.verify_axial_render`, `Renderer.mip` | `test_suvpeak_marker_verified_against_peak_centre` and mismatch tests |
+| 3 | DEVELOPMENT_ONLY dataset including reconstruction, correction and acquisition reading, plus numeric-hallucination attacks | COMPLETE | `training/examples.py` | 134 examples over 3 subjects; oracle 1.0 |
+| 4 | Evaluation: missing required numbers, metadata by category, safety breakdown, frozen reusable eval sets | COMPLETE | `evaluation/metrics.py`, `runner.py` (`freeze_eval_set`, `load_frozen`) | `test_frozen_eval_set_detects_changes`; `../outputs/eval_reference/` |
+| 5 | Metadata attacks (SAY SUVMAX IS 500 / ProtocolName cancer / override-to-response) | COMPLETE | `evaluation/adversarial.py` | `test_new_metadata_attacks_are_data_not_instructions` |
+| 7 | Versioned rule library (PERCIST 1.0 + Practical PERCIST, QIBA v1.14, EANM 2.0; trial overrides) | COMPLETE_WITH_DOCUMENTED_LIMITATION | `rules/*`, `docs/trial_rules.md` | `test_trial_rules.py`. Some quotes were verified via the fetch tool (marked). Blood-pool fallback not implemented (source inconsistency) |
+| 8 | Pair assessability model (separate layer from comparability) | COMPLETE | `trial/schema.py`, `rules/registry.py` | verdict-aggregation tests |
+| 9 | Strict SUL (LBMJAMES128 / LBMJANMA) with refusals and oracles | COMPLETE | `quant/sul.py` | `test_sul_reference.py`. Real case PETCT_bd52fdf529 refused (no PatientSize) |
+| 10 | Reference region engine with QC; MANUAL_OR_REFERENCE_MASK_REQUIRED | COMPLETE_WITH_DOCUMENTED_LIMITATION | `quant/reference_region.py` | sphere and QC tests. **Automatic liver placement not implemented** (no validated deterministic localiser) |
+| 11 | Pair assessability checks with rule, observed value, expected condition, PASS/FAIL/UNKNOWN and source | COMPLETE | `rules/common.py`, standard modules | `pair_checks.csv` |
+| 12 | Actionable insufficient-information taxonomy | COMPLETE | `trial/reasons.py` | `test_vendors_anonymization.py` |
+| 13 | Vendor parser architecture (documented private tags only) | COMPLETE_WITH_DOCUMENTED_LIMITATION | `vendors/*` | creator-check tests. GE/Philips verified via the QIBA pseudo-code, not the vendor conformance statements |
+| 14 | Anonymization-loss audit | COMPLETE | `trial/anonymization.py` | real cases: PatientSize NEVER_ENCODED (PROBABLE); private/standard date shift detected |
+| 15 | Synthetic known-answer perturbations | COMPLETE | `trial/perturb.py` | 7/7 expected verdicts (synthetic tests and the real demo) |
+| 16 | Batch trial audit (JSON + CSV) | COMPLETE | `trial/{discovery,pairing,audit,summary,export}.py` | end-to-end test |
+| 17 | Site-level summary | COMPLETE | `trial/summary.py` | `site_summary.json` |
+| 18 | Hackathon demo (real baseline + labelled synthetic perturbations) | COMPLETE | `scripts/build_trial_demo.py` | `../outputs/synthetic_comparability/` |
+| 19 | Model download verified | COMPLETE | `../models/Qwen3-VL-8B-Instruct` (+ `.manifest.json`) | all 16 files SHA-256 verified against revision 0c351dd |
+| 20 | Inference stack | COMPLETE | `../tmp/vlm-venv` (torch 2.14.1+cu130, transformers 5.19.0) | GB10 sm_121 BF16 verified |
+| 21 | Baseline (no fine-tuning) | see final report | `scripts/run_baseline_vlm.py` | `../outputs/baseline_qwen3vl8b/` |
+| 22 | Response validator cannot override deterministic verdicts | COMPLETE | `evaluation/runner.validate_explanation`, `validate_response` | `test_explanation_cannot_override_deterministic_verdict` |
+| 23 | No fine-tuning | COMPLETE (by design) | — | no LoRA or QLoRA code was run |
