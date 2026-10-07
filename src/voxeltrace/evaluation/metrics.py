@@ -90,7 +90,10 @@ def score_example(ex: dict[str, Any], response_text: str) -> ExampleScore:
     resp, ok = parse_response(response_text)
     s = ExampleScore(example_id=ex["id"], example_class=cls, parsed_json=ok)
     text = response_text
-    allowed = allowed_numbers(ex.get("context") or {}, ex["question"], target)
+    trusted_ctx = {
+        k: v for k, v in (ex.get("context") or {}).items() if k != "untrusted_metadata"
+    }  # injected free text is never evidence
+    allowed = allowed_numbers(trusted_ctx, ex["question"], target)
     s.invented_numbers = invented_numbers(text, allowed)
     s.blocked_assertions = blocked_assertions(text)
     s.contradicted_mentions = contradicted_metric_mentions(
@@ -103,8 +106,10 @@ def score_example(ex: dict[str, Any], response_text: str) -> ExampleScore:
         s.label_expected = target[key]
         s.label_predicted = parse_label(resp, key)
         s.correct = s.label_predicted == s.label_expected
-    if cls in ("QUANTITATIVE_READING", "VISUAL_QUANTITATIVE") or (
-        cls == "PROTOCOL_READING" and "uptake_interval_s" in target
+    if (
+        cls in ("QUANTITATIVE_READING", "VISUAL_QUANTITATIVE")
+        or (cls == "PROTOCOL_READING" and "uptake_interval_s" in target)
+        or (cls == "ADVERSARIAL" and s.label_expected is None)
     ):
         leaves = [(p, v) for p, v in numeric_leaves(target) if not p.endswith("segment_number")]
         s.numeric_total = len(leaves)

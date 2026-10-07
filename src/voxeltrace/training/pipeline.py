@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 import voxeltrace
+from voxeltrace.evaluation.adversarial import build_adversarial_examples
 from voxeltrace.evidence.outputs import write_protocol_outputs
 from voxeltrace.ingest import build_case, load_series_volume
 from voxeltrace.quant.evidence import quantify_case, write_outputs
@@ -113,6 +114,13 @@ def build_case_dataset(
         {**provenance, "evidence_sha256": gtc.evidence_sha256},
         negatives,
         positives,
+    )
+    examples += build_adversarial_examples(
+        gtc,
+        run.evidence,
+        proto["protocol"],
+        split,
+        {**provenance, "evidence_sha256": gtc.evidence_sha256},
     )
     out_dir = out_root / subject
     out_dir.mkdir(parents=True, exist_ok=True)
