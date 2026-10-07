@@ -55,8 +55,12 @@ echo "       ~/.config/gh holds the GitHub CLI login (log out with 'gh auth logo
 
 hr "Public data manifest"
 if [ -f "$HACK/data/manifest.json" ]; then
-  python3 -c 'import json,sys; m=json.load(open(sys.argv[1]))
-for d in m["datasets"]: print(f"  {d[\"collection\"]} {d[\"subject_id\"]}: {d[\"file_count_total\"]} files, {d[\"bytes_total\"]:,} bytes")' "$HACK/data/manifest.json"
+  python3 - "$HACK/data/manifest.json" <<'PY'
+import json, sys
+for d in json.load(open(sys.argv[1]))["datasets"]:
+    print(f"  {d['collection']} {d['subject_id']}: {d['file_count_total']} files, "
+          f"{d['bytes_total']:,} bytes")
+PY
 else
   echo "  none"
 fi
