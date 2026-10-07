@@ -25,6 +25,21 @@
 | **SUVpeak vs Z-Rad IBSI global intensity peak** | 12.2351465187 | 12.2351465187 | **2.3e-15** |
 | Z-Rad IBSI *local* peak (sphere at the max voxel; a different feature) | 11.7094 | — | information only |
 
+### Results on PETCT_bd52fdf529 (SOMATOM Definition AS, mirrored SEG frames)
+
+highdicom's spatial SEG decode gives 1182 voxels, identical to VoxelTrace.
+
+| Quantity | External | VoxelTrace | Relative difference |
+|---|---|---|---|
+| SUVmax | 10.2546186607 | 10.2546186607 | 0 |
+| SUVmean | 2.31480978119 | 2.31480978119 | 0 |
+| MTV (mL) | 14.7052847526 | 14.7052847526 | 3.6e-16 |
+| TLG (g) | 34.0399369803 | 34.0399369803 | 4.2e-16 |
+| SUVpeak vs Z-Rad global peak | 7.34519145639 | 7.34519145639 | 2.2e-15 |
+
+This independently validates the mirrored-frame SEG mapping. Z-Rad's own SUV conversion refused
+this case too.
+
 ### Z-Rad SUV conversion refused this case
 
 Z-Rad's own DICOM SUV conversion **refused** the case: "Reconstructed administration and

@@ -280,3 +280,84 @@ FrameReferenceTime. It is **refused** with `SCAN_REFERENCE_AMBIGUOUS`, as design
   - The wrong-value demonstration (SUVmax 23.89) is CONTRADICTED.
 - **Streamlit:** AppTest of the Protocol & Claims page on the real case and the refused
   fixture shows no exceptions. The other three pages also show no exceptions.
+
+## Milestone 5: ground truth, visualization, multimodal evaluation foundation (2026-10-07)
+
+### Automated tests: `pytest` reports 258 passed
+
+- **Ground-truth schema:**
+  - hierarchy levels are fixed by source type;
+  - MODEL_GENERATED is rejected;
+  - EXPERT_ANNOTATION requires review;
+  - unvalidated sources are rejected as targets;
+  - the example level equals the highest source level.
+- **Visualization (27 tests):**
+  - analytic voxel↔patient mapping;
+  - every voxel's pixel block round-trips, with and without flips and crops;
+  - a hot-voxel point annotation lands on the exact PNG pixel (radiological and neurological,
+    cropped and full);
+  - bbox and pixel count equal the rendered mask;
+  - PNGs are deterministic and the data are unaltered;
+  - non-standard orientation is refused;
+  - MIP orientation is checked;
+  - CT resampling is checked, including the FrameOfReference guard;
+  - the SUVpeak circle radius is checked;
+  - the footer leaves the image region untouched;
+  - the verifier fails on 5 kinds of injected mismatch.
+- **Training dataset:**
+  - end-to-end build on a synthetic case;
+  - targets equal ground truth;
+  - the SUVmax pixel maps back to the SUVmax voxel;
+  - injected text is not copied into contexts;
+  - no raw UIDs or identifiers;
+  - Qwen export format;
+  - tampering is detected;
+  - splits are deterministic and patient-level;
+  - 4 kinds of leakage are detected;
+  - longitudinal studies stay with their patient;
+  - zero-SUV QC fires without any metric change;
+  - no negative labels without a decoded SEG.
+- **Evaluation:**
+  - number extraction ignores identifiers;
+  - precision-aware exact matching;
+  - invented numbers;
+  - claim parsing;
+  - refusal and blocked assertions, where a disclaimer does not count as a negation;
+  - grounding: IoU, distance, Dice;
+  - metadata accuracy;
+  - gate and report.
+- **Adversarial:**
+  - injected DICOM text leaves claim statuses unchanged;
+  - free-text injection can never make a fact fully SUPPORTED;
+  - obeying an injection is scored wrong and rejected by the gate.
+- **SEG:**
+  - mirrored frames decode voxel-exactly;
+  - off-grid, rotated and outside-grid frames are refused.
+
+### Real development datasets (DEVELOPMENT_ONLY; not a training set)
+
+| Subject | Diagnosis (CSV) | Scanner | SUV | Segment | Examples |
+|---|---|---|---|---|---|
+| PETCT_0011f3deaf | melanoma | Biograph128_mCT | PASS (Δt 3623 s) | 1299 voxels, 5 components; 89 voxels (6.9 %) SUV = 0 | 45 |
+| PETCT_db3bac356a | negative control | Biograph128_mCT | PASS (Δt 3601 s) | decoded, EMPTY | 28 |
+| PETCT_bd52fdf529 | lung cancer | SOMATOM Definition AS_mCT | PASS (Δt 3608 s; TM-only injection, documented rule) | mirrored SEG frames decoded; 1182 voxels, 3 components; 313 (26.5 %) SUV = 0 | 44 |
+
+- **Total:** 117 examples. A perfect oracle (ground-truth targets submitted as answers) scores
+  1.0 in every class with 0 invented numbers.
+- **External cross-check** (highdicom SEG + Z-Rad IBSI global peak) on both lesion cases:
+  max relative difference ≤ 2.3e-15.
+- **Milestone 3 numbers** for PETCT_0011f3deaf are unchanged: bit-identical; internal
+  independent check 7.26e-16.
+
+### Findings
+
+- **Reference masks over zeroed PET:** some reference segment voxels lie where the PET is
+  exactly 0 (masked outside the body).
+  - They are flagged (`SEGMENT_VOXELS_ZERO_SUV`).
+  - Metric definitions are unchanged.
+  - Such slices are excluded from localization targets.
+- **Mirrored SEG frames on the SOMATOM cases:** the strict decoder correctly refused them.
+  Exact mirrored mapping has now been added and validated externally.
+- **Z-Rad timing refusal:** Z-Rad refuses SUV conversion on both lesion cases because the
+  Siemens private acquisition-start tag is date-shifted by one day. VoxelTrace uses standard
+  tags only, cross-validated by FrameReferenceTime and DecayFactor.

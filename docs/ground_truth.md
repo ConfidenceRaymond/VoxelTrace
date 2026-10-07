@@ -60,3 +60,41 @@ Rules enforced in code:
 - A slice without segment voxels is labelled `contains_segmented_target = false`. That means
   only that no reference-segmented target is present. It does **not** mean "normal" or
   "disease-free".
+
+## Example generation rules (`training/examples.py`)
+
+**Positive slices** (per supplied segment, at most 8):
+- P1: the slice containing the SUVmax voxel;
+- P2: the slice containing the SUVpeak centre;
+- P3: for each 26-connected component, the slice where it has its largest in-slice area;
+- a candidate within 3 slices of an already selected slice is skipped (no near-duplicates);
+- a candidate is **excluded** if more than 50 % of the segment's voxels in that slice have
+  SUV exactly 0 (the reference mask lies over masked or zeroed PET). Excluded slices appear only
+  in the human-review contact sheet.
+
+**Negative slices:**
+- **only if the reference SEG was decoded** (possibly empty);
+- no segment voxels, and at least 10 slices from any segmented slice;
+- PET signal present and CT body present;
+- 4 slices, taken at the 15/40/65/90 % quantiles of the eligible slices;
+- the label means "no reference-segmented target", never "normal".
+
+**Lesion crops** are centred on the segment's in-slice centroid, falling back to the SUVmax
+voxel.
+
+**Classes:**
+- VISUAL_LOCALIZATION
+- QUANTITATIVE_READING (from evidence JSON, never from pixels)
+- PROTOCOL_READING (standard attributes only)
+- CLAIM_VERIFICATION
+- CONTRADICTION (wrong values at 4 significant digits, kept only if the rule engine says
+  CONTRADICTED)
+- REFUSAL
+- MISSING_DATA (real absent fields plus one flagged synthetic removal)
+- VISUAL_QUANTITATIVE (the SUVmax pixel)
+- PROTOCOL_COMPARABILITY (real protocol against flagged synthetic perturbations)
+- ADVERSARIAL (injected free text under `untrusted_metadata`)
+
+**Splits:** fewer than 20 subjects means DEVELOPMENT_ONLY. Otherwise patients are split with a
+salted hash. `check_leakage` rejects any subject, study, longitudinal study or derived image
+that crosses splits.

@@ -25,7 +25,7 @@ talks only to a loopback OpenAI-compatible endpoint (default `http://127.0.0.1:8
 e.g. vLLM on the GB10), refuses non-local endpoints by default, has no cloud fallback,
 and needs no API key.
 
-## Hackathon status: milestone 4 (protocol evidence + claim gating)
+## Hackathon status: milestone 5 (ground truth, visualization, multimodal evaluation foundation)
 
 Currently implemented:
 
@@ -87,6 +87,29 @@ Currently implemented:
     [docs/reconstruction_evidence.md](docs/reconstruction_evidence.md),
     [docs/comparability.md](docs/comparability.md) and [docs/claims.md](docs/claims.md).
   - **UI:** the Streamlit **Protocol & Claims** page.
+- Milestone 5 adds four packages. **No model has been trained.**
+  - `voxeltrace.training`:
+    - a typed ground-truth hierarchy with provenance on every value;
+    - `MODEL_GENERATED` is rejected as ground truth;
+    - a generator for nine multimodal example classes plus an adversarial corpus;
+    - patient-level splits with leakage checks;
+    - generic and Qwen3-VL JSONL export.
+  - `voxeltrace.visualization`:
+    - deterministic PET, CT, fusion, MIP, crop, overlay and marker rendering;
+    - exact voxel↔patient↔pixel mappings;
+    - a verifier that rejects inconsistent renders.
+  - `voxeltrace.evaluation`:
+    - deterministic scoring (numeric exactness, invented numbers, claim, refusal and metadata
+      accuracy, grounding, policy and hallucination checks);
+    - a response gate.
+  - **Development datasets:** three public subjects (melanoma, negative control, lung cancer on
+    the second scanner model) are DEVELOPMENT_ONLY and **not** a training set.
+  - See [docs/ground_truth.md](docs/ground_truth.md),
+    [docs/visualization.md](docs/visualization.md),
+    [docs/model_selection.md](docs/model_selection.md),
+    [docs/fine_tuning_plan.md](docs/fine_tuning_plan.md),
+    [docs/training_dataset_plan.md](docs/training_dataset_plan.md) and
+    [docs/external_crosscheck.md](docs/external_crosscheck.md).
 
 Quantitative correctness is validated **only for the implemented DICOM path**, not for all
 vendor PET DICOM variants.
@@ -178,6 +201,19 @@ make app              # http://127.0.0.1:8501
 #   correction_evidence, protocol_qc and claim_evidence JSON
 # exit 0 = SUV computed, 2 = refused (reasons printed and written)
 ```
+
+## Build a development example dataset (no model involved)
+
+```bash
+.venv/bin/python scripts/build_dev_dataset.py ../data/fdg_pet_ct_lesions/PETCT_0011f3deaf \
+    --subject PETCT_0011f3deaf
+# -> ../outputs/training_dev/<subject>/{images/,examples.jsonl,examples_qwen3vl.jsonl,
+#    manifest.json,ground_truth.json} and ../outputs/visual_audit/<subject>_contact_sheet.png
+.venv/bin/python scripts/evaluate_responses.py examples.jsonl responses.jsonl --out report.json
+```
+
+Derived PNGs are medical-image derivatives. They stay under the hackathon tree and are never
+committed.
 
 ## Other scripts
 

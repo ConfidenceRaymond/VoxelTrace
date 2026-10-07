@@ -13,7 +13,11 @@ EVIDENCE OBJECT                         QuantEvidence + ProtocolEvidence (typed 
   ↓
 CLAIM GATING                            voxeltrace.evidence.claims / comparability
   ↓
-LOCAL AI (planned)                      OpenAI-compatible endpoint on 127.0.0.1 (not yet used)
+GROUND TRUTH + VISUALIZATION            voxeltrace.training (L1-L5 targets, examples, splits)
+  ↓                                     voxeltrace.visualization (deterministic PNG + annotations)
+EVALUATION HARNESS                      voxeltrace.evaluation (numeric, claims, grounding, policy)
+  ↓
+LOCAL AI (planned)                      Qwen3-VL-8B baseline via local runtime (not yet run)
 ```
 
 ## Separation of concerns
@@ -23,6 +27,9 @@ LOCAL AI (planned)                      OpenAI-compatible endpoint on 127.0.0.1 
 | Quantitative engine | `voxeltrace.quant` | Pure, deterministic NumPy. No AI. Same input gives the same output. Invalid data is counted or rejected, never silently repaired. |
 | Quantification | `voxeltrace.quant` | `dicom_time.py` parses DA/TM/DT strictly. `suv.py` holds the eligibility validator, timing policy and SUVbw. `lesions.py` computes per-segment MTV/SUV statistics/TLG/SUVpeak. `evidence.py` builds the `QuantEvidence` and output files. See [quantification.md](quantification.md). |
 | Protocol evidence and claims | `voxeltrace.evidence` | Header-only, standard tags only. `scanner`, `acquisition`, `reconstruction` and `corrections` produce `EvidenceField`s (PRESENT / MISSING / PRESENT_BUT_AMBIGUOUS / UNSUPPORTED). `protocol` holds the bundle and QC. `comparability` provides `compare_protocols`. `claims` holds the deterministic claim rules. See protocol_evidence.md, reconstruction_evidence.md, comparability.md and claims.md. |
+| Ground truth and examples | `voxeltrace.training` | GTValue provenance (L1–L7; L7 rejected), ground-truth builder, example generator, patient-level splits, validation, exports. See ground_truth.md. |
+| Visualization | `voxeltrace.visualization` | Display-only deterministic rendering, exact coordinate mappings, render verification. See visualization.md. |
+| Evaluation | `voxeltrace.evaluation` | Deterministic scoring and response gate; adversarial corpus. |
 | Evidence | `voxeltrace.schemas` | Typed, frozen Pydantic models. The only thing handed to the AI layer. |
 | AI reasoning | `voxeltrace.ai` | Talks to a local OpenAI-compatible server (default `http://127.0.0.1:8000/v1`). Non-loopback endpoints are refused unless explicitly enabled. No cloud fallback. No API key required. The model interprets evidence; it never produces measurements. |
 | Ingestion | `voxeltrace.ingest` | `dicom.py` handles discovery, PET metadata, geometry and volumes. `nifti.py` loads NIfTI. `segmentation.py` handles NIfTI masks and DICOM SEG. `case.py` builds a `VoxelTraceCase`. Header-first: pixels are read only on request. Missing means missing. Ambiguous geometry raises `IngestError`. |
