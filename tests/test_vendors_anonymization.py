@@ -82,7 +82,7 @@ def test_stripped_only_with_explicit_marker():
 
 
 def test_reason_catalog_actionable():
-    for code, info in CATALOG.items():
+    for _code, info in CATALOG.items():
         assert info.what and info.why_it_matters and info.remediation and info.site_can_fix
     assert reason_for_suv_refusal("INCONSISTENT_UNITS", "x").code == "INCONSISTENT_METADATA"
     assert reason_for_suv_refusal("SCAN_REFERENCE_AMBIGUOUS", "x").code == "AMBIGUOUS_TIMING"
