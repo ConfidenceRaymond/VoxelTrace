@@ -110,6 +110,8 @@ Currently implemented:
     [docs/fine_tuning_plan.md](docs/fine_tuning_plan.md),
     [docs/training_dataset_plan.md](docs/training_dataset_plan.md) and
     [docs/external_crosscheck.md](docs/external_crosscheck.md).
+  - **Frozen evaluation sets:** dev_v1, dev_v2 ([docs/baseline_dev_v2.md](docs/baseline_dev_v2.md))
+    and dev_v3 with the field-aware evaluator `vt-eval-2` ([docs/dev_v3.md](docs/dev_v3.md)).
 
 Quantitative correctness is validated **only for the implemented DICOM path**, not for all
 vendor PET DICOM variants.
