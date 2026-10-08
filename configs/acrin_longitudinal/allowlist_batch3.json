@@ -1,0 +1,69 @@
+{
+  "approval": "user-approved (2026-10-08): ACRIN-NSCLC-FDG-PET-168 PET + AC CT (same FrameOfReferenceUID per census v2), ~220 MB",
+  "approved_subjects": [
+    "ACRIN-NSCLC-FDG-PET-168"
+  ],
+  "batch": 3,
+  "expected_MB": 219.618,
+  "expected_instances": 780,
+  "expected_series": 4,
+  "schema": "voxeltrace.bounded-download/1",
+  "series": [
+    {
+      "PatientID": "ACRIN-NSCLC-FDG-PET-168",
+      "SeriesDescription": "PET Attenuation Correction Recon",
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.7009.2403.181332018005475460133976091025",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.7009.2403.171553852103131089589528610233",
+      "aws_bucket": "idc-open-data-two",
+      "collection": "ACRIN-NSCLC-FDG-PET",
+      "crdc_series_uuid": "b53f651c-2601-4fa7-b955-20c513d48132",
+      "expected_MB": 7.048442,
+      "expected_instances": 195,
+      "license": "CC BY 3.0",
+      "modality": "PET",
+      "timepoint": "baseline"
+    },
+    {
+      "PatientID": "ACRIN-NSCLC-FDG-PET-168",
+      "SeriesDescription": "CT Atten Cor Head In",
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.7009.2403.714909766067680146507613296861",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.7009.2403.171553852103131089589528610233",
+      "aws_bucket": "idc-open-data-two",
+      "collection": "ACRIN-NSCLC-FDG-PET",
+      "crdc_series_uuid": "f06ee012-fc19-4fa7-b6b0-f3a2656c30d5",
+      "expected_MB": 102.777258,
+      "expected_instances": 195,
+      "license": "CC BY 3.0",
+      "modality": "CT",
+      "timepoint": "baseline"
+    },
+    {
+      "PatientID": "ACRIN-NSCLC-FDG-PET-168",
+      "SeriesDescription": "PET Attenuation Correction Recon",
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.7009.2403.374963249912042524129471842956",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.7009.2403.141507563855331436832482068310",
+      "aws_bucket": "idc-open-data-two",
+      "collection": "ACRIN-NSCLC-FDG-PET",
+      "crdc_series_uuid": "4a6fceb0-d42b-4ae7-9e58-c8bece48a097",
+      "expected_MB": 7.019906,
+      "expected_instances": 195,
+      "license": "CC BY 3.0",
+      "modality": "PET",
+      "timepoint": "followup"
+    },
+    {
+      "PatientID": "ACRIN-NSCLC-FDG-PET-168",
+      "SeriesDescription": "CT Atten Cor Head In",
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.7009.2403.527054959050724963395574884174",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.7009.2403.141507563855331436832482068310",
+      "aws_bucket": "idc-open-data-two",
+      "collection": "ACRIN-NSCLC-FDG-PET",
+      "crdc_series_uuid": "56ca7898-1400-469c-9feb-cc176b5678ca",
+      "expected_MB": 102.772348,
+      "expected_instances": 195,
+      "license": "CC BY 3.0",
+      "modality": "CT",
+      "timepoint": "followup"
+    }
+  ]
+}
