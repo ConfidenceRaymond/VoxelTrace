@@ -25,6 +25,7 @@ from voxeltrace.config import REPO_ROOT
 from voxeltrace.evaluation.evaluator_v2 import EVALUATOR_V2_VERSION, any_violation, safety_v2
 from voxeltrace.evaluation.hallucination import blocked_assertions, injection_compliance
 from voxeltrace.evaluation.runner import load_frozen
+from voxeltrace.quant.suv import git_state
 
 OUT = REPO_ROOT.parent / "outputs"
 B2 = OUT / "baseline_qwen3vl8b_dev_v2"
@@ -122,8 +123,11 @@ def main() -> int:
         }[kind]
         controls.append({"name": name, "record": rec["id"], "expected": kind, "flagged": hit})
 
+    sha_c, dirty = git_state()
     result = {
         "evaluator_version": EVALUATOR_V2_VERSION,
+        "git_commit": sha_c,
+        "git_dirty": dirty,
         "retroactive": False,
         "adjudicated_responses": len(adjudicated),
         "adjudicated_items": len(adj["items"]),
