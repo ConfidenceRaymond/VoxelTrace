@@ -62,6 +62,30 @@ phantom test-retest component. Vendor and patient test-retest content must be *v
 Step 1. If patient same-day repeats exist, it is the best real dataset for the
 `PERCIST-LIVER-SUL-STABILITY` rule without treatment effects.
 
+## Vendor × architecture matrix (open-data availability, 2026-10-08)
+
+Availability codes:
+- **OPEN-DICOM:** public DICOM confirmed.
+- **GATED:** requires an agreement.
+- **NONE-FOUND:** no open DICOM found in this search.
+- **(verify):** reported by a secondary source, not yet checked in headers.
+
+| Vendor | CONVENTIONAL_AFOV | LONG_AFOV | TOTAL_BODY | PET_MR |
+|---|---|---|---|---|
+| **Siemens** | OPEN-DICOM: FDG-PET-CT-Lesions (Biograph mCT); PSMA-PET-CT-Lesions (mCT Flow, Biograph 64); ACRIN-NSCLC-FDG-PET (CPS/CTI 1023/1024/1080/1094 lineage, see census) | GATED: Biograph Vision Quadra in UDPET (387 subjects; simulated low-dose = synthetic) | n/a (Quadra is long-axial, not total-body) | NONE-FOUND in this search (Biograph mMR open data to be searched; verify) |
+| **GE** | OPEN-DICOM: ACRIN-NSCLC-FDG-PET (Discovery ST/STE/LS/RX, Advance; census); Head-Neck-PET-CT (Discovery ST/STE, verify); PSMA LMU (Discovery 690) | NONE-FOUND | NONE-FOUND | NONE-FOUND (SIGNA PET/MR) |
+| **Philips** | OPEN-DICOM: ACRIN-NSCLC-FDG-PET (Allegro, Guardian; census); Head-Neck-PET-CT (Gemini GXL, verify) | NONE-FOUND | NONE-FOUND | NONE-FOUND |
+| **United Imaging** | **uMI family** (uMI 510/550/780/Panorama): NONE-FOUND | NONE-FOUND | **uEXPLORER**: GATED only (UDPET, 1060 subjects, DICOM, signed data-transfer agreement, simulated low-dose); **no open uEXPLORER DICOM dataset found** | **uPMR (e.g. uPMR 790)**: NONE-FOUND |
+
+**Implications:**
+- Every LONG_AFOV, TOTAL_BODY and PET_MR cell, and every United Imaging cell, is currently
+  unvalidated. VoxelTrace has no United Imaging vendor module, so such scans refuse with
+  `UNSUPPORTED_VENDOR` wherever vendor-specific handling would be needed.
+- Strict SUV uses only standard attributes. It may still work on UIH exports that carry
+  BQML/START and complete timing.
+- **Next United Imaging step:** request UDPET access (DTA) or a collaborator export, and run
+  the Step 1/2 header census only.
+
 ## Rule applicability caveats
 
 - **FDG only:** QIBA FDG 1.14, PERCIST 1.0 and EANM FDG 2.0 apply to FDG. PSMA studies must
@@ -83,6 +107,17 @@ Step 1. If patient same-day repeats exist, it is the best real dataset for the
    per scanner family.
 5. **Real longitudinal pairs:** first from ACRIN 6668 (FDG, baseline + post-treatment, CT at
    both timepoints *(verify)*). This exercises the liver stability rule on real pairs.
+
+## ACRIN census result (done, metadata only)
+
+See [acrin_census.md](acrin_census.md).
+
+| Item | Result |
+|---|---|
+| Candidate patients with a real baseline + follow-up pair | **141** |
+| …likely analyzable (all GE) | 53 |
+| …with warnings (all Siemens/CTI: patient height missing) | 57 |
+| …likely insufficient (all Philips CNTS/NONE; GE Advance non-BQML; MIMvista derived) | 31 |
 
 ## Highest-priority first step
 
