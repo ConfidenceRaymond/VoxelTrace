@@ -44,21 +44,22 @@ def header(**kw):
     return ds
 
 
-def attestation(tp, **kw):
+def attestation(tp, sha="a" * 64, **kw):
     base = dict(
+        attestation_id=f"ATT-{tp}",
         subject_id="S1",
-        study_pseudonym="st",
-        series_pseudonym="se",
         timepoint=tp,
-        scanner="GE Discovery LS",
+        study_instance_uid="1.2.3",
+        series_instance_uid=f"1.2.3.{tp}",
+        manufacturer="GE MEDICAL SYSTEMS",
+        manufacturer_model_name="Discovery LS",
         software_version="16.01",
-        source_type="SCANNER_PROTOCOL_EXPORT",
-        source_document="protocol_export.pdf",
-        attestor="site physicist",
+        source={"source_type": "SCANNER_PROTOCOL_EXPORT", "path": "x.pdf", "sha256": sha},
+        attestor_id="site physicist",
+        attestor_role="QUALIFIED_PET_PHYSICIST",
         attested_at=datetime(2026, 10, 8, tzinfo=UTC),
         confidence="CONFIRMED",
-        attachment_sha256="a" * 64,
-        rule_applicability=["percist-1.0"],
+        rule_scope=["percist-1.0"],  # report-only classifier; no rule reads this
         simulated=False,
         **VALUES,
     )
@@ -156,7 +157,7 @@ def test_missing_both_not_established_with_remediation():
 
 
 def test_attestation_only_established_with_warning_when_applicable():
-    atts = (attestation("baseline"), attestation("followup", attachment_sha256="b" * 64))
+    atts = (attestation("baseline"), attestation("followup", sha="b" * 64))
     a = classify_identity([], [], ruleset="percist-1.0", attestations=atts)
     assert a.classification == "ESTABLISHED_WITH_WARNING"
     assert all(p.status == "SAME_WITH_WARNING" for p in a.parameters)
@@ -172,11 +173,11 @@ def test_attestation_not_applicable_to_ruleset_not_established():
 
 def test_attestation_validation():
     with pytest.raises(ValidationError):
-        attestation("baseline", attachment_sha256="not-a-hash")
+        attestation("baseline", sha="not-a-hash")
     with pytest.raises(ValidationError):
-        attestation("baseline", attestor="")
+        attestation("baseline", attestor_id="")
     with pytest.raises(ValidationError):
-        attestation("baseline", rule_applicability=[])
+        attestation("baseline", rule_scope=[])
     with pytest.raises(ValueError, match="simulated"):
         classify_identity([], [], attestations=(attestation("baseline", simulated=True),))
 

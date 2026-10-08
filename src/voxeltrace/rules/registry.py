@@ -7,8 +7,9 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 
 from voxeltrace.rules import eanm, percist, qiba
+from voxeltrace.rules.qiba_identity import qiba_reconstruction_identity
 from voxeltrace.rules.schema import Rule, RuleCheck
-from voxeltrace.rules.voxeltrace_rules import VOXELTRACE_RULES
+from voxeltrace.rules.voxeltrace_rules import VOXELTRACE_RULES, VT_RECON
 from voxeltrace.trial.reasons import Reason
 from voxeltrace.trial.schema import PairAssessabilityResult, PairContext, Verdict
 
@@ -29,11 +30,14 @@ class RuleSet:
 
 
 def _ruleset(rid: str, standard: str, mod) -> RuleSet:
+    vt = list(VOXELTRACE_RULES)
+    if rid == "qiba-fdg-1.14":  # LEVEL_C attestation path: QIBA ONLY (qiba_identity.py)
+        vt = [(r, qiba_reconstruction_identity if r is VT_RECON else fn) for r, fn in vt]
     return RuleSet(
         ruleset_id=rid,
         version=mod.V,
         standard=standard,
-        rules=list(VOXELTRACE_RULES) + list(mod.RULES),
+        rules=vt + list(mod.RULES),
         documented_not_implemented=list(mod.DOCUMENTED_NOT_IMPLEMENTED),
     )
 
@@ -62,7 +66,9 @@ def verdict(checks: list[RuleCheck]) -> Verdict:
         return "NOT_ASSESSABLE"
     if any(c.status == "UNKNOWN" for c in blocking):
         return "INSUFFICIENT_INFORMATION"
-    if any(c.status in ("FAIL", "UNKNOWN") for c in warning):
+    if any(c.status in ("FAIL", "UNKNOWN") for c in warning) or any(
+        c.status == "PASS_WITH_WARNING" for c in checks
+    ):
         return "ASSESSABLE_WITH_WARNINGS"
     return "ASSESSABLE"
 

@@ -13,7 +13,9 @@ Standard = Literal[
 ]
 Verification = Literal["PRIMARY_TEXT", "PRIMARY_TEXT_VIA_FETCH", "SECONDARY"]
 Impact = Literal["blocking", "warning", "info"]
-CheckStatus = Literal["PASS", "FAIL", "UNKNOWN", "NOT_APPLICABLE"]
+CheckStatus = Literal["PASS", "PASS_WITH_WARNING", "FAIL", "UNKNOWN", "NOT_APPLICABLE"]
+# PASS_WITH_WARNING: only VT-PROTOCOL-IDENTITY under qiba-fdg-1.14 with an external
+# reconstruction attestation (rules/qiba_identity.py); never DICOM-proven identity.
 
 
 class RuleSource(BaseModel):

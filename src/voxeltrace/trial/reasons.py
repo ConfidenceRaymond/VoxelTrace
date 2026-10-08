@@ -36,6 +36,9 @@ ReasonCode = Literal[
     "REFERENCE_INHERITANCE_REFUSED",
     "ANTHROPOMETRICS_MISSING",
     "SUV_REFUSED",
+    "EXTERNAL_RECONSTRUCTION_ATTESTATION",
+    "RECONSTRUCTION_ATTESTATION_NOT_USABLE",
+    "RECONSTRUCTION_ATTESTATION_CONTRADICTS",
 ]
 Confidence = Literal["CONFIRMED", "PROBABLE", "POSSIBLE", "UNKNOWN"]
 
@@ -228,6 +231,31 @@ CATALOG: dict[str, ReasonInfo] = {
         why_it_matters="no quantitative values for this timepoint",
         site_can_fix="MAYBE",
         remediation="see the specific SUV refusal reasons",
+    ),
+    "EXTERNAL_RECONSTRUCTION_ATTESTATION": ReasonInfo(
+        code="EXTERNAL_RECONSTRUCTION_ATTESTATION",
+        what="reconstruction identity rests on a validated external attestation (LEVEL_C), "
+        "not on DICOM (QIBA rule set only)",
+        why_it_matters="identity is externally attested, not DICOM-proven",
+        site_can_fix="MAYBE",
+        remediation="re-export with standard reconstruction attributes to obtain DICOM proof",
+    ),
+    "RECONSTRUCTION_ATTESTATION_NOT_USABLE": ReasonInfo(
+        code="RECONSTRUCTION_ATTESTATION_NOT_USABLE",
+        what="a reconstruction attestation was supplied but is invalid, stale, out of scope, "
+        "charter-only or incomplete",
+        why_it_matters="it cannot contribute evidence of reconstruction identity",
+        site_can_fix="YES",
+        remediation="supply a hash-bound, scan-bound attestation by an accepted role for both "
+        "timepoints, scoped to the rule set, stating every unknown parameter",
+    ),
+    "RECONSTRUCTION_ATTESTATION_CONTRADICTS": ReasonInfo(
+        code="RECONSTRUCTION_ATTESTATION_CONTRADICTS",
+        what="attested reconstruction disagrees with DICOM, with another attestation, or "
+        "between timepoints",
+        why_it_matters="identity is contradicted; the pair is not comparable",
+        site_can_fix="MAYBE",
+        remediation="resolve the discrepancy with the site physicist; correct the record",
     ),
 }
 

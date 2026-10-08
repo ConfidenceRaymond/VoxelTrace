@@ -88,6 +88,11 @@ class PairContext(BaseModel):
     baseline: ScanTimepoint
     followup: ScanTimepoint
     site_flags: dict[str, Any] = Field(default_factory=dict)
+    recon_attestations: dict[str, list[Any]] = Field(
+        default_factory=dict,
+        description="timepoint -> validated AttestationOutcome list; read ONLY by the QIBA "
+        "rule set (rules/qiba_identity.py)",
+    )
 
 
 class PairEvidence(BaseModel):

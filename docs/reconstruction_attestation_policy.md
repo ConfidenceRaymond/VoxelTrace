@@ -1,4 +1,4 @@
-# Reconstruction attestation policy (research; NOT enabled)
+# Reconstruction attestation policy (QIBA-only path implemented; EANM/PERCIST not enabled)
 
 RESEARCH PROTOTYPE - NOT FOR CLINICAL DIAGNOSIS.
 
@@ -6,9 +6,11 @@ RESEARCH PROTOTYPE - NOT FOR CLINICAL DIAGNOSIS.
 (`ReconstructionAttestation`, trust LEVEL_C; see `docs/reconstruction_audit_168.md`) satisfy
 baseline/follow-up protocol identity?
 
-**Status: research only.**
-- No rule imports the trust model, and VT-PROTOCOL-IDENTITY is unchanged.
-- ACRIN-NSCLC-FDG-PET-168 stays NOT_ESTABLISHED / UNKNOWN.
+**Status (updated 2026-10-08): QIBA-only evidence path implemented; see "Implementation"
+below.**
+- EANM and PERCIST are unchanged and never read attestations.
+- No attestation exists for any real subject.
+- ACRIN-NSCLC-FDG-PET-168 stays NOT_ESTABLISHED / UNKNOWN under all three rule sets.
 
 **Classifications:**
 
@@ -140,3 +142,75 @@ That difference is documented here, not acted on. Thresholds and rules are uncha
 2. Which attestor roles are acceptable (site physicist, imaging core lab).
 3. Whether a trial imaging charter can stand in for per-scan records.
 4. Whether `confidence: BELIEVED` is ever acceptable. The recommendation is no.
+
+## Implementation (QIBA only)
+
+| Piece | Location |
+|---|---|
+| Schema, loading, validation | `src/voxeltrace/evidence/attestation.py` (`voxeltrace.recon-attestation/2`) |
+| QIBA rule variant | `src/voxeltrace/rules/qiba_identity.py`; wired in `rules/registry.py` for `qiba-fdg-1.14` only |
+| Audit wiring | `trial/audit.py` (`attestations_file=` or trial.yaml `recon_attestation_file`; explicit only, never picked up by default) |
+| Report | `trial/summary.py` `attestation_rows`, AUDIT_REPORT.md section, `reconstruction_attestations.csv`, app page `5_Reconstruction_Evidence.py` (report only) |
+| Tests | `tests/test_qiba_attestation.py` |
+
+**Attestor roles:**
+
+| Role | Accepted? |
+|---|---|
+| QUALIFIED_PET_PHYSICIST | yes |
+| NUCLEAR_MEDICINE_PHYSICIST | yes |
+| IMAGING_CORE_QC_LEAD | yes, only with documented PET QC responsibility |
+| SITE_PET_TECHNOLOGIST | only if countersigned by one of the above (not self) |
+| INVESTIGATOR, RADIOLOGIST, STUDY_COORDINATOR, VENDOR_REPRESENTATIVE, OTHER | rejected |
+| UNSIGNED_NOTE source | rejected |
+| missing attestor or series binding | schema error |
+| `confidence: BELIEVED` | rejected |
+
+**Charter policy:**
+- A `TRIAL_IMAGING_CHARTER` source without a charter binding (site, scanner model, software or
+  period, scan-level applicability) is `EXPECTED_PROTOCOL_ONLY` and never establishes
+  identity.
+- The same applies to a bound charter without a hash-bound scan-level corroborating source
+  (SCANNER_PROTOCOL_EXPORT, SITE_PROTOCOL_RECORD or SIGNED_ATTESTATION).
+
+**Binding and staleness:** every source and corroborating document is sha256-bound.
+
+| Condition | Result |
+|---|---|
+| Edited document | STALE |
+| Missing document | INVALID |
+| Different study or series UID than the audited PET | STALE |
+| Different manufacturer, model or software than the audited PET | STALE |
+| Wrong subject or timepoint | INVALID |
+| Scan facts unverifiable | INVALID |
+| Simulated record in a production audit | INVALID |
+
+**Rule behaviour (VT-PROTOCOL-IDENTITY under qiba-fdg-1.14 only):**
+
+| Situation | Check status | PROTOCOL_IDENTITY |
+|---|---|---|
+| no attestation supplied | unchanged; byte-identical to the shared rule | ESTABLISHED / NOT_ESTABLISHED / CONTRADICTED from PASS / UNKNOWN / FAIL |
+| DICOM unknown only for reconstruction parameters, and VALID in-scope attestations at both timepoints fill every one with equal values | **PASS_WITH_WARNING** | **ESTABLISHED_WITH_WARNING** |
+| attested values differ between timepoints, attestation vs DICOM differ, or two attestations disagree | FAIL | CONTRADICTED |
+| non-reconstruction unknowns (units, voxel size, corrections), one timepoint only, incomplete, stale, invalid or out of scope | UNKNOWN | NOT_ESTABLISHED |
+
+**When an attestation is used,** the check carries:
+- attestation IDs, source sha256, attestor role and trust level (LEVEL_C);
+- reason `EXTERNAL_RECONSTRUCTION_ATTESTATION`;
+- rule version suffix `+qiba-attestation-1`;
+- the warning **EXTERNAL RECONSTRUCTION ATTESTATION USED**.
+
+The verdict can then be at most ASSESSABLE_WITH_WARNINGS, never ASSESSABLE.
+
+**168 dry run** (`scripts/dry_run_qiba_attestation_168.py`): this used SIMULATED placeholder
+values in a temporary directory, deleted afterwards. The summary is at
+`../outputs/dry_runs/qiba_attestation_168_summary.json` and contains no attestation.
+
+| Check | Result |
+|---|---|
+| Production mode | refuses the simulated records |
+| Test mode, QIBA | `INSUFFICIENT_INFORMATION / NOT_ESTABLISHED` → `ASSESSABLE_WITH_WARNINGS / ESTABLISHED_WITH_WARNING` |
+| Test mode, EANM and PERCIST | byte-identical, still INSUFFICIENT_INFORMATION |
+
+Regenerating the real 168 audits with the new code reproduces every pair, check, CSV and
+report byte-for-byte.

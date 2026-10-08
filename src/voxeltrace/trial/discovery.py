@@ -29,6 +29,10 @@ class TrialLayout(BaseModel):
     )
     reference_proposals: Literal["auto", "off"] = "auto"
     reference_review_file: str | None = None
+    recon_attestation_file: str | None = Field(
+        default=None,
+        description="explicit only (trial.yaml recon_attestation_file); never picked up by default",
+    )
     synthetic_reference_inheritance: dict[str, str] = Field(
         default_factory=dict,
         description="synthetic subject/timepoint -> parent subject/timepoint (test fixtures)",
@@ -57,6 +61,9 @@ def discover_trial(root: str | Path) -> TrialLayout:
         reference_regions=_supplied_regions(raw.get("reference_regions") or {}),
         reference_proposals=raw.get("reference_proposals", "auto"),
         reference_review_file=str(root / raw.get("reference_review_file", "reference_review.yaml")),
+        recon_attestation_file=(
+            str(root / raw["recon_attestation_file"]) if raw.get("recon_attestation_file") else None
+        ),
         synthetic=raw.get("synthetic_perturbations", {}) or {},
         synthetic_reference_inheritance={
             k: v["parent"] for k, v in (raw.get("synthetic_reference_inheritance") or {}).items()

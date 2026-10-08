@@ -9,7 +9,8 @@ like full assessability, the checks are reported in three layers:
   OVERALL     the unchanged pair verdict (all blocking rules together)
 
 Layer status: FAIL if any blocking check FAILs, else UNKNOWN if any blocking check is
-UNKNOWN, else PASS (warning-level checks are listed but do not set the layer status).
+UNKNOWN, else PASS_WITH_WARNING if a blocking check passed only on external attestation
+(QIBA), else PASS (warning-level checks are listed but do not set the layer status).
 """
 
 from __future__ import annotations
@@ -29,6 +30,8 @@ def layer_status(checks: list[Any]) -> str:
         return "FAIL"
     if any(c.status == "UNKNOWN" for c in blocking):
         return "UNKNOWN"
+    if any(c.status == "PASS_WITH_WARNING" for c in blocking):
+        return "PASS_WITH_WARNING"
     return "PASS"
 
 
@@ -41,7 +44,9 @@ def assessability_layers(pair_result: Any) -> dict[str, Any]:
             "status": layer_status(cs) if cs else "NOT_APPLICABLE",
             "checks": {c.rule_id: c.status for c in cs},
             "unresolved": sorted(
-                c.rule_id for c in cs if c.impact == "blocking" and c.status != "PASS"
+                c.rule_id
+                for c in cs
+                if c.impact == "blocking" and c.status not in ("PASS", "PASS_WITH_WARNING")
             ),
         }
     out["OVERALL"] = pair_result.verdict

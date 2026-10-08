@@ -7,7 +7,8 @@ and compare_protocols are unchanged.
 Trust levels (highest first):
   LEVEL_A  structured standard DICOM attribute (e.g. NumberOfIterations (0018,9739))
   LEVEL_B  vendor private tag whose meaning is documented in a cited source
-  LEVEL_C  scanner protocol export or signed attestation (ReconstructionAttestation)
+  LEVEL_C  scanner protocol export or signed attestation (ReconstructionAttestation,
+           evidence/attestation.py; the only RULE use is QIBA, via rules/qiba_identity.py)
   LEVEL_D  vendor free text (SeriesDescription, ProtocolName, ImageComments, ...)
   LEVEL_E  image-derived corroboration (noise, texture, sharpness)
   LEVEL_U  unknown / undocumented private tag
@@ -16,7 +17,7 @@ Policy (per required parameter, baseline vs follow-up):
   A/A, B/B          can establish identity
   A/B               establishes identity with a warning (mixed sources)
   C on either side  establishes identity WITH WARNING, only if the attestation declares the
-                    rule set in rule_applicability; otherwise not establishing
+                    rule set in rule_scope; otherwise not establishing
   D, E, U alone     never establish identity
 Classification: ESTABLISHED / ESTABLISHED_WITH_WARNING / NOT_ESTABLISHED / CONTRADICTED
 (establishing evidence shows a different value, or establishing sources disagree).
@@ -24,11 +25,11 @@ Classification: ESTABLISHED / ESTABLISHED_WITH_WARNING / NOT_ESTABLISHED / CONTR
 
 from __future__ import annotations
 
-import re
-from datetime import datetime
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field
+
+from voxeltrace.evidence.attestation import ReconstructionAttestation
 
 TrustLevel = Literal["LEVEL_A", "LEVEL_B", "LEVEL_C", "LEVEL_D", "LEVEL_E", "LEVEL_U"]
 RANK = {"LEVEL_A": 0, "LEVEL_B": 1, "LEVEL_C": 2, "LEVEL_D": 3, "LEVEL_E": 4, "LEVEL_U": 5}
@@ -59,13 +60,6 @@ FREE_TEXT_FIELDS = ("SeriesDescription", "ProtocolName", "ImageComments", "Study
 # (docs/reconstruction_audit_168.md). Undocumented private tags are LEVEL_U.
 DOCUMENTED_PRIVATE_TAGS: dict[tuple[str, int, int], tuple[str, str]] = {}
 
-SourceType = Literal[
-    "SITE_PROTOCOL_DOCUMENT",
-    "TRIAL_IMAGING_CHARTER",
-    "SCANNER_PROTOCOL_EXPORT",
-    "PHYSICIST_ATTESTATION",
-]
-
 
 class EvidenceItem(BaseModel):
     parameter: str
@@ -75,55 +69,23 @@ class EvidenceItem(BaseModel):
     source: str = Field(description="DICOM keyword, private tag + document, attestation id...")
 
 
-class ReconstructionAttestation(BaseModel):
-    """External reconstruction evidence for ONE series (LEVEL_C). Never created by software."""
-
-    schema_version: Literal["voxeltrace.recon-attestation/1"] = "voxeltrace.recon-attestation/1"
-    subject_id: str
-    study_pseudonym: str
-    series_pseudonym: str
-    timepoint: str
-    scanner: str
-    software_version: str
-    reconstruction_method: str
-    iterations: int | None = None
-    subsets: int | None = None
-    post_filter: str | None = None
-    time_of_flight: bool | None = None
-    psf_resolution_modelling: bool | None = None
-    source_type: SourceType
-    source_document: str = Field(min_length=1)
-    attestor: str = Field(min_length=1)
-    attested_at: datetime
-    confidence: Literal["CONFIRMED", "BELIEVED"]
-    attachment_sha256: str
-    rule_applicability: list[str] = Field(
-        min_length=1, description="rule sets that accept this attestation as identity evidence"
-    )
-    simulated: bool = False
-
-    @field_validator("attachment_sha256")
-    @classmethod
-    def _sha(cls, v: str) -> str:
-        if not re.fullmatch(r"[0-9a-f]{64}", v):
-            raise ValueError("attachment_sha256 must be a 64-char lowercase hex digest")
-        return v
-
-    def evidence_items(self) -> list[EvidenceItem]:
-        src = f"attestation:{self.source_type}:{self.attachment_sha256[:12]}"
-        if self.confidence != "CONFIRMED":
-            src += ":BELIEVED"
-        return [
-            EvidenceItem(
-                parameter=p,
-                timepoint=self.timepoint,
-                value=getattr(self, p),
-                trust_level="LEVEL_C",
-                source=src,
-            )
-            for p in REQUIRED_PARAMETERS
-            if getattr(self, p) is not None
-        ]
+def attestation_evidence_items(att: ReconstructionAttestation) -> list[EvidenceItem]:
+    """LEVEL_C items of ONE attestation (schema voxeltrace.recon-attestation/2). Callers pass
+    only attestations that ``evidence.attestation.validate_attestation`` found VALID."""
+    src = f"attestation:{att.attestation_id}:{att.source.source_type}:{att.source.sha256[:12]}"
+    if att.confidence != "CONFIRMED":
+        src += ":BELIEVED"
+    return [
+        EvidenceItem(
+            parameter=p,
+            timepoint=att.timepoint,
+            value=getattr(att, p),
+            trust_level="LEVEL_C",
+            source=src,
+        )
+        for p in REQUIRED_PARAMETERS
+        if getattr(att, p) is not None
+    ]
 
 
 FINDING_STATUSES = ("SAME", "SAME_WITH_WARNING", "DIFFERENT", "CONFLICT", "NOT_ESTABLISHED")
@@ -307,8 +269,8 @@ def classify_identity(
     for a in attestations:
         if a.simulated:
             raise ValueError("simulated attestations are confined to tests")
-        for it in a.evidence_items():
-            att_rules[it.source] = list(a.rule_applicability)
+        for it in attestation_evidence_items(a):
+            att_rules[it.source] = list(a.rule_scope)
             (baseline if a.timepoint == "baseline" else followup).append(it)
     params = [_parameter(p, baseline, followup, ruleset, att_rules) for p in REQUIRED_PARAMETERS]
     by = {s: [p.parameter for p in params if p.status == s] for s in FINDING_STATUSES}

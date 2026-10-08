@@ -245,9 +245,16 @@ def pair_rows(audit: TrialAudit) -> list[dict[str, Any]]:
                     c.rule_id for c in p.checks if c.impact == "blocking" and c.status == "UNKNOWN"
                 ),
                 "warnings": ";".join(
-                    c.rule_id
-                    for c in p.checks
-                    if c.impact == "warning" and c.status in ("FAIL", "UNKNOWN")
+                    [
+                        c.rule_id
+                        for c in p.checks
+                        if c.impact == "warning" and c.status in ("FAIL", "UNKNOWN")
+                    ]
+                    + [
+                        f"{c.rule_id}(EXTERNALLY_ATTESTED)"
+                        for c in p.checks
+                        if c.status == "PASS_WITH_WARNING"
+                    ]
                 ),
                 "reason_codes": ";".join(sorted({r.code for r in p.reasons})),
             }
@@ -263,6 +270,7 @@ def rule_rows(audit: TrialAudit) -> list[dict[str, Any]]:
         for c in p.checks:
             table[(c.rule_id, _origin(p))][c.status] += 1
             meta[c.rule_id] = (c.impact, c.standard)
+    attested = any(cnt.get("PASS_WITH_WARNING") for cnt in table.values())
     return [
         {
             "rule_id": rid,
@@ -270,10 +278,44 @@ def rule_rows(audit: TrialAudit) -> list[dict[str, Any]]:
             "impact": meta[rid][0],
             "data_origin": origin,
             "PASS": cnt.get("PASS", 0),
+            # never folded into PASS; column only present when an attestation was used
+            **({"PASS_WITH_WARNING": cnt.get("PASS_WITH_WARNING", 0)} if attested else {}),
             "FAIL": cnt.get("FAIL", 0),
             "UNKNOWN": cnt.get("UNKNOWN", 0),
         }
         for (rid, origin), cnt in sorted(table.items())
+    ]
+
+
+def attestation_rows(audit: TrialAudit) -> list[dict[str, Any]]:
+    """Report-only view of every supplied reconstruction attestation and whether the
+    QIBA rule used it. Empty when no attestation file was supplied."""
+    used: dict[str, list[str]] = defaultdict(list)
+    for p in audit.pairs:
+        for c in p.checks:
+            if c.rule_id == "VT-PROTOCOL-IDENTITY" and isinstance(c.observed, dict):
+                for e in c.observed.get("attestation_evidence", []):
+                    if e.get("used"):
+                        used[e["attestation_id"]].append(
+                            f"{p.pair.subject_id} {p.pair.baseline}->{p.pair.followup}: "
+                            f"{c.observed.get('protocol_identity')}"
+                        )
+    return [
+        {
+            "attestation_id": o.attestation_id,
+            "subject": o.subject_id,
+            "timepoint": o.timepoint,
+            "status": o.status,
+            "trust_level": o.trust_level,
+            "attestor_role": o.attestor_role or "",
+            "source_type": o.source_type or "",
+            "source_sha256": o.source_sha256 or "",
+            "rule_scope": ";".join(o.rule_scope),
+            "affected_rule_set": audit.ruleset_id if used.get(o.attestation_id) else "",
+            "used_for": "; ".join(used.get(o.attestation_id, [])),
+            "reasons": ";".join(o.reasons),
+        }
+        for o in audit.recon_attestations
     ]
 
 
@@ -364,6 +406,23 @@ def audit_report_md(audit: TrialAudit) -> str:
             f"| {r['subject']} | {r['verdict']} | {r['blocking_fail'] or '-'} | "
             f"{r['blocking_unknown'] or '-'} | {r['warnings'] or '-'} |"
             for r in pairs
+        ]
+    att = attestation_rows(audit)
+    if att:
+        lines += ["", "## Reconstruction attestations (LEVEL_C; report only)", ""]
+        if any(r["used_for"] for r in att):
+            lines += ["> **EXTERNAL RECONSTRUCTION ATTESTATION USED.** Reconstruction identity "
+                      "for the pairs below is externally attested, NOT DICOM-proven "
+                      "(QIBA rule set only).", ""]  # fmt: skip
+        lines += [
+            "| attestation | subject/timepoint | status | role | source | sha256 | used for |",
+            "|---|---|---|---|---|---|---|",
+        ]
+        lines += [
+            f"| {r['attestation_id']} | {r['subject']}/{r['timepoint']} | {r['status']} | "
+            f"{r['attestor_role']} | {r['source_type']} | {r['source_sha256'][:12]} | "
+            f"{r['used_for'] or '-'} |"
+            for r in att
         ]
     lines += ["", "## Reference regions", ""]
     for region, counts in site_summary(audit)["reference_regions"].items():

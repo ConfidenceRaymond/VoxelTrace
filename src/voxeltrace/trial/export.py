@@ -11,6 +11,7 @@ import yaml
 from voxeltrace.trial.audit import TrialAudit
 from voxeltrace.trial.summary import (
     REFERENCE_COLUMNS,
+    attestation_rows,
     audit_report_md,
     failure_rows,
     matrix,
@@ -38,9 +39,11 @@ def export_audit(audit: TrialAudit, out_dir: str | Path) -> list[Path]:
     out.mkdir(parents=True, exist_ok=True)
     paths = []
     full = out / "trial_audit.json"
-    full.write_text(
-        audit.model_dump_json(indent=2, exclude={"timepoints": {"__all__": {"protocol"}}}) + "\n"
-    )
+    exclude: dict = {"timepoints": {"__all__": {"protocol"}}}
+    if audit.recon_attestation_file is None and not audit.recon_attestations:
+        # keep audits without attestations byte-identical to earlier versions
+        exclude |= {"recon_attestation_file": True, "recon_attestations": True}
+    full.write_text(audit.model_dump_json(indent=2, exclude=exclude) + "\n")
     paths.append(full)
     rows = matrix(audit)
     mpath = out / "subject_timepoint_matrix.csv"
@@ -109,6 +112,14 @@ def export_audit(audit: TrialAudit, out_dir: str | Path) -> list[Path]:
             w.writeheader()
             w.writerows(rows)
         paths.append(path)
+    att = attestation_rows(audit)
+    if att:  # report only; written only when attestations were supplied
+        apath = out / "reconstruction_attestations.csv"
+        with apath.open("w", newline="") as fh:
+            w = csv.DictWriter(fh, fieldnames=list(att[0]))
+            w.writeheader()
+            w.writerows(att)
+        paths.append(apath)
     mdpath = out / "AUDIT_REPORT.md"
     mdpath.write_text(audit_report_md(audit))
     paths.append(mdpath)
