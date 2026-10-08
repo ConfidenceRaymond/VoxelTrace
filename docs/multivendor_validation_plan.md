@@ -145,3 +145,21 @@ Sources:
 - [IDC RIDER Lung PET-CT](https://portal.imaging.datacommons.cancer.gov/collections/rider_lung_pet_ct)
 - [IDC PSMA-PET-CT-Lesions](https://portal.imaging.datacommons.cancer.gov/collections/psma_pet_ct_lesions)
 - [autoPET IV dataset](https://autopet-iv.grand-challenge.org/dataset/)
+
+## Update 2026-10-08: cross-collection census v3 and access status
+
+See [census_v3_public_pet.md](census_v3_public_pet.md) for the per-subject ranking.
+
+**Access status verified this session** (metadata only):
+
+| Source | Status | Evidence |
+|---|---|---|
+| IDC v25 (43 collections with PET) | OPEN DICOM, CC BY 3.0/4.0 | local idc-index; byte-range header reads from the public buckets |
+| Head-Neck-PET-CT (TCIA) | **NOT anonymously accessible**; absent from IDC v25 | the TCIA NBIA v1 API returns no series and no modality values without login |
+| ACRIN-HNSCC-FDG-PET-CT (TCIA) | **GATED / limited**: only RTSTRUCT is anonymously listed | `getModalityValues` → `[RTSTRUCT]` |
+| QIN-BREAST-02, QIN-SARCOMA (TCIA) | MR only anonymously | `getModalityValues` → `[MR]` |
+| HECKTOR 2025 | **GATED** (registration and approval); **NIfTI only**, no DICOM headers | hecktor25.grand-challenge.org dataset page |
+| autoPET (FDG-PET-CT-Lesions, PSMA-PET-CT-Lesions) | OPEN DICOM in IDC/TCIA; challenge copies are NIfTI | IDC v25; autoPET dataset pages |
+| United Imaging in IDC v25 | **1 series only**: `cmb_pca`, "UIH / MIM Software" uMI 550, a "MIP MOVIE: PET AC PYLARIFY" rendering (derived, PSMA, not quantitative) | idc-index |
+| uEXPLORER / uMI / uPMR open DICOM | **NO_OPEN_DICOM_IDENTIFIED** (unchanged); uEXPLORER only GATED via UDPET (DTA, simulated low-dose) | earlier search (table above) |
+| OpenNeuro PET (37 datasets) | OPEN, but BIDS/NIfTI, not DICOM; mostly brain research PET | GraphQL metadata query; see [brain_pet_roadmap.md](brain_pet_roadmap.md) |
