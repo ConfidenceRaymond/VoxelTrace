@@ -42,7 +42,9 @@ HACK = REPO_ROOT.parent
 DATA = HACK / "data" / "acrin_longitudinal"
 OUT = HACK / "outputs" / "acrin_longitudinal"
 CENSUS = HACK / "data" / "census" / "acrin_nsclc_fdg_pet"
-SUBJECTS = ("ACRIN-NSCLC-FDG-PET-094", "ACRIN-NSCLC-FDG-PET-153")
+CENSUS_V2 = HACK / "data" / "census" / "acrin_nsclc_fdg_pet_v2"
+SUBJECTS: tuple[str, ...] = ("ACRIN-NSCLC-FDG-PET-094", "ACRIN-NSCLC-FDG-PET-153")
+TRIAL_ID = "ACRIN-NSCLC-FDG-PET-LONGITUDINAL-1"
 TPS = ("baseline", "followup")
 RULESETS = ("percist-1.0", "qiba-fdg-1.14", "eanm-fdg-2.0")
 REVIEW_REASONS = {
@@ -54,6 +56,12 @@ REVIEW_REASONS = {
     "REFERENCE_QC_FAILED",
     "MANUAL_OR_REFERENCE_MASK_REQUIRED",
 }
+
+
+def pet_uid(subject: str, tp: str) -> str:
+    """SeriesInstanceUID of the downloaded PET series (read from the files)."""
+    f = next((DATA / subject / tp / "PET").glob("*.dcm"))
+    return str(pydicom.dcmread(f, stop_before_pixels=True).SeriesInstanceUID)
 
 
 def blocked_by(c) -> str:
@@ -186,6 +194,30 @@ def suv_sul(subject: str, tp: str) -> tuple[dict, dict]:
         "scan_reference_datetime_source": q.scan_reference_datetime_source,
         "suv_per_bqml": e.scale_factors.suv_per_bqml if e.scale_factors else None,
     }
+    src = (run.outcome.result or run.outcome.refusal) if run.outcome else None
+    codes = [r.code for r in src.validation.reasons] if src else []
+    warns = [w.code for w in src.validation.warnings] if src else []
+    out["suv_warning_codes"] = warns
+    if "DECAY_FACTOR_INCONSISTENT" in codes:
+        out["decay_factor_crosscheck"] = "FAILED"
+    elif "DECAY_FACTOR_UNVERIFIED" in warns:
+        out["decay_factor_crosscheck"] = "NOT_AVAILABLE"
+        out["quantitative_warning"] = "STORED_DECAY_FACTOR_NOT_AVAILABLE"
+    elif src is not None and any(
+        c.name == "Vendor decay factor" and c.passed for c in src.validation.checks
+    ):
+        out["decay_factor_crosscheck"] = "VERIFIED"
+    else:
+        out["decay_factor_crosscheck"] = "NOT_EVALUATED (validator stopped before this check)"
+    hs = [
+        pydicom.dcmread(i.path, stop_before_pixels=True)
+        for i in run.case.get_series(run.pet_series_uid or "").instances
+    ]
+    out["decay_tags_present"] = {
+        "DecayFactor": sum(h.get("DecayFactor") is not None for h in hs),
+        "FrameReferenceTime": sum(h.get("FrameReferenceTime") is not None for h in hs),
+        "slices": len(hs),
+    }
     st = e.measured.suv_volume_stats
     if st is not None:
         out["suv_range"] = [st.finite_min, st.finite_max]
@@ -279,7 +311,16 @@ def diff(a: dict, b: dict) -> dict:
     return out
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
+    import argparse
+
+    global OUT, SUBJECTS, TRIAL_ID
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--subjects", nargs="+", default=list(SUBJECTS))
+    ap.add_argument("--out-name", default="acrin_longitudinal")
+    ap.add_argument("--trial-id", default=TRIAL_ID)
+    a = ap.parse_args(argv)
+    SUBJECTS, OUT, TRIAL_ID = tuple(a.subjects), HACK / "outputs" / a.out_name, a.trial_id
     OUT.mkdir(parents=True, exist_ok=True)
     # ---------------------------------------------------------------- 1. ingestion
     ing = [ingestion(s, t) for s in SUBJECTS for t in TPS]
@@ -329,7 +370,7 @@ def main() -> int:
     (trial / "trial.yaml").write_text(
         yaml.safe_dump(
             {
-                "trial_id": "ACRIN-NSCLC-FDG-PET-LONGITUDINAL-1",
+                "trial_id": TRIAL_ID,
                 "ruleset": "percist-1.0",
                 "timepoint_order": list(TPS),
                 "reference_proposals": "auto",
@@ -389,7 +430,7 @@ def main() -> int:
     for s in SUBJECTS:
         c = cand[s]
         for t in TPS:
-            pr = risk[c[f"pet_series_{t}"]]
+            pr = risk[pet_uid(s, t)]
             act = by[(s, t)]
             fpt = fps[(s, t)]
             sul_ok = act["sul"].get("LBMJAMES128", {}).get("status")
@@ -425,9 +466,71 @@ def main() -> int:
         w = csv.DictWriter(fh, fieldnames=list(cc[0]))
         w.writeheader()
         w.writerows(cc)
+    # ---------------------------------------------------------------- 4b. census v2 vs actual
+    v2_pet = {
+        json.loads(x)["SeriesInstanceUID"]: json.loads(x)
+        for x in (CENSUS_V2 / "pet_series_v2_enriched.jsonl").read_text().splitlines()
+    }
+    v2_pairs = {r["PatientID"]: r for r in csv.DictReader((CENSUS_V2 / "pairs_v2.csv").open())}
+    v2rows = []
+    for s in SUBJECTS:
+        pr = v2_pairs.get(s)
+        for t in TPS:
+            act = by[(s, t)]
+            p2 = v2_pet.get(pet_uid(s, t), {})
+            sul_act = act["sul"].get("LBMJAMES128", {}).get("status", "NOT_ATTEMPTED")
+            v2rows.append(
+                {
+                    "subject": s,
+                    "timepoint": t,
+                    "suv_v2": "PASS" if p2.get("suv_eligible") else "REFUSED",
+                    "suv_actual": act["suv_status"],
+                    "suv_refusal_v2": ";".join(p2.get("refusal_codes", [])),
+                    "suv_refusal_actual": ";".join(x.split(":")[0] for x in act["refusal_reasons"]),
+                    "decay_crosscheck_v2": (
+                        "FAILED"
+                        if "DECAY_FACTOR_INCONSISTENT" in p2.get("refusal_codes", [])
+                        else "NOT_AVAILABLE"
+                        if "DECAY_FACTOR_UNVERIFIED" in p2.get("warning_codes", [])
+                        else "VERIFIED_ON_SAMPLE"
+                    ),
+                    "decay_crosscheck_actual": act["decay_factor_crosscheck"],
+                    "sul_v2": "LIKELY_PASS"
+                    if p2.get("height_present")
+                    else "LIKELY_REFUSE (no height)",
+                    "sul_actual": sul_act,
+                    "ct_for_v2": p2.get("ct_same_for"),
+                    "ct_for_actual": ig[(s, t)].get("pet_ct_same_frame_of_reference"),
+                    "tracer_v2": (p2.get("tracer") or {}).get("status"),
+                    "tracer_actual": fps[(s, t)]["tracer"]["status"],
+                    "recon_v2": (p2.get("recon_description") or {}).get("value"),
+                    "recon_actual": fps[(s, t)]["reconstruction_description"]["value"],
+                    "iterations_v2": (p2.get("iterations") or {}).get("status"),
+                    "iterations_actual": fps[(s, t)]["iterations"]["status"],
+                    "pair_category_v2": pr["category"] if pr else None,
+                    "qiba_v2": pr["qiba_predicted"] if pr else None,
+                    "qiba_actual": next(
+                        p.verdict for p in audits["qiba-fdg-1.14"].pairs if p.pair.subject_id == s
+                    ),
+                }
+            )
+    with (OUT / "census_v2_crosscheck.csv").open("w", newline="") as fh:
+        w = csv.DictWriter(fh, fieldnames=list(v2rows[0]))
+        w.writeheader()
+        w.writerows(v2rows)
     # ---------------------------------------------------------------- 5. real proposals
-    props = [r for s in SUBJECTS for t in TPS for r in proposals_without_suv(s, t, rv_dir / "qc")]
-    pending = {}
+    refused = {(r["subject"], r["timepoint"]) for r in res if r["suv_status"] != "PASS"}
+    props = [
+        r
+        for s in SUBJECTS
+        for t in TPS
+        if (s, t) in refused
+        for r in proposals_without_suv(s, t, rv_dir / "qc")
+    ]
+    audit_ws = yaml.safe_load(
+        (OUT / "audit_percist-1.0" / "reference_review_worksheet.yaml").read_text()
+    )
+    pending = dict(audit_ws.get("reviews") or {})
     for r in props:
         if r["status"] != "PROPOSED":
             continue
@@ -444,6 +547,26 @@ def main() -> int:
             "measurement": "NOT AVAILABLE: strict SUVbw refused at this timepoint "
             "(DECAY_FACTOR_INCONSISTENT); PERCIST liver rules stay UNKNOWN even after review",
         }
+    for t in audits["percist-1.0"].timepoints:
+        for region, res_ in (("LIVER", t.liver), ("BLOOD_POOL", t.blood_pool)):
+            if res_ is not None and res_.status in ("PROPOSED_REQUIRES_REVIEW", "AUTO_NOT_FOUND"):
+                props.append(
+                    {
+                        "subject": t.subject_id,
+                        "timepoint": t.timepoint,
+                        "region": region,
+                        "status": "PROPOSED"
+                        if res_.status == "PROPOSED_REQUIRES_REVIEW"
+                        else "NOT_FOUND",
+                        "reason": res_.refusal,
+                        "proposal_sha256": res_.proposal_sha256,
+                        "measured_suv_mean_preview": res_.suv_mean,
+                        "measured_sul_mean_preview": res_.sul_mean,
+                        "cov_preview": res_.cov,
+                        "qc_image": res_.qc_image,
+                        "source": "trial audit (quantitative PET available)",
+                    }
+                )
     (rv_dir / "reference_review_worksheet.yaml").write_text(
         "# REAL ACRIN proposals (distinct namespace from the synthetic demo reviews).\n"
         "# Decisions are recorded ONLY by a human. Nothing here is a decision.\n"
