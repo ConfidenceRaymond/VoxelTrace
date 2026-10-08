@@ -89,7 +89,7 @@ git -C "$REPO" remote -v | scrub
 [ -z "$(git -C "$REPO" remote)" ] && echo "  (none)"
 endsec
 
-section "Hackathon tree"
+section "Project tree"
 echo "root: $HACK"
 run ls -1 "$HACK"
 endsec

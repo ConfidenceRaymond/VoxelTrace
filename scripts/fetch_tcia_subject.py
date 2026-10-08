@@ -151,7 +151,7 @@ def main(argv: list[str] | None = None) -> int:
         json.loads(manifest_path.read_text())
         if manifest_path.exists()
         else {
-            "description": "VoxelTrace hackathon-local public data. NEVER commit or push.",
+            "description": "VoxelTrace project-local public data. NEVER commit or push.",
             "datasets": [],
         }
     )

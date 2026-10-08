@@ -1,7 +1,9 @@
 # Data policy
 
-VoxelTrace runs on a **temporary** NVIDIA GB10 hackathon workstation. All project
-material lives under `/home/dell/voxeltrace_hackathon/` so it can be removed cleanly.
+VoxelTrace is an ongoing research and product project developed on an NVIDIA GB10
+workstation. All project material lives under the project root
+`/home/dell/voxeltrace_hackathon/` so it stays separate from the rest of the system and can
+be audited or removed cleanly.
 
 ## Never committed to Git
 
@@ -38,11 +40,11 @@ Dependency caches are redirected into this tree where practical
 Public datasets (TCIA, OpenNeuro) are used under their own data-use terms.
 Record dataset, version and licence for each download in `docs/validation.md` before use.
 
-## Departure
+## Leaving a workstation
 
-Before leaving the workstation we will:
+Before leaving a workstation we will:
 
 1. Run `scripts/cleanup_audit.sh` (read-only inventory).
 2. Review anything reported outside `~/voxeltrace_hackathon`.
 3. Push any code worth keeping (code only, never data or weights).
-4. Delete hackathon-local data, models, caches, outputs and source.
+4. Delete project-local data, models, caches, outputs and source.

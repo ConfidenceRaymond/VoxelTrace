@@ -53,7 +53,7 @@ Recipe (initial):
 - r = 16, alpha = 32, dropout 0.05, BF16, gradient checkpointing.
 - 1–3 epochs, early stopping on VALIDATION.
 - Tooling: LLaMA-Factory (`qwen3_vl` template) or PEFT + transformers, inside a venv in the
-  hackathon tree.
+  project root.
 
 Report on LOCKED_TEST, before vs after:
 - every `EvaluationReport` metric;

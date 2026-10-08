@@ -9,7 +9,7 @@ ai_timeout_s: 5.0
 # Refuse non-loopback endpoints unless explicitly enabled.
 ai_allow_remote: false
 
-# Hackathon-local storage, relative to the repository root.
+# Project-local storage, relative to the repository root.
 data_dir: "../data"
 models_dir: "../models"
 outputs_dir: "../outputs"

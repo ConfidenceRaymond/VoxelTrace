@@ -187,7 +187,7 @@ def build_case_dataset(
         },
         selection_rules=SELECTION_RULES,
         notes=[
-            "Images are PNG derivatives of CC BY 4.0 data; keep under the hackathon tree; "
+            "Images are PNG derivatives of CC BY 4.0 data; keep under the project root; "
             "never commit to Git.",
             "Negative slices mean 'no reference-segmented target', not 'normal'.",
             "Synthetic perturbations are flagged per example (synthetic_perturbation).",

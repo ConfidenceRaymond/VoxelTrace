@@ -122,7 +122,7 @@ remotes:
   (none)
 ```
 
-## Hackathon tree
+## Project tree
 
 ```
 root: /home/dell/voxeltrace_hackathon

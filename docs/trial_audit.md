@@ -73,7 +73,7 @@ COMPARABLE.
 - `site_summary.json`: counts, and verdicts by site, scanner, software and reconstruction;
   insufficient-information counts by reason; failures by rule.
 
-## Hackathon demo (`../outputs/synthetic_comparability/`)
+## Demo (`../outputs/synthetic_comparability/`)
 
 - **BASELINE** is the real PETCT_0011f3deaf, as read-only links.
 - **FOLLOWUP** is a **SYNTHETIC_PERTURBATION** copy. These are not real follow-up scans; each is

@@ -63,7 +63,7 @@ None of these changed a validated number.
 | 15 | Synthetic known-answer perturbations | COMPLETE | `trial/perturb.py` | 7/7 expected verdicts (synthetic tests and the real demo) |
 | 16 | Batch trial audit (JSON + CSV) | COMPLETE | `trial/{discovery,pairing,audit,summary,export}.py` | end-to-end test |
 | 17 | Site-level summary | COMPLETE | `trial/summary.py` | `site_summary.json` |
-| 18 | Hackathon demo (real baseline + labelled synthetic perturbations) | COMPLETE | `scripts/build_trial_demo.py` | `../outputs/synthetic_comparability/` |
+| 18 | Trial demo (real baseline + labelled synthetic perturbations) | COMPLETE | `scripts/build_trial_demo.py` | `../outputs/synthetic_comparability/` |
 | 19 | Model download verified | COMPLETE | `../models/Qwen3-VL-8B-Instruct` (+ `.manifest.json`) | all 16 files SHA-256 verified against revision 0c351dd |
 | 20 | Inference stack | COMPLETE | `../tmp/vlm-venv` (torch 2.14.1+cu130, transformers 5.19.0) | GB10 sm_121 BF16 verified |
 | 21 | Baseline (no fine-tuning) | COMPLETE | `scripts/run_baseline_vlm.py`, `scripts/analyze_baseline.py` | 70 examples on frozen `dev_v1`; results read-only in `../outputs/baseline_qwen3vl8b/`; summary in `docs/baseline_qwen3vl8b.md` |

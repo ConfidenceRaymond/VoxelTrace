@@ -5,8 +5,9 @@
 > **RESEARCH PROTOTYPE - NOT FOR CLINICAL DIAGNOSIS.**
 > VoxelTrace is not a medical device and must not be used for diagnosis or treatment decisions.
 
-VoxelTrace is a local-first research prototype for quantitative PET imaging analysis,
-built during an NVIDIA GB10 (DGX-Spark-class) hackathon.
+VoxelTrace is a local-first research prototype for quantitative PET imaging analysis.
+It is an ongoing research and product project, developed on an NVIDIA GB10
+(DGX-Spark-class) workstation.
 
 ## Core idea
 
@@ -25,7 +26,7 @@ talks only to a loopback OpenAI-compatible endpoint (default `http://127.0.0.1:8
 e.g. vLLM on the GB10), refuses non-local endpoints by default, has no cloud fallback,
 and needs no API key.
 
-## Hackathon status: milestone 5+ (multimodal evaluation foundation + trial comparability audit)
+## Status: milestone 5+ (multimodal evaluation foundation + trial comparability audit)
 
 Currently implemented:
 
@@ -237,13 +238,13 @@ make app              # http://127.0.0.1:8501
 .venv/bin/python scripts/evaluate_responses.py examples.jsonl responses.jsonl --out report.json
 ```
 
-Derived PNGs are medical-image derivatives. They stay under the hackathon tree and are never
+Derived PNGs are medical-image derivatives. They stay under the project root (`~/voxeltrace_hackathon`) and are never
 committed.
 
 ## Other scripts
 
 - `scripts/check_environment.sh` - regenerate `docs/environment_snapshot.md` (`make env-snapshot`).
-- `scripts/cleanup_audit.sh` - **read-only** inventory of hackathon material (`make audit`).
+- `scripts/cleanup_audit.sh` - **read-only** inventory of project-local material (`make audit`).
 
 ## Safety and limitations
 

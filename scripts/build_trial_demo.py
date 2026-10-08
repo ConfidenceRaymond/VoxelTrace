@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the hackathon Trial Comparability Audit demo (REAL baseline + SYNTHETIC_PERTURBATION
+"""Build the Trial Comparability Audit demo (REAL baseline + SYNTHETIC_PERTURBATION
 follow-ups) under ../outputs/synthetic_comparability/ and run the audit with each rule set.
 
 Never implies that synthetic follow-ups came from real patients. Originals are untouched
