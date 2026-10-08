@@ -115,3 +115,7 @@ pairs are about 250 MB.
 - record the CT FrameOfReferenceUID against the PET's;
 - record tracer code presence;
 - price the AC CT, not the scout.
+
+## Superseded by census v2
+
+See [census_v2.md](census_v2.md). The v1 risk labels are optimistic for strict SUV. v1 files are kept unchanged for provenance.

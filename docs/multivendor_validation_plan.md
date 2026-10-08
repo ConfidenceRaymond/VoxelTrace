@@ -77,6 +77,17 @@ Availability codes:
 | **Philips** | OPEN-DICOM: ACRIN-NSCLC-FDG-PET (Allegro, Guardian; census); Head-Neck-PET-CT (Gemini GXL, verify) | NONE-FOUND | NONE-FOUND | NONE-FOUND |
 | **United Imaging** | **uMI family** (uMI 510/550/780/Panorama): NONE-FOUND | NONE-FOUND | **uEXPLORER**: GATED only (UDPET, 1060 subjects, DICOM, signed data-transfer agreement, simulated low-dose); **no open uEXPLORER DICOM dataset found** | **uPMR (e.g. uPMR 790)**: NONE-FOUND |
 
+**Update (2026-10-08, second search):**
+
+| Source | Scanner | Status |
+|---|---|---|
+| TCIA "Healthy-Total-Body-CTs" (Selfridge et al. 2023, doi 10.7937/NC7Z-4F76) | United Imaging uEXPLORER, UC Davis | **CT only** (30 healthy adults; FDG PET "planned for a future update"); one listing says limited access; real data; not usable for PET quantification |
+| UC Davis EXPLORER research-data page | total-body PET | **GATED** (data transfer agreement); scanner mix and DICOM availability not confirmed |
+| UDPET | uEXPLORER and Biograph Vision Quadra | **GATED** (DTA), DICOM; low-dose images are SIMULATED |
+| uMI Panorama (FDA K241585), uMI 780, uPMR 790 (FDA K183014/K222540/K234154) | United Imaging | regulatory and performance records only; **no open dataset found** |
+| CERMEP-IDB-MRXFDG | FDG brain PET/CT (not PET/MR) | GATED (request form), single timepoint |
+| CAI2R Knoll et al. | brain FDG PET/MR, Biograph mMR | raw/list-mode research data, single session; DICOM not stated |
+
 **Implications:**
 - Every LONG_AFOV, TOTAL_BODY and PET_MR cell, and every United Imaging cell, is currently
   unvalidated. VoxelTrace has no United Imaging vendor module, so such scans refuse with
