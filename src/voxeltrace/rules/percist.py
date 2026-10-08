@@ -15,6 +15,7 @@ from voxeltrace.rules.sources import (
     PPERCIST_UPTAKE,
 )
 from voxeltrace.trial.reasons import Reason
+from voxeltrace.trial.reference import reference_reason
 from voxeltrace.trial.schema import PairContext, ScanTimepoint
 
 V = "PERCIST-1.0/PRACTICAL-2016"
@@ -56,7 +57,8 @@ LIVER = Rule(
     impact="blocking",
     sources=[PERCIST_LIVER],
     assumptions=[
-        "liver region supplied (mask or reviewed centre); automatic placement is not implemented"
+        "liver region supplied (mask or reviewed centre) or an automatic proposal accepted or "
+        "adjusted by a reviewer; unreviewed proposals are never used"
     ],
 )
 DOSE = Rule(
@@ -102,13 +104,10 @@ MEASURABLE = Rule(
 
 
 def _liver_sul(tp: ScanTimepoint):
-    if tp.liver is None or tp.liver.status != "COMPUTED":
-        return None, Reason(
-            code="MANUAL_OR_REFERENCE_MASK_REQUIRED",
-            field=f"{tp.timepoint}.liver",
-            detail=(tp.liver.refusal if tp.liver else None) or "no liver reference region",
-            confidence="CONFIRMED",
-        )
+    r = reference_reason(tp.timepoint, tp.liver, "LIVER")
+    if r is not None:
+        return None, r
+    assert tp.liver is not None
     if tp.liver.sul_mean is None:
         sul = tp.sul.get(SUL_FORMULA)
         refs = ", ".join(r.code for r in sul.refusals) if sul else "SUL not computed"

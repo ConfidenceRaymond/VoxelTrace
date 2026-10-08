@@ -26,6 +26,8 @@ def matrix(audit: TrialAudit) -> list[dict[str, Any]]:
                 "reconstruction": tp.reconstruction,
                 "suv_status": tp.suv_status,
                 "uptake_min": round(tp.uptake_s / 60, 2) if tp.uptake_s else None,
+                "liver_reference": tp.liver.status if tp.liver else None,
+                "blood_pool_reference": tp.blood_pool.status if tp.blood_pool else None,
                 "pair_verdict": p.verdict
                 if p
                 else (
@@ -74,5 +76,90 @@ def site_summary(audit: TrialAudit) -> dict[str, Any]:
             if c.status == "FAIL":
                 failures[c.rule_id] += 1
     out["insufficient_information_by_reason"] = dict(reasons.most_common())
+    out["reference_regions"] = {
+        region: dict(
+            Counter(
+                (getattr(t, attr).status if getattr(t, attr) else "NOT_EVALUATED")
+                for t in audit.timepoints
+            )
+        )
+        for region, attr in (("LIVER", "liver"), ("BLOOD_POOL", "blood_pool"))
+    }
     out["failures_by_rule"] = dict(failures.most_common())
     return out
+
+
+REFERENCE_COLUMNS = [
+    "subject",
+    "timepoint",
+    "region",
+    "status",
+    "source",
+    "method",
+    "centre_patient_mm",
+    "diameter_mm",
+    "length_mm",
+    "voxel_count",
+    "volume_ml",
+    "suv_mean",
+    "suv_sd",
+    "cov",
+    "suv_max",
+    "sul_mean",
+    "sul_sd",
+    "usable_by_rules",
+    "review_decision",
+    "reviewer",
+    "algorithm_version",
+    "proposal_sha256",
+    "qc_image",
+    "refusal",
+]
+
+
+def reference_rows(audit: TrialAudit) -> list[dict[str, Any]]:
+    """One row per timepoint x region. Values of unreviewed proposals are shown for review
+    only; ``usable_by_rules`` is true only for COMPUTED regions."""
+    rows = []
+    for tp in audit.timepoints:
+        for region, res in (("LIVER", tp.liver), ("BLOOD_POOL", tp.blood_pool)):
+            row: dict[str, Any] = {"subject": tp.subject_id, "timepoint": tp.timepoint}
+            row["region"] = region
+            if res is None:
+                row.update(status="NOT_EVALUATED", usable_by_rules=False)
+            else:
+                d = res.model_dump()
+                row.update({k: d.get(k) for k in REFERENCE_COLUMNS if k in d})
+                row["usable_by_rules"] = res.status == "COMPUTED"
+            rows.append(row)
+    return rows
+
+
+def review_worksheet(audit: TrialAudit) -> dict[str, Any]:
+    """Pre-filled reference_review.yaml content for every proposal that still needs a
+    decision (PROPOSED_REQUIRES_REVIEW or REVIEW_STALE). decision stays PENDING until a
+    human edits it."""
+    reviews: dict[str, dict[str, Any]] = {}
+    for tp in audit.timepoints:
+        for region, res in (("LIVER", tp.liver), ("BLOOD_POOL", tp.blood_pool)):
+            if res is None or res.status not in ("PROPOSED_REQUIRES_REVIEW", "REVIEW_STALE"):
+                continue
+            reviews.setdefault(f"{tp.subject_id}/{tp.timepoint}", {})[region] = {
+                "decision": "PENDING",
+                "proposal_sha256": res.proposal_sha256,
+                "reviewer": "",
+                "reviewed_at": "",
+                "centre_patient_mm": None,
+                "note": None,
+                "proposed_centre_patient_mm": list(res.centre_patient_mm or ()),
+                "proposed_size_mm": [res.diameter_mm, res.length_mm],
+                "preview_unreviewed": {
+                    "suv_mean": res.suv_mean,
+                    "cov": res.cov,
+                    "suv_max": res.suv_max,
+                    "measurement_qc": res.refusal or "PASS",
+                },
+                "qc_image": res.qc_image,
+                "previous_status": res.status,
+            }
+    return {"reviews": reviews}

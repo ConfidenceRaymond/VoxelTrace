@@ -11,6 +11,7 @@ from voxeltrace.rules.registry import assess_pair
 from voxeltrace.rules.trial_overrides import effective_ruleset
 from voxeltrace.trial.discovery import discover_trial
 from voxeltrace.trial.pairing import make_pairs
+from voxeltrace.trial.reference import load_reviews
 from voxeltrace.trial.schema import PairAssessabilityResult, PairContext, ScanTimepoint
 from voxeltrace.trial.timepoint import build_timepoint
 
@@ -22,6 +23,12 @@ class TrialAudit(BaseModel):
     standard: str
     overrides: list[str] = Field(default_factory=list)
     documented_not_implemented: list[str] = Field(default_factory=list)
+    reference_proposals: str = "auto"
+    reference_review_file: str | None = None
+    reference_reviews_applied: int = 0
+    reference_reviews_unmatched: list[str] = Field(
+        default_factory=list, description="review keys with no matching subject/timepoint"
+    )
     timepoints: list[ScanTimepoint]
     pairs: list[PairAssessabilityResult]
     disclaimer: str = (
@@ -30,9 +37,19 @@ class TrialAudit(BaseModel):
     )
 
 
-def run_trial_audit(root: str | Path, ruleset: str | None = None) -> TrialAudit:
-    """Audit a trial directory. ``ruleset`` overrides trial.yaml (explicit, recorded)."""
+def run_trial_audit(
+    root: str | Path,
+    ruleset: str | None = None,
+    *,
+    qc_dir: str | Path | None = None,
+    reviews_file: str | Path | None = None,
+) -> TrialAudit:
+    """Audit a trial directory. ``ruleset`` overrides trial.yaml (explicit, recorded).
+    ``qc_dir`` receives reference-proposal QC renders; ``reviews_file`` overrides the
+    trial's reference_review_file."""
     layout = discover_trial(root)
+    review_path = reviews_file or layout.reference_review_file
+    reviews = load_reviews(review_path)
     if ruleset is not None:
         layout.config = layout.config.model_copy(update={"ruleset": ruleset})
     rs = effective_ruleset(layout.config)
@@ -46,7 +63,10 @@ def run_trial_audit(root: str | Path, ruleset: str | None = None) -> TrialAudit:
                 timepoint=tp_name,
                 site=layout.sites.get(subj),
                 synthetic=layout.synthetic.get(key),
-                liver_spec=layout.reference_regions.get(key),
+                reference_specs=layout.reference_regions.get(key),
+                reviews=reviews.get(key),
+                auto_reference=layout.reference_proposals == "auto",
+                qc_dir=qc_dir,
             )
     pairs = []
     for subj, scans in layout.scans.items():
@@ -72,6 +92,15 @@ def run_trial_audit(root: str | Path, ruleset: str | None = None) -> TrialAudit:
         standard=rs.standard,
         overrides=rs.overrides,
         documented_not_implemented=rs.documented_not_implemented,
+        reference_proposals=layout.reference_proposals,
+        reference_review_file=str(review_path) if review_path else None,
+        reference_reviews_applied=sum(
+            1
+            for t in tps.values()
+            for r in (t.liver, t.blood_pool)
+            if r is not None and r.review_decision and r.status != "REVIEW_STALE"
+        ),
+        reference_reviews_unmatched=sorted(k for k in reviews if tuple(k.split("/", 1)) not in tps),
         timepoints=list(tps.values()),
         pairs=pairs,
     )

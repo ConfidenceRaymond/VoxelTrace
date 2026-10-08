@@ -6,8 +6,25 @@ import csv
 import json
 from pathlib import Path
 
+import yaml
+
 from voxeltrace.trial.audit import TrialAudit
-from voxeltrace.trial.summary import matrix, site_summary
+from voxeltrace.trial.summary import (
+    REFERENCE_COLUMNS,
+    matrix,
+    reference_rows,
+    review_worksheet,
+    site_summary,
+)
+
+WORKSHEET_HEADER = """\
+# VoxelTrace reference-region review worksheet (generated; RESEARCH PROTOTYPE).
+# For each entry: open qc_image, then set decision to ACCEPT, ADJUST (also set
+# centre_patient_mm, LPS mm) or REJECT, and fill reviewer and reviewed_at.
+# Save the edited file as <trial>/reference_review.yaml and re-run the audit.
+# Unreviewed proposals (decision PENDING) are never used by any assessability rule.
+# A review applies only to the proposal_sha256 it names.
+"""
 
 
 def export_audit(audit: TrialAudit, out_dir: str | Path) -> list[Path]:
@@ -64,6 +81,17 @@ def export_audit(audit: TrialAudit, out_dir: str | Path) -> list[Path]:
                     ]
                 )
     paths.append(ppath)
+    rpath = out / "reference_regions.csv"
+    with rpath.open("w", newline="") as fh:
+        w = csv.DictWriter(fh, fieldnames=REFERENCE_COLUMNS, extrasaction="ignore")
+        w.writeheader()
+        w.writerows(reference_rows(audit))
+    paths.append(rpath)
+    wpath = out / "reference_review_worksheet.yaml"
+    wpath.write_text(
+        WORKSHEET_HEADER + yaml.safe_dump(review_worksheet(audit), sort_keys=True, width=100)
+    )
+    paths.append(wpath)
     spath = out / "site_summary.json"
     spath.write_text(json.dumps(site_summary(audit), indent=2) + "\n")
     paths.append(spath)

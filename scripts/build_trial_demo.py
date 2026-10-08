@@ -67,7 +67,7 @@ def main() -> int:
     )
     ok = True
     for rs in ("qiba-fdg-1.14", "percist-1.0", "eanm-fdg-2.0"):
-        audit = run_trial_audit(trial, ruleset=rs)
+        audit = run_trial_audit(trial, ruleset=rs, qc_dir=OUT / f"audit_{rs}" / "reference_qc")
         export_audit(audit, OUT / f"audit_{rs}")
         print(f"== {rs} ({audit.ruleset_version})")
         for p in audit.pairs:

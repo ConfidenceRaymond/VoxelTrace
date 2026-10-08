@@ -27,6 +27,11 @@ ReasonCode = Literal[
     "AMBIGUOUS_TIMING",
     "UNKNOWN_PROVENANCE",
     "MANUAL_OR_REFERENCE_MASK_REQUIRED",
+    "REFERENCE_REVIEW_REQUIRED",
+    "REFERENCE_REVIEW_STALE",
+    "REFERENCE_REJECTED_BY_REVIEWER",
+    "REFERENCE_AUTO_NOT_FOUND",
+    "REFERENCE_QC_FAILED",
     "ANTHROPOMETRICS_MISSING",
     "SUV_REFUSED",
 ]
@@ -138,12 +143,53 @@ CATALOG: dict[str, ReasonInfo] = {
     ),
     "MANUAL_OR_REFERENCE_MASK_REQUIRED": ReasonInfo(
         code="MANUAL_OR_REFERENCE_MASK_REQUIRED",
-        what="reference region (liver/blood pool) not supplied and automatic placement is "
-        "not implemented",
+        what="reference region (liver/blood pool) not supplied and automatic proposals are "
+        "disabled for this trial",
         why_it_matters="PERCIST-style reference checks need it",
         site_can_fix="YES",
-        remediation="supply a reference-region mask or a reviewed sphere centre (physical "
-        "coordinates) per timepoint",
+        remediation="supply a reference-region mask or a reviewed centre (physical "
+        "coordinates) per timepoint in trial.yaml, or enable reference_proposals: auto",
+    ),
+    "REFERENCE_REVIEW_REQUIRED": ReasonInfo(
+        code="REFERENCE_REVIEW_REQUIRED",
+        what="an automatic reference-region proposal exists but has not been reviewed",
+        why_it_matters="unreviewed automatic placements are never used by assessability rules",
+        site_can_fix="YES",
+        remediation="open the QC image named in reference_review_worksheet.yaml, then record "
+        "ACCEPT, ADJUST (with centre_patient_mm) or REJECT, the reviewer and the date under the "
+        "same proposal_sha256 in <trial>/reference_review.yaml and re-run the audit",
+    ),
+    "REFERENCE_REVIEW_STALE": ReasonInfo(
+        code="REFERENCE_REVIEW_STALE",
+        what="the recorded review refers to a different proposal than the current one",
+        why_it_matters="the reviewed region is not the region that would be measured",
+        site_can_fix="YES",
+        remediation="re-review the current proposal (new proposal_sha256 in the worksheet)",
+    ),
+    "REFERENCE_REJECTED_BY_REVIEWER": ReasonInfo(
+        code="REFERENCE_REJECTED_BY_REVIEWER",
+        what="a reviewer rejected the automatic reference-region proposal",
+        why_it_matters="no accepted reference region exists for this timepoint",
+        site_can_fix="YES",
+        remediation="record ADJUST with a reviewed centre, or supply a mask/centre in "
+        "trial.yaml reference_regions",
+    ),
+    "REFERENCE_AUTO_NOT_FOUND": ReasonInfo(
+        code="REFERENCE_AUTO_NOT_FOUND",
+        what="the deterministic CT-guided proposer could not place the region (see detail, "
+        "e.g. no CT series, lungs not found, no consistent aorta segment)",
+        why_it_matters="no reference region is available for reference-based rules",
+        site_can_fix="YES",
+        remediation="supply a reference-region mask or reviewed centre in trial.yaml "
+        "reference_regions, or provide the attenuation-correction CT with the PET",
+    ),
+    "REFERENCE_QC_FAILED": ReasonInfo(
+        code="REFERENCE_QC_FAILED",
+        what="the reference region was refused by measurement QC (outside image, overlaps a "
+        "lesion, masked SUV 0 voxels, or too few voxels)",
+        why_it_matters="the region cannot be measured defensibly",
+        site_can_fix="YES",
+        remediation="move the region (ADJUST with a new centre) or supply a corrected mask",
     ),
     "ANTHROPOMETRICS_MISSING": ReasonInfo(
         code="ANTHROPOMETRICS_MISSING",

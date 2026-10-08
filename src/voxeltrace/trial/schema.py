@@ -46,6 +46,7 @@ class ScanTimepoint(BaseModel):
     lesion_suvpeak: float | None = None
     protocol: ProtocolEvidence | None = None
     liver: ReferenceRegionResult | None = None
+    blood_pool: ReferenceRegionResult | None = None
     sul: dict[str, SULResult] = Field(default_factory=dict, description="formula -> result")
     anonymization: AnonymizationAudit | None = None
     reasons: list[Reason] = Field(default_factory=list)
