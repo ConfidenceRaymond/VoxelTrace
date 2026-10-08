@@ -1,0 +1,97 @@
+{
+  "approval": "user-approved option 'PET x4 + 094 CT x2' (2026-10-08); 153 CTs excluded (no CT in the PET frame of reference)",
+  "approved_subjects": [
+    "ACRIN-NSCLC-FDG-PET-094",
+    "ACRIN-NSCLC-FDG-PET-153"
+  ],
+  "expected_MB": 272.271,
+  "expected_instances": 1447,
+  "expected_series": 6,
+  "schema": "voxeltrace.bounded-download/1",
+  "series": [
+    {
+      "PatientID": "ACRIN-NSCLC-FDG-PET-094",
+      "SeriesDescription": "CT IMAGES",
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.7009.2403.872541064534495964621857723337",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.7009.2403.301957631611545273757656589061",
+      "aws_bucket": "idc-open-data-two",
+      "collection": "ACRIN-NSCLC-FDG-PET",
+      "crdc_series_uuid": "42ecf160-99a3-414f-9950-b16cebea6299",
+      "expected_MB": 108.3573,
+      "expected_instances": 205,
+      "license": "CC BY 3.0",
+      "modality": "CT",
+      "timepoint": "baseline"
+    },
+    {
+      "PatientID": "ACRIN-NSCLC-FDG-PET-094",
+      "SeriesDescription": "PET AC",
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.7009.2403.204263761776964284985187981507",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.7009.2403.301957631611545273757656589061",
+      "aws_bucket": "idc-open-data-two",
+      "collection": "ACRIN-NSCLC-FDG-PET",
+      "crdc_series_uuid": "d7c68ee4-c290-4df8-9a77-1a018fb9a542",
+      "expected_MB": 8.048482,
+      "expected_instances": 205,
+      "license": "CC BY 3.0",
+      "modality": "PET",
+      "timepoint": "baseline"
+    },
+    {
+      "PatientID": "ACRIN-NSCLC-FDG-PET-094",
+      "SeriesDescription": "CT IMAGES",
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.7009.2403.304504540674887779029838850579",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.7009.2403.336288884829352225184763051037",
+      "aws_bucket": "idc-open-data-two",
+      "collection": "ACRIN-NSCLC-FDG-PET",
+      "crdc_series_uuid": "47fcac41-48bb-4b8e-9824-8527a6a93f54",
+      "expected_MB": 126.331122,
+      "expected_instances": 239,
+      "license": "CC BY 3.0",
+      "modality": "CT",
+      "timepoint": "followup"
+    },
+    {
+      "PatientID": "ACRIN-NSCLC-FDG-PET-094",
+      "SeriesDescription": "PET AC",
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.7009.2403.506175547105760855926729316181",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.7009.2403.336288884829352225184763051037",
+      "aws_bucket": "idc-open-data-two",
+      "collection": "ACRIN-NSCLC-FDG-PET",
+      "crdc_series_uuid": "30abebc2-9161-434b-a002-5b693f7d716c",
+      "expected_MB": 9.38445,
+      "expected_instances": 239,
+      "license": "CC BY 3.0",
+      "modality": "PET",
+      "timepoint": "followup"
+    },
+    {
+      "PatientID": "ACRIN-NSCLC-FDG-PET-153",
+      "SeriesDescription": "PET WB",
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.7009.2403.290996947471807561311506448860",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.7009.2403.115927985443584522790541275538",
+      "aws_bucket": "idc-open-data-two",
+      "collection": "ACRIN-NSCLC-FDG-PET",
+      "crdc_series_uuid": "98e51164-17ed-4ecd-ba2a-b3f35fb1192b",
+      "expected_MB": 9.444522,
+      "expected_instances": 262,
+      "license": "CC BY 3.0",
+      "modality": "PET",
+      "timepoint": "baseline"
+    },
+    {
+      "PatientID": "ACRIN-NSCLC-FDG-PET-153",
+      "SeriesDescription": "PET WB",
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.7009.2403.150609159111473866187006240242",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.7009.2403.331802694967215960316671216880",
+      "aws_bucket": "idc-open-data-two",
+      "collection": "ACRIN-NSCLC-FDG-PET",
+      "crdc_series_uuid": "85a73d5e-5c49-48e1-a7d3-01c572c64ab4",
+      "expected_MB": 10.70545,
+      "expected_instances": 297,
+      "license": "CC BY 3.0",
+      "modality": "PET",
+      "timepoint": "followup"
+    }
+  ]
+}
