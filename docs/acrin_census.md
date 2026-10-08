@@ -95,3 +95,23 @@ so the PERCIST liver rules are UNKNOWN; this is the Siemens/CTI pattern.
 - **Optional negative control:** pair 5 (Philips) for the non-BQML refusal path.
 
 **Requires explicit approval before download.**
+
+## Validation against downloaded data (2026-10-08)
+
+Two candidates (094, 153) were downloaded and analysed; see
+[acrin_longitudinal.md](acrin_longitudinal.md).
+
+| Prediction | Result |
+|---|---|
+| Scanner, model, height availability, reconstruction description | correct 4/4 |
+| Strict-SUV eligibility | **wrong 4/4**: all refused with `DECAY_FACTOR_INCONSISTENT` |
+
+**Size estimates were wrong.** They used the smallest CT series, the scout. Real PET + AC CT
+pairs are about 250 MB.
+
+**Census v2 should:**
+- read DecayFactor and FrameReferenceTime from two slices per series, and check
+  DecayFactor = 2^(FRT/T½);
+- record the CT FrameOfReferenceUID against the PET's;
+- record tracer code presence;
+- price the AC CT, not the scout.
