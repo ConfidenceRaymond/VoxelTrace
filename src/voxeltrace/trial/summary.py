@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from collections import Counter, defaultdict
 from typing import Any
 
@@ -205,3 +206,160 @@ def review_worksheet(audit: TrialAudit) -> dict[str, Any]:
                 "previous_status": res.status,
             }
     return {"schema": REVIEW_SCHEMA, "reviews": reviews}
+
+
+# --------------------------------------------------------------------------------------
+# Pair, rule and failure tables; concise report (REAL and SYNTHETIC kept separate)
+# --------------------------------------------------------------------------------------
+
+
+def _origin(p) -> str:
+    return "SYNTHETIC_PERTURBATION" if p.synthetic_perturbation else "REAL"
+
+
+def pair_rows(audit: TrialAudit) -> list[dict[str, Any]]:
+    tps = {(t.subject_id, t.timepoint): t for t in audit.timepoints}
+    rows = []
+    for p in audit.pairs:
+        f = tps.get((p.pair.subject_id, p.pair.followup))
+        rows.append(
+            {
+                "data_origin": _origin(p),
+                "synthetic_perturbation": (f.synthetic_perturbation if f else None) or "",
+                "subject": p.pair.subject_id,
+                "baseline": p.pair.baseline,
+                "followup": p.pair.followup,
+                "ruleset": f"{p.ruleset_id} {p.ruleset_version}",
+                "verdict": p.verdict,
+                "protocol_comparability": p.comparability_category or "",
+                "blocking_fail": ";".join(
+                    c.rule_id for c in p.checks if c.impact == "blocking" and c.status == "FAIL"
+                ),
+                "blocking_unknown": ";".join(
+                    c.rule_id for c in p.checks if c.impact == "blocking" and c.status == "UNKNOWN"
+                ),
+                "warnings": ";".join(
+                    c.rule_id
+                    for c in p.checks
+                    if c.impact == "warning" and c.status in ("FAIL", "UNKNOWN")
+                ),
+                "reason_codes": ";".join(sorted({r.code for r in p.reasons})),
+            }
+        )
+    return rows
+
+
+def rule_rows(audit: TrialAudit) -> list[dict[str, Any]]:
+    """Per rule x data origin: PASS / FAIL / UNKNOWN counts (origins never pooled)."""
+    table: dict[tuple[str, str], Counter] = defaultdict(Counter)
+    meta: dict[str, tuple[str, str]] = {}
+    for p in audit.pairs:
+        for c in p.checks:
+            table[(c.rule_id, _origin(p))][c.status] += 1
+            meta[c.rule_id] = (c.impact, c.standard)
+    return [
+        {
+            "rule_id": rid,
+            "standard": meta[rid][1],
+            "impact": meta[rid][0],
+            "data_origin": origin,
+            "PASS": cnt.get("PASS", 0),
+            "FAIL": cnt.get("FAIL", 0),
+            "UNKNOWN": cnt.get("UNKNOWN", 0),
+        }
+        for (rid, origin), cnt in sorted(table.items())
+    ]
+
+
+def compact_observed(observed: Any) -> str:
+    """JSON of a check's observed value; for field-by-field comparisons only the fields that
+    are not SAME are kept, so the differing field is visible."""
+    if isinstance(observed, dict) and any(v == "SAME" for v in observed.values()):
+        observed = {k: v for k, v in observed.items() if v != "SAME"}
+    return json.dumps(observed, default=str)
+
+
+def failure_rows(audit: TrialAudit) -> list[dict[str, Any]]:
+    """Every FAIL / UNKNOWN check. failure_class: TECHNICAL (a condition was evaluated and
+    not met) or MISSING_DATA (it could not be evaluated). Whether a synthetic failure was
+    expected is judged against pre-declared expectations by the caller, never here."""
+    rows = []
+    for p in audit.pairs:
+        for c in p.checks:
+            if c.status not in ("FAIL", "UNKNOWN"):
+                continue
+            rows.append(
+                {
+                    "data_origin": _origin(p),
+                    "subject": p.pair.subject_id,
+                    "pair": f"{p.pair.baseline}->{p.pair.followup}",
+                    "verdict": p.verdict,
+                    "rule_id": c.rule_id,
+                    "impact": c.impact,
+                    "status": c.status,
+                    "failure_class": "TECHNICAL" if c.status == "FAIL" else "MISSING_DATA",
+                    "observed": compact_observed(c.observed),
+                    "condition": c.expected,
+                    "reason_codes": ";".join(sorted({r.code for r in c.reasons})),
+                    "reason_detail": " | ".join(r.detail for r in c.reasons),
+                }
+            )
+    return rows
+
+
+def audit_report_md(audit: TrialAudit) -> str:
+    """Concise human-readable report. REAL and SYNTHETIC_PERTURBATION findings are kept in
+    separate sections and are never combined into one rate."""
+    lines = [
+        f"# Trial audit {audit.trial_id}: {audit.ruleset_id} ({audit.ruleset_version})",
+        "",
+        "RESEARCH PROTOTYPE - NOT FOR CLINICAL DIAGNOSIS. Comparability/assessability audit "
+        "only; no biological or treatment response is assessed.",
+        "",
+        f"- Scans: {len(audit.timepoints)}; pairs: {len(audit.pairs)}; reference reviews "
+        f"applied: {audit.reference_reviews_applied}",
+    ]
+    if audit.overrides:
+        lines.append(f"- Trial overrides: {'; '.join(audit.overrides)}")
+    for origin, title in (
+        ("REAL", "REAL DATA FINDINGS"),
+        ("SYNTHETIC_PERTURBATION", "SYNTHETIC_PERTURBATION FINDINGS"),
+    ):
+        pairs = [r for r in pair_rows(audit) if r["data_origin"] == origin]
+        lines += ["", f"## {title}", ""]
+        if origin == "REAL":
+            real_tps = [t for t in audit.timepoints if not t.synthetic_perturbation]
+            lines.append(f"Real scans: {len(real_tps)}.")
+            for t in real_tps:
+                refs = ", ".join(
+                    f"{name} {r.status if r else 'NOT_EVALUATED'}"
+                    for name, r in (("liver", t.liver), ("blood pool", t.blood_pool))
+                )
+                lines.append(
+                    f"- {t.subject_id}/{t.timepoint}: SUV {t.suv_status}; {refs}"
+                    + (
+                        f"; timepoint reasons: {sorted({r.code for r in t.reasons})}"
+                        if t.reasons
+                        else ""
+                    )
+                )
+        if not pairs:
+            lines.append(f"Pairs: none ({origin.lower()}).")
+            continue
+        verdicts = Counter(r["verdict"] for r in pairs)
+        lines += [
+            "",
+            "Verdicts: " + ", ".join(f"{v} {verdicts.get(v, 0)}" for v in VERDICTS),
+            "",
+            "| subject | verdict | blocking FAIL | blocking UNKNOWN | warnings |",
+            "|---|---|---|---|---|",
+        ]
+        lines += [
+            f"| {r['subject']} | {r['verdict']} | {r['blocking_fail'] or '-'} | "
+            f"{r['blocking_unknown'] or '-'} | {r['warnings'] or '-'} |"
+            for r in pairs
+        ]
+    lines += ["", "## Reference regions", ""]
+    for region, counts in site_summary(audit)["reference_regions"].items():
+        lines.append(f"- {region}: " + ", ".join(f"{k} {v}" for k, v in sorted(counts.items())))
+    return "\n".join(lines) + "\n"

@@ -79,6 +79,15 @@ COMPARABLE.
 - `reference_regions.csv`, `reference_review_worksheet.yaml`, `reference_qc/*.png`: see
   [reference_regions.md](reference_regions.md).
 - Batch CLI: `scripts/run_trial_audit.py <trial> --out <dir> [--ruleset] [--reviews]`.
+- `pair_verdicts.csv`, `rule_summary.csv` (PASS/FAIL/UNKNOWN per rule), `failure_reasons.csv`
+  (every FAIL/UNKNOWN check, `TECHNICAL` or `MISSING_DATA`, with the differing fields) and
+  `AUDIT_REPORT.md`.
+  - **Origins:** every table carries `data_origin` (`REAL` or `SYNTHETIC_PERTURBATION`).
+  - **No pooling:** REAL and SYNTHETIC findings are never pooled into one rate.
+- Demo cross-rule-set report: `scripts/report_trial_demo.py`.
+  - **QIBA:** synthetic verdicts are checked against the pre-declared `perturb.EXPECTED`.
+  - **PERCIST/EANM:** these have no pre-declared expectations, so failures are labelled
+    *post hoc*.
 
 ## Demo (`../outputs/synthetic_comparability/`)
 

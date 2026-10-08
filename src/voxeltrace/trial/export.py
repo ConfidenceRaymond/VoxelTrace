@@ -11,9 +11,13 @@ import yaml
 from voxeltrace.trial.audit import TrialAudit
 from voxeltrace.trial.summary import (
     REFERENCE_COLUMNS,
+    audit_report_md,
+    failure_rows,
     matrix,
+    pair_rows,
     reference_rows,
     review_worksheet,
+    rule_rows,
     site_summary,
 )
 
@@ -94,6 +98,20 @@ def export_audit(audit: TrialAudit, out_dir: str | Path) -> list[Path]:
         WORKSHEET_HEADER + yaml.safe_dump(review_worksheet(audit), sort_keys=True, width=100)
     )
     paths.append(wpath)
+    for name, rows in (
+        ("pair_verdicts.csv", pair_rows(audit)),
+        ("rule_summary.csv", rule_rows(audit)),
+        ("failure_reasons.csv", failure_rows(audit)),
+    ):
+        path = out / name
+        with path.open("w", newline="") as fh:
+            w = csv.DictWriter(fh, fieldnames=list(rows[0]) if rows else ["empty"])
+            w.writeheader()
+            w.writerows(rows)
+        paths.append(path)
+    mdpath = out / "AUDIT_REPORT.md"
+    mdpath.write_text(audit_report_md(audit))
+    paths.append(mdpath)
     spath = out / "site_summary.json"
     spath.write_text(json.dumps(site_summary(audit), indent=2) + "\n")
     paths.append(spath)
