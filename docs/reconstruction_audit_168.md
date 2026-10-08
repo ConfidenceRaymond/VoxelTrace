@@ -177,3 +177,58 @@ human-accepted liver spheres (read-only). Tolerances are heuristics, not validat
 **Verdicts: unchanged** (PERCIST, QIBA, EANM all INSUFFICIENT_INFORMATION).
 **Part 11 re-run: not performed**, because no documented path was found. All frozen hashes were
 re-checked after the audit and are identical.
+
+Note: the earlier 168 report also listed a `MAROTECH Inc.` private creator at both
+timepoints. It reserves a block with no data elements, so it does not appear in the element
+inventory above.
+
+## 8. Reconstruction evidence trust model (reporting only)
+
+Module `src/voxeltrace/evidence/recon_trust.py`. **No rule imports it** (enforced by a test), so
+VT-PROTOCOL-IDENTITY / `compare_protocols` behaviour is unchanged.
+
+| Level | Source | Can establish identity? |
+|---|---|---|
+| LEVEL_A | structured standard DICOM attribute, present with one value on every slice | yes (A/A) |
+| LEVEL_B | vendor private tag listed in `DOCUMENTED_PRIVATE_TAGS` with a cited document (registry is **empty** today) | yes (B/B); A/B with warning |
+| LEVEL_C | `ReconstructionAttestation` (scanner protocol export, site protocol document, trial imaging charter, physicist attestation) | with warning, **only** if the attestation lists the rule set in `rule_applicability` |
+| LEVEL_D | free text (SeriesDescription, ProtocolName, ImageComments, StudyDescription), never parsed | no |
+| LEVEL_E | image-derived corroboration | no |
+| LEVEL_U | undocumented private tag (`UNSUPPORTED_PRIVATE_TAG`) | no |
+
+**Required parameters:** reconstruction_method, iterations, subsets, post_filter,
+time_of_flight, psf_resolution_modelling.
+- The classic PET IOD has no standard TOF/PSF attribute, so those two need LEVEL_B or LEVEL_C
+  evidence.
+- This is stricter than the current rule. The trust model is a report and gates nothing, so
+  this does not loosen anything.
+
+**Classification:**
+
+| Result | When |
+|---|---|
+| ESTABLISHED | every parameter SAME at A/A or B/B |
+| ESTABLISHED_WITH_WARNING | mixed A/B, applicable attestation, or lower-trust evidence disagreeing |
+| NOT_ESTABLISHED | any parameter lacks establishing evidence at a timepoint |
+| CONTRADICTED | establishing evidence differs between timepoints, or establishing sources conflict within one timepoint |
+
+**`ReconstructionAttestation`** (schema `voxeltrace.recon-attestation/1`):
+- identity and scanner fields: subject, study/series pseudonyms, timepoint, scanner, software;
+- reconstruction fields: method, iterations, subsets, filter, TOF, PSF;
+- source: source_type, source_document, attestor, attested_at, confidence
+  (CONFIRMED/BELIEVED), attachment_sha256 (required, 64-hex), rule_applicability (non-empty).
+
+Simulated attestations are rejected outside tests. **No attestation exists or was created for
+168.**
+
+**Report:** `scripts/recon_provenance_report.py <subject> <ns>` writes
+`recon_provenance.{json,md}` for trial QC, site queries and retrospective audit. It shows:
+- the evidence table with trust levels;
+- missing items;
+- whether identity is establishable, and why;
+- what the site should provide.
+
+It reads attestations only from `<ns>/recon_attestations/*.yaml`, which a site must supply.
+
+For 168 the report says NOT_ESTABLISHED, highest level LEVEL_D, all six parameters
+unresolved.

@@ -136,3 +136,8 @@ Every predicted field matched the full series at both timepoints:
   identity).
 
 **No miss.**
+
+## Reconstruction-provenance audit
+
+See `docs/reconstruction_audit_168.md`. Reconstruction identity is **NOT_ESTABLISHED** (no
+LEVEL_A/B/C evidence). Verdicts are unchanged.
