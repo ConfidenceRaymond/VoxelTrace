@@ -32,8 +32,12 @@ COMPARABLE.
 - Lesion SUVpeak, from the supplied SEG.
 - Protocol evidence.
 - SUL under LBMJAMES128 and LBMJANMA. Missing anthropometrics give `ANTHROPOMETRICS_MISSING`.
-- The liver reference region, only if a reviewed mask or centre is supplied. Otherwise it is
-  `MANUAL_OR_REFERENCE_MASK_REQUIRED`.
+- Liver and blood-pool reference regions ([reference_regions.md](reference_regions.md)):
+  - a supplied mask or centre; or
+  - a deterministic CT-guided proposal (`vt-refauto-1`), which is used only after a human
+    ACCEPT/ADJUST review bound to its `proposal_sha256`.
+  - Otherwise the status is a specific code such as `REFERENCE_REVIEW_REQUIRED` or
+    `REFERENCE_AUTO_NOT_FOUND`.
 - An anonymization-loss audit.
 
 ## Insufficient-information taxonomy (`trial/reasons.py`)
@@ -71,7 +75,10 @@ COMPARABLE.
 - `subject_timepoint_matrix.csv`
 - `pair_checks.csv`: per rule, observed / expected / PASS-FAIL-UNKNOWN / source / reasons.
 - `site_summary.json`: counts, and verdicts by site, scanner, software and reconstruction;
-  insufficient-information counts by reason; failures by rule.
+  insufficient-information counts by reason; failures by rule; reference-region statuses.
+- `reference_regions.csv`, `reference_review_worksheet.yaml`, `reference_qc/*.png`: see
+  [reference_regions.md](reference_regions.md).
+- Batch CLI: `scripts/run_trial_audit.py <trial> --out <dir> [--ruleset] [--reviews]`.
 
 ## Demo (`../outputs/synthetic_comparability/`)
 
@@ -92,6 +99,11 @@ Expected QIBA verdicts (all reproduced):
 | E | ReconstructionMethod, ConvolutionKernel and the Siemens private group removed | INSUFFICIENT_INFORMATION (AMBIGUOUS_RECONSTRUCTION) |
 | F | SCAT removed from CorrectedImage | NOT_ASSESSABLE |
 
-Under PERCIST every pair is INSUFFICIENT_INFORMATION or NOT_ASSESSABLE. No reviewed liver region
-was supplied, and the reason (`MANUAL_OR_REFERENCE_MASK_REQUIRED`) says so; the region is not
-invented.
+Under PERCIST every pair is INSUFFICIENT_INFORMATION or NOT_ASSESSABLE:
+
+- Real baselines get liver and blood-pool proposals, but no human review has been recorded, so
+  the reason is `REFERENCE_REVIEW_REQUIRED`. The worksheet and QC images are written with the
+  audit.
+- Synthetic follow-ups contain no CT in their frame of reference, so the reason is
+  `REFERENCE_AUTO_NOT_FOUND`.
+- No region is invented, and no unreviewed proposal is used.

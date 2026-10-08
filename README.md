@@ -214,7 +214,9 @@ make app              # http://127.0.0.1:8501
   INSUFFICIENT_INFORMATION, each with actionable reason codes.
 - **Also included:**
   - strict SUL (LBMJAMES128 / LBMJANMA);
-  - a supplied-region liver reference measurement;
+  - liver and blood-pool reference measurement: supplied regions, or deterministic
+    CT-guided proposals that count only after a hash-bound human review
+    ([docs/reference_regions.md](docs/reference_regions.md));
   - an anonymization-loss audit;
   - creator-checked vendor private attributes.
 - **Output:** JSON + CSV.
@@ -223,6 +225,9 @@ make app              # http://127.0.0.1:8501
   [docs/trial_rules.md](docs/trial_rules.md).
 
 ```bash
+.venv/bin/python scripts/run_trial_audit.py <trial_dir> --ruleset percist-1.0 --out ../outputs/<name>
+# -> trial_audit.json, subject_timepoint_matrix.csv, pair_checks.csv, site_summary.json,
+#    reference_regions.csv, reference_review_worksheet.yaml, reference_qc/*.png
 .venv/bin/python scripts/build_trial_demo.py   # real baseline + SYNTHETIC_PERTURBATION follow-ups
 # -> ../outputs/synthetic_comparability/audit_<ruleset>/{trial_audit.json,
 #    subject_timepoint_matrix.csv,pair_checks.csv,site_summary.json}

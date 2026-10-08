@@ -47,8 +47,12 @@ Not implemented:
 
 - **SUL formula:** `LBMJAMES128`, as suggested by Practical PERCIST. PERCIST 1.0 itself gives
   no equation.
+- **Liver region:** the liver rules use only `COMPUTED` regions, i.e. supplied, or an
+  automatic proposal after human ACCEPT/ADJUST review
+  ([reference_regions.md](reference_regions.md)).
 - **Not implemented:**
-  - the blood-pool fallback (PERCIST 1.0 text and table disagree on the +2 SD term);
+  - the blood-pool fallback (PERCIST 1.0 text and table disagree on the +2 SD term). The blood
+    pool is measured and reported, but no rule uses it;
   - fasting and glucose;
   - response categories.
 - **Numerical tolerance:** inclusive boundaries are compared with a 1e-9 tolerance. This covers
