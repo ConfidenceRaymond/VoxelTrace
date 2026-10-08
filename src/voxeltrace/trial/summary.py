@@ -108,6 +108,7 @@ REFERENCE_COLUMNS = [
     "sul_mean",
     "sul_sd",
     "usable_by_rules",
+    "review_status",
     "review_decision",
     "reviewer",
     "algorithm_version",
@@ -131,35 +132,76 @@ def reference_rows(audit: TrialAudit) -> list[dict[str, Any]]:
                 d = res.model_dump()
                 row.update({k: d.get(k) for k in REFERENCE_COLUMNS if k in d})
                 row["usable_by_rules"] = res.status == "COMPUTED"
+                row["review_status"] = review_status_of(res)
             rows.append(row)
     return rows
 
 
+def review_status_of(res) -> str:
+    """UNREVIEWED / ACCEPTED / ADJUSTED / REJECTED / OUTDATED / INVALID for an automatic
+    proposal; '' for supplied regions or when no proposal exists."""
+    if res is None or res.source != "AUTO_PROPOSAL" or res.status == "AUTO_NOT_FOUND":
+        return ""
+    return {
+        "PROPOSED_REQUIRES_REVIEW": "UNREVIEWED",
+        "REVIEW_OUTDATED": "OUTDATED",
+        "REVIEW_INVALID": "INVALID",
+        "REJECTED_BY_REVIEWER": "REJECTED",
+    }.get(res.status) or {"ACCEPT": "ACCEPTED", "ADJUST": "ADJUSTED"}.get(
+        res.review_decision or "", ""
+    )
+
+
 def review_worksheet(audit: TrialAudit) -> dict[str, Any]:
-    """Pre-filled reference_review.yaml content for every proposal that still needs a
-    decision (PROPOSED_REQUIRES_REVIEW or REVIEW_STALE). decision stays PENDING until a
-    human edits it."""
+    """Pre-filled reference_review.yaml content (schema voxeltrace.reference-review/2) for
+    every proposal that still needs a decision (UNREVIEWED, OUTDATED or INVALID). Every
+    decision stays PENDING until a human edits it; the Reference Review page is the
+    preferred way to record decisions."""
+    import voxeltrace
+    from voxeltrace.quant.suv import git_state
+    from voxeltrace.trial.reference import REVIEW_SCHEMA, rule_context_for
+
+    commit, dirty = git_state()
     reviews: dict[str, dict[str, Any]] = {}
     for tp in audit.timepoints:
         for region, res in (("LIVER", tp.liver), ("BLOOD_POOL", tp.blood_pool)):
-            if res is None or res.status not in ("PROPOSED_REQUIRES_REVIEW", "REVIEW_STALE"):
+            if review_status_of(res) not in ("UNREVIEWED", "OUTDATED", "INVALID"):
                 continue
+            geom = {
+                "method": res.method
+                or (
+                    "SPHERE_AT_SUPPLIED_CENTRE"
+                    if region == "LIVER"
+                    else "CYLINDER_AT_SUPPLIED_CENTRE"
+                ),
+                "centre_patient_mm": list(res.centre_patient_mm or ()),
+                "diameter_mm": res.diameter_mm,
+                "length_mm": res.length_mm,
+            }
             reviews.setdefault(f"{tp.subject_id}/{tp.timepoint}", {})[region] = {
+                "subject": tp.subject_id,
+                "timepoint": tp.timepoint,
+                "region": region,
                 "decision": "PENDING",
                 "proposal_sha256": res.proposal_sha256,
+                "proposal_algorithm_version": res.algorithm_version,
+                "proposal_geometry": geom,
+                "final_geometry": geom,
                 "reviewer": "",
                 "reviewed_at": "",
-                "centre_patient_mm": None,
                 "note": None,
-                "proposed_centre_patient_mm": list(res.centre_patient_mm or ()),
-                "proposed_size_mm": [res.diameter_mm, res.length_mm],
+                "software_version": voxeltrace.__version__,
+                "git_commit": f"{commit}{'+dirty' if dirty else ''}",
+                "rule_context": rule_context_for(region).model_dump(),
                 "preview_unreviewed": {
                     "suv_mean": res.suv_mean,
+                    "sul_mean": res.sul_mean,
                     "cov": res.cov,
                     "suv_max": res.suv_max,
+                    "voxel_count": res.voxel_count,
                     "measurement_qc": res.refusal or "PASS",
                 },
                 "qc_image": res.qc_image,
                 "previous_status": res.status,
             }
-    return {"reviews": reviews}
+    return {"schema": REVIEW_SCHEMA, "reviews": reviews}

@@ -43,13 +43,15 @@ def run_trial_audit(
     *,
     qc_dir: str | Path | None = None,
     reviews_file: str | Path | None = None,
+    allow_simulated_reviews: bool = False,
 ) -> TrialAudit:
     """Audit a trial directory. ``ruleset`` overrides trial.yaml (explicit, recorded).
     ``qc_dir`` receives reference-proposal QC renders; ``reviews_file`` overrides the
-    trial's reference_review_file."""
+    trial's reference_review_file. ``allow_simulated_reviews`` exists for tests only;
+    production audits ignore SIMULATED review records (they become REVIEW_INVALID)."""
     layout = discover_trial(root)
     review_path = reviews_file or layout.reference_review_file
-    reviews = load_reviews(review_path)
+    reviews = load_reviews(review_path, allow_simulated=allow_simulated_reviews)
     if ruleset is not None:
         layout.config = layout.config.model_copy(update={"ruleset": ruleset})
     rs = effective_ruleset(layout.config)
@@ -98,7 +100,9 @@ def run_trial_audit(
             1
             for t in tps.values()
             for r in (t.liver, t.blood_pool)
-            if r is not None and r.review_decision and r.status != "REVIEW_STALE"
+            if r is not None
+            and r.review_decision
+            and r.status not in ("REVIEW_OUTDATED", "REVIEW_INVALID")
         ),
         reference_reviews_unmatched=sorted(k for k in reviews if tuple(k.split("/", 1)) not in tps),
         timepoints=list(tps.values()),

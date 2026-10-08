@@ -37,9 +37,10 @@ For each subject/timepoint and region, the first matching case applies.
    |---|---|---|
    | none | `PROPOSED_REQUIRES_REVIEW` (values shown for the reviewer only) | **no** |
    | `ACCEPT`, same `proposal_sha256` | `COMPUTED` | yes |
-   | `ADJUST` + `centre_patient_mm`, same sha | `COMPUTED` at the reviewer's centre | yes |
+   | `ADJUST` + moved `final_geometry` centre, same sha | `COMPUTED` at the reviewer's centre | yes |
    | `REJECT`, same sha | `REJECTED_BY_REVIEWER` | no |
-   | any decision, different sha | `REVIEW_STALE` | no |
+   | any decision, different sha or proposal geometry | `REVIEW_OUTDATED` (never reused) | no |
+   | record fails validation, is filed under another scan or region, or is SIMULATED | `REVIEW_INVALID` | no |
    | proposer failed | `AUTO_NOT_FOUND` | no |
 
 3. **Proposals off** (`reference_proposals: off`): `MANUAL_OR_REFERENCE_MASK_REQUIRED`.
@@ -48,9 +49,9 @@ More rules:
 
 - **Binding:** `proposal_sha256` hashes the region, method, centre, size, algorithm version,
   and the PET and CT series pseudonyms. A review therefore applies to exactly one proposal on
-  exactly one scan. Changing the algorithm, or re-exporting the scan, makes the review stale.
-- **Review fields:** a review must name the reviewer and the date. `ADJUST` requires a
-  centre, and only `ADJUST` may carry one.
+  exactly one scan. Changing the algorithm, or re-exporting the scan, makes the review
+  OUTDA- **Review fields and recording:** see [reference_region_review.md](reference_region_review.md)
+  (record schema `voxeltrace.reference-review/2`, review page, ADJUST workflow). one.
 - **Ignored entries:** `PENDING` entries and the display-only worksheet fields are ignored.
 - **Recording:** the audit records how many reviews were applied and lists review keys that
   match no scan.
@@ -60,7 +61,8 @@ More rules:
 | Code | When | Fix |
 |---|---|---|
 | `REFERENCE_REVIEW_REQUIRED` | a proposal exists but has not been reviewed | review the QC image, then record ACCEPT, ADJUST or REJECT |
-| `REFERENCE_REVIEW_STALE` | the review names another proposal | re-review the current proposal |
+| `REFERENCE_REVIEW_OUTDATED` | the review names another proposal | re-review the current proposal |
+| `REFERENCE_REVIEW_INVALID` | the review record is unusable (see detail) | re-record it on the review page |
 | `REFERENCE_REJECTED_BY_REVIEWER` | rejected | ADJUST with a centre, or supply a mask or centre |
 | `REFERENCE_AUTO_NOT_FOUND` | the proposer failed (detail says why, e.g. no CT in the PET frame of reference) | supply a region, or provide the CT |
 | `REFERENCE_QC_FAILED` | an accepted or supplied region failed measurement QC | move the region, or correct the mask |

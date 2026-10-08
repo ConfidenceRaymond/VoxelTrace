@@ -11,7 +11,11 @@ from voxeltrace.evidence.outputs import protocol_for_run
 from voxeltrace.ingest import build_case
 from voxeltrace.ingest.dicom import IngestError, load_series_volume
 from voxeltrace.quant.evidence import quantify_case
-from voxeltrace.quant.reference_auto import ReferenceProposal, propose_reference_regions
+from voxeltrace.quant.reference_auto import (
+    ReferenceProposal,
+    WorkGrid,
+    propose_reference_regions,
+)
 from voxeltrace.quant.reference_region import ReferenceRegionSpec, measure_reference_region
 from voxeltrace.quant.sul import apply_sul, compute_sul
 from voxeltrace.training.ground_truth import pseudonym
@@ -85,8 +89,8 @@ def build_timepoint(
             )
 
         need_auto = auto_reference and any(r not in specs for r in REGIONS)
-        proposals, qc_images = (
-            _auto_proposals(case, run, tp, lesion_masks, qc_dir) if need_auto else ({}, {})
+        proposals, qc_images, _ = (
+            _auto_proposals(case, run, tp, lesion_masks, qc_dir) if need_auto else ({}, {}, None)
         )
         for region in REGIONS:
             res = resolve_region(
@@ -113,7 +117,7 @@ def build_timepoint(
 
 def _auto_proposals(
     case, run, tp: ScanTimepoint, lesion_masks, qc_dir: str | Path | None
-) -> tuple[dict[str, ReferenceProposal], dict[str, str]]:
+) -> tuple[dict[str, ReferenceProposal], dict[str, str], WorkGrid | None]:
     """Deterministic CT-guided proposals (vt-refauto-1) and, if ``qc_dir``, QC renders."""
     pet = case.get_series(run.pet_series_uid or "")
     pet_for = set(pet.frame_of_reference_uids)
@@ -131,13 +135,13 @@ def _auto_proposals(
         }
 
     if not cts:
-        return nf("no CT series in the PET frame of reference"), {}
+        return nf("no CT series in the PET frame of reference"), {}, None
     if len(cts) > 1:
-        return nf(f"{len(cts)} CT series in the PET frame of reference (ambiguous)"), {}
+        return nf(f"{len(cts)} CT series in the PET frame of reference (ambiguous)"), {}, None
     try:
         ct = load_series_volume(cts[0])
     except IngestError as exc:
-        return nf(f"CT not loadable: {exc}"), {}
+        return nf(f"CT not loadable: {exc}"), {}, None
     props, work = propose_reference_regions(
         ct.array,
         ct.geometry,
@@ -161,4 +165,4 @@ def _auto_proposals(
                 render_proposal_qc(work, p, title=f"{tp.subject_id} {tp.timepoint} {region}")
             )
             images[region] = f"{d.name}/{name}"
-    return props, images
+    return props, images, work

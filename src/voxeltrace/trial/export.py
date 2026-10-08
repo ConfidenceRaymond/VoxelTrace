@@ -19,11 +19,13 @@ from voxeltrace.trial.summary import (
 
 WORKSHEET_HEADER = """\
 # VoxelTrace reference-region review worksheet (generated; RESEARCH PROTOTYPE).
-# For each entry: open qc_image, then set decision to ACCEPT, ADJUST (also set
-# centre_patient_mm, LPS mm) or REJECT, and fill reviewer and reviewed_at.
-# Save the edited file as <trial>/reference_review.yaml and re-run the audit.
-# Unreviewed proposals (decision PENDING) are never used by any assessability rule.
-# A review applies only to the proposal_sha256 it names.
+# Preferred: record decisions on the Reference Review page of the VoxelTrace app.
+# By hand: open qc_image, then set decision to ACCEPT (keep final_geometry), ADJUST (move
+# only final_geometry.centre_patient_mm, LPS mm) or REJECT (set final_geometry: null), fill
+# reviewer and reviewed_at (ISO-8601 timestamp), save as <trial>/reference_review.yaml and
+# re-run the audit. PENDING proposals are never used by any assessability rule.
+# A review applies only to the proposal_sha256 it names; if the proposal changes, the
+# review becomes OUTDATED and is not reused.
 """
 
 

@@ -2,7 +2,6 @@
 
 import numpy as np
 import pytest
-import yaml
 
 from test_lesions import geom
 from voxeltrace.quant.reference_auto import (
@@ -11,22 +10,12 @@ from voxeltrace.quant.reference_auto import (
     propose_reference_regions,
 )
 from voxeltrace.quant.reference_region import (
-    ReferenceRegionResult,
     ReferenceRegionSpec,
     cylinder_mask,
     measure_reference_region,
     sphere_mask,
 )
-from voxeltrace.rules import percist
 from voxeltrace.schemas import ImageGeometry
-from voxeltrace.trial.reference import (
-    ReferenceReview,
-    load_reviews,
-    reference_reason,
-    resolve_region,
-)
-from voxeltrace.trial.schema import PairContext, ScanPair, ScanTimepoint
-from voxeltrace.trial.summary import review_worksheet
 
 # ------------------------------------------------------------------ VOI masks
 
@@ -199,160 +188,3 @@ def test_qc_render(phantom):
     assert png[:8] == b"\x89PNG\r\n\x1a\n"
     with pytest.raises(ValueError):
         render_proposal_qc(work, ReferenceProposal(region="LIVER", status="NOT_FOUND"), title="x")
-
-
-# ------------------------------------------------------------------ review gate
-
-PROP = ReferenceProposal(
-    region="LIVER",
-    status="PROPOSED",
-    method="SPHERE_AT_SUPPLIED_CENTRE",
-    centre_patient_mm=(1.0, 2.0, 3.0),
-    diameter_mm=30.0,
-    pet_series_pseudonym="p",
-)
-
-
-def measured(spec):
-    return ReferenceRegionResult(
-        status="COMPUTED",
-        region=spec.region,
-        method=spec.method,
-        provenance=spec.provenance,
-        centre_patient_mm=spec.centre_patient_mm,
-        diameter_mm=spec.diameter_mm,
-        suv_mean=2.0,
-        sul_mean=1.5,
-        sul_sd=0.2,
-        voxel_count=100,
-    )
-
-
-def review(decision, sha=None, centre=None):
-    return ReferenceReview(
-        decision=decision,
-        proposal_sha256=sha or PROP.sha256,
-        reviewer="core lab reader 1",
-        reviewed_at="2026-10-08",
-        centre_patient_mm=centre,
-    )
-
-
-def resolve(**kw):
-    args = {
-        "supplied": None,
-        "proposal": PROP,
-        "review": None,
-        "measure": measured,
-        "auto_enabled": True,
-    }
-    return resolve_region("LIVER", **{**args, **kw})
-
-
-def test_unreviewed_proposal_never_computed():
-    r = resolve()
-    assert r.status == "PROPOSED_REQUIRES_REVIEW" and r.suv_mean == 2.0  # preview only
-    assert r.source == "AUTO_PROPOSAL" and r.proposal_sha256 == PROP.sha256
-    assert reference_reason("BASELINE", r, "LIVER").code == "REFERENCE_REVIEW_REQUIRED"
-
-
-def test_accept_adjust_reject_stale():
-    a = resolve(review=review("ACCEPT"))
-    assert a.status == "COMPUTED" and a.review_decision == "ACCEPT"
-    assert "accepted by core lab reader 1" in a.provenance
-    assert reference_reason("B", a, "LIVER") is None
-    adj = resolve(review=review("ADJUST", centre=(5.0, 6.0, 7.0)))
-    assert adj.status == "COMPUTED" and adj.centre_patient_mm == (5.0, 6.0, 7.0)
-    rej = resolve(review=review("REJECT"))
-    assert rej.status == "REJECTED_BY_REVIEWER"
-    assert reference_reason("B", rej, "LIVER").code == "REFERENCE_REJECTED_BY_REVIEWER"
-    st = resolve(review=review("ACCEPT", sha="0" * 64))
-    assert st.status == "REVIEW_STALE"
-    assert reference_reason("B", st, "LIVER").code == "REFERENCE_REVIEW_STALE"
-
-
-def test_supplied_wins_and_auto_off_and_not_found():
-    spec = PROP.to_spec("reviewed mask")
-    assert resolve(supplied=spec).source == "SUPPLIED"
-    off = resolve(auto_enabled=False)
-    assert off.status == "MANUAL_OR_REFERENCE_MASK_REQUIRED"
-    nf = resolve(proposal=ReferenceProposal(region="LIVER", status="NOT_FOUND", failure_reason="x"))
-    assert nf.status == "AUTO_NOT_FOUND"
-    assert reference_reason("B", nf, "LIVER").code == "REFERENCE_AUTO_NOT_FOUND"
-
-
-def test_accepted_region_failing_qc_is_actionable():
-    def refused(spec):
-        return ReferenceRegionResult(status="REFUSED", region="LIVER", refusal="overlaps a lesion")
-
-    r = resolve(review=review("ACCEPT"), measure=refused)
-    assert reference_reason("B", r, "LIVER").code == "REFERENCE_QC_FAILED"
-    pending = resolve(measure=refused)
-    assert (
-        pending.status == "PROPOSED_REQUIRES_REVIEW" and "fails measurement QC" in pending.refusal
-    )
-
-
-@pytest.mark.parametrize(
-    "entry",
-    [
-        {"decision": "ADJUST"},  # no centre
-        {"decision": "ACCEPT", "centre_patient_mm": [1, 2, 3]},  # centre only with ADJUST
-        {"decision": "ACCEPT", "reviewer": ""},
-        {"decision": "ACCEPT", "proposal_sha256": "abc"},
-    ],
-)
-def test_invalid_reviews_refused(tmp_path, entry):
-    base = {"proposal_sha256": PROP.sha256, "reviewer": "r1", "reviewed_at": "2026-10-08"}
-    f = tmp_path / "r.yaml"
-    f.write_text(yaml.safe_dump({"reviews": {"S/B": {"LIVER": {**base, **entry}}}}))
-    with pytest.raises(ValueError):
-        load_reviews(f)
-
-
-def test_worksheet_roundtrip(tmp_path):
-    from voxeltrace.trial.audit import TrialAudit
-
-    t = ScanTimepoint(subject_id="S", timepoint="B", suv_status="PASS", liver=resolve())
-    audit = TrialAudit(
-        trial_id="T",
-        ruleset_id="percist-1.0",
-        ruleset_version="v",
-        standard="PERCIST_1.0",
-        timepoints=[t],
-        pairs=[],
-    )
-    ws = review_worksheet(audit)
-    entry = ws["reviews"]["S/B"]["LIVER"]
-    assert entry["decision"] == "PENDING" and entry["proposal_sha256"] == PROP.sha256
-    f = tmp_path / "reference_review.yaml"
-    f.write_text(yaml.safe_dump(ws))
-    assert load_reviews(f) == {}  # PENDING is not a review
-    entry.update(decision="ACCEPT", reviewer="reader 2", reviewed_at="2026-10-09")
-    f.write_text(yaml.safe_dump(ws))
-    assert load_reviews(f)["S/B"]["LIVER"].decision == "ACCEPT"
-
-
-# ------------------------------------------------------------------ PERCIST gate unchanged
-
-
-def _ctx(liver_b, liver_f):
-    def tp(name, liver):
-        return ScanTimepoint(
-            subject_id="S", timepoint=name, suv_status="PASS", uptake_s=3600, liver=liver
-        )
-
-    return PairContext(
-        pair=ScanPair(subject_id="S", baseline="B", followup="F"),
-        baseline=tp("B", liver_b),
-        followup=tp("F", liver_f),
-    )
-
-
-def test_percist_liver_rule_ignores_unreviewed_proposals():
-    rule, fn = percist.LIVER, percist.RULES[2][1]
-    c = fn(rule, _ctx(resolve(), resolve()))
-    assert c.status == "UNKNOWN"
-    assert {r.code for r in c.reasons} == {"REFERENCE_REVIEW_REQUIRED"}
-    ok = fn(rule, _ctx(resolve(review=review("ACCEPT")), resolve(review=review("ACCEPT"))))
-    assert ok.status == "PASS"

@@ -28,7 +28,8 @@ ReasonCode = Literal[
     "UNKNOWN_PROVENANCE",
     "MANUAL_OR_REFERENCE_MASK_REQUIRED",
     "REFERENCE_REVIEW_REQUIRED",
-    "REFERENCE_REVIEW_STALE",
+    "REFERENCE_REVIEW_OUTDATED",
+    "REFERENCE_REVIEW_INVALID",
     "REFERENCE_REJECTED_BY_REVIEWER",
     "REFERENCE_AUTO_NOT_FOUND",
     "REFERENCE_QC_FAILED",
@@ -155,12 +156,21 @@ CATALOG: dict[str, ReasonInfo] = {
         what="an automatic reference-region proposal exists but has not been reviewed",
         why_it_matters="unreviewed automatic placements are never used by assessability rules",
         site_can_fix="YES",
-        remediation="open the QC image named in reference_review_worksheet.yaml, then record "
-        "ACCEPT, ADJUST (with centre_patient_mm) or REJECT, the reviewer and the date under the "
-        "same proposal_sha256 in <trial>/reference_review.yaml and re-run the audit",
+        remediation="review the proposal on the Reference Review page (or the exported "
+        "worksheet) and record ACCEPT, ADJUST or REJECT for that proposal_sha256 in "
+        "<trial>/reference_review.yaml, then re-run the audit",
     ),
-    "REFERENCE_REVIEW_STALE": ReasonInfo(
-        code="REFERENCE_REVIEW_STALE",
+    "REFERENCE_REVIEW_INVALID": ReasonInfo(
+        code="REFERENCE_REVIEW_INVALID",
+        what="a review entry exists but fails validation (e.g. filed under another subject or "
+        "region, inconsistent geometry or hash, missing reviewer or timestamp, or SIMULATED)",
+        why_it_matters="an invalid review is never applied",
+        site_can_fix="YES",
+        remediation="re-record the decision with the reference review page, which writes a "
+        "complete, hash-bound record",
+    ),
+    "REFERENCE_REVIEW_OUTDATED": ReasonInfo(
+        code="REFERENCE_REVIEW_OUTDATED",
         what="the recorded review refers to a different proposal than the current one",
         why_it_matters="the reviewed region is not the region that would be measured",
         site_can_fix="YES",

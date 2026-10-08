@@ -215,8 +215,9 @@ make app              # http://127.0.0.1:8501
 - **Also included:**
   - strict SUL (LBMJAMES128 / LBMJANMA);
   - liver and blood-pool reference measurement: supplied regions, or deterministic
-    CT-guided proposals that count only after a hash-bound human review
-    ([docs/reference_regions.md](docs/reference_regions.md));
+    CT-guided proposals that count only after a hash-bound human review on the
+    **Reference Review** app page ([docs/reference_regions.md](docs/reference_regions.md),
+    [docs/reference_region_review.md](docs/reference_region_review.md));
   - an anonymization-loss audit;
   - creator-checked vendor private attributes.
 - **Output:** JSON + CSV.
