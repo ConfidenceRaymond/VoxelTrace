@@ -1,0 +1,186 @@
+{
+  "schema": "voxeltrace.download-provenance/1",
+  "batch": 2,
+  "collection": "ACRIN-NSCLC-FDG-PET",
+  "total_bytes": 523329660,
+  "total_files": 2017,
+  "per_file_hashes": "data/acrin_longitudinal/provenance_manifest_batch2.json (sha256 + S3 ETag per file; not in git)",
+  "series": [
+    {
+      "collection": "ACRIN-NSCLC-FDG-PET",
+      "PatientID": "ACRIN-NSCLC-FDG-PET-050",
+      "timepoint": "baseline",
+      "modality": "PET",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.7009.2403.914695274676168506813503902900",
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.7009.2403.832181422784347731612658887466",
+      "SeriesDescription": "PET WB",
+      "license": "CC BY 3.0",
+      "Manufacturer": "CPS",
+      "ManufacturerModelName": "1080",
+      "SoftwareVersions": [
+        "PS4.0.3"
+      ],
+      "file_count": 390,
+      "bytes": 23444900,
+      "download_source": "s3://idc-open-data-two/7a2ff5f9-88e3-4cea-9e4e-984417a7f922/ (IDC public bucket, HTTPS)",
+      "download_started": "2026-10-08T21:26:40+00:00",
+      "download_finished": "2026-10-08T21:27:49+00:00",
+      "source_checksum": "S3 ETag per object (in data/ manifest)",
+      "series_sha256": "74bfe6e2ff18a5cfe992c317d79b57693af905edd33a8066d17e5706918b9d6d"
+    },
+    {
+      "collection": "ACRIN-NSCLC-FDG-PET",
+      "PatientID": "ACRIN-NSCLC-FDG-PET-050",
+      "timepoint": "baseline",
+      "modality": "CT",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.7009.2403.914695274676168506813503902900",
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.7009.2403.191680041608917127545933186104",
+      "SeriesDescription": "CT WB  5.0  B31s",
+      "license": "CC BY 3.0",
+      "Manufacturer": "SIEMENS",
+      "ManufacturerModelName": "Emotion 6",
+      "SoftwareVersions": [
+        "VB10B"
+      ],
+      "file_count": 390,
+      "bytes": 205736942,
+      "download_source": "s3://idc-open-data-two/701c3ef9-67af-4b0b-8532-12499ed58009/ (IDC public bucket, HTTPS)",
+      "download_started": "2026-10-08T21:27:49+00:00",
+      "download_finished": "2026-10-08T21:29:41+00:00",
+      "source_checksum": "S3 ETag per object (in data/ manifest)",
+      "series_sha256": "3f11f73c5af05fb95db30e7a0b92eba0c213d12f0fc80c41e4e92db2ae29ab7e"
+    },
+    {
+      "collection": "ACRIN-NSCLC-FDG-PET",
+      "PatientID": "ACRIN-NSCLC-FDG-PET-050",
+      "timepoint": "followup",
+      "modality": "PET",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.7009.2403.242551432460469318383189170462",
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.7009.2403.755593937347614119358384083463",
+      "SeriesDescription": "PET WB",
+      "license": "CC BY 3.0",
+      "Manufacturer": "CPS",
+      "ManufacturerModelName": "1080",
+      "SoftwareVersions": [
+        "PS4.0.3"
+      ],
+      "file_count": 390,
+      "bytes": 23444994,
+      "download_source": "s3://idc-open-data-two/7baf5c15-c68d-4251-ab43-6a3623deb02d/ (IDC public bucket, HTTPS)",
+      "download_started": "2026-10-08T21:29:41+00:00",
+      "download_finished": "2026-10-08T21:30:49+00:00",
+      "source_checksum": "S3 ETag per object (in data/ manifest)",
+      "series_sha256": "95547d47d50c979e82f2f7ee691afa5eb4659928c8245e5f58203dfc1b001d21"
+    },
+    {
+      "collection": "ACRIN-NSCLC-FDG-PET",
+      "PatientID": "ACRIN-NSCLC-FDG-PET-050",
+      "timepoint": "followup",
+      "modality": "CT",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.7009.2403.242551432460469318383189170462",
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.7009.2403.228013702784377265453348982200",
+      "SeriesDescription": "CT WB  5.0  B31s",
+      "license": "CC BY 3.0",
+      "Manufacturer": "SIEMENS",
+      "ManufacturerModelName": "Emotion 6",
+      "SoftwareVersions": [
+        "VB10B"
+      ],
+      "file_count": 131,
+      "bytes": 69106956,
+      "download_source": "s3://idc-open-data-two/64806645-70ee-4cc0-8cb9-1dba94465886/ (IDC public bucket, HTTPS)",
+      "download_started": "2026-10-08T21:30:49+00:00",
+      "download_finished": "2026-10-08T21:31:26+00:00",
+      "source_checksum": "S3 ETag per object (in data/ manifest)",
+      "series_sha256": "49e9fb1e8c839bf5445db23550ec530aae32a095b84314989222d7e5babed199"
+    },
+    {
+      "collection": "ACRIN-NSCLC-FDG-PET",
+      "PatientID": "ACRIN-NSCLC-FDG-PET-167",
+      "timepoint": "baseline",
+      "modality": "PET",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.7009.2403.131774250744461470627967802158",
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.7009.2403.188582061928143730423154694959",
+      "SeriesDescription": "PET Attenuation Correction Recon",
+      "license": "CC BY 3.0",
+      "Manufacturer": "GE MEDICAL SYSTEMS",
+      "ManufacturerModelName": "Discovery LS",
+      "SoftwareVersions": [
+        "16.01"
+      ],
+      "file_count": 163,
+      "bytes": 5892126,
+      "download_source": "s3://idc-open-data-two/05820030-3220-4f70-a0df-5c76c6f6ef0f/ (IDC public bucket, HTTPS)",
+      "download_started": "2026-10-08T21:31:26+00:00",
+      "download_finished": "2026-10-08T21:31:49+00:00",
+      "source_checksum": "S3 ETag per object (in data/ manifest)",
+      "series_sha256": "183bcc178fd6b41c2cebd54b27aa6a4852bf86bd2f5f01f74e793fcf026f4f09"
+    },
+    {
+      "collection": "ACRIN-NSCLC-FDG-PET",
+      "PatientID": "ACRIN-NSCLC-FDG-PET-167",
+      "timepoint": "baseline",
+      "modality": "CT",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.7009.2403.131774250744461470627967802158",
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.7009.2403.769596098747991668985631527756",
+      "SeriesDescription": "CT Atten Cor Head In",
+      "license": "CC BY 3.0",
+      "Manufacturer": "GE MEDICAL SYSTEMS",
+      "ManufacturerModelName": "Discovery LS",
+      "SoftwareVersions": [
+        "LightSpeedAppsct_dst_dls_1.7_R2.9N.IRIX646.5"
+      ],
+      "file_count": 163,
+      "bytes": 85911564,
+      "download_source": "s3://idc-open-data-two/3d7774ae-39fb-427c-b5de-0a80348d8df6/ (IDC public bucket, HTTPS)",
+      "download_started": "2026-10-08T21:31:49+00:00",
+      "download_finished": "2026-10-08T21:32:35+00:00",
+      "source_checksum": "S3 ETag per object (in data/ manifest)",
+      "series_sha256": "2d268b8a37305fe18bb0a5fb82cd79672e4796804d032d6fff4887bf4dbac1c5"
+    },
+    {
+      "collection": "ACRIN-NSCLC-FDG-PET",
+      "PatientID": "ACRIN-NSCLC-FDG-PET-167",
+      "timepoint": "followup",
+      "modality": "PET",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.7009.2403.259830295644801885986429936695",
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.7009.2403.736768755780301050358626045124",
+      "SeriesDescription": "PET Attenuation Correction Recon",
+      "license": "CC BY 3.0",
+      "Manufacturer": "GE MEDICAL SYSTEMS",
+      "ManufacturerModelName": "Discovery LS",
+      "SoftwareVersions": [
+        "16.01"
+      ],
+      "file_count": 195,
+      "bytes": 7019858,
+      "download_source": "s3://idc-open-data-two/75505ea7-1286-4c27-abeb-d908b1280753/ (IDC public bucket, HTTPS)",
+      "download_started": "2026-10-08T21:32:35+00:00",
+      "download_finished": "2026-10-08T21:33:03+00:00",
+      "source_checksum": "S3 ETag per object (in data/ manifest)",
+      "series_sha256": "a0c3ca1d3a6106b3bf1e14e0f72f22f4820e393d9bcd10ac33ee6d76ba56c287"
+    },
+    {
+      "collection": "ACRIN-NSCLC-FDG-PET",
+      "PatientID": "ACRIN-NSCLC-FDG-PET-167",
+      "timepoint": "followup",
+      "modality": "CT",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.7009.2403.259830295644801885986429936695",
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.7009.2403.325615227146941294891617287627",
+      "SeriesDescription": "CT Atten Cor Head In",
+      "license": "CC BY 3.0",
+      "Manufacturer": "GE MEDICAL SYSTEMS",
+      "ManufacturerModelName": "Discovery LS",
+      "SoftwareVersions": [
+        "LightSpeedAppsct_dst_dls_1.7_R2.9N.IRIX646.5"
+      ],
+      "file_count": 195,
+      "bytes": 102772320,
+      "download_source": "s3://idc-open-data-two/4b8965ea-7d27-442f-aa9d-c40d07159126/ (IDC public bucket, HTTPS)",
+      "download_started": "2026-10-08T21:33:03+00:00",
+      "download_finished": "2026-10-08T21:34:01+00:00",
+      "source_checksum": "S3 ETag per object (in data/ manifest)",
+      "series_sha256": "aec45ea907ea305fa57adb8a894dceb98c428e70a6d814e439a21996d3b52205"
+    }
+  ]
+}

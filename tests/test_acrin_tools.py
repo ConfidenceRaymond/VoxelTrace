@@ -109,3 +109,19 @@ def test_blocked_by_separates_suv_from_review():
     assert mod.blocked_by(not_eval) == "SUV_REFUSED"
     assert mod.blocked_by(_check("UNKNOWN", "REFERENCE_REVIEW_REQUIRED")) == "REFERENCE_REVIEW"
     assert mod.blocked_by(_check("UNKNOWN", "AMBIGUOUS_RECONSTRUCTION")).startswith("OWN_EVIDENCE")
+
+
+def test_existing_manifest_never_overwritten(fetch, tmp_path, monkeypatch):
+    mod, _ = fetch
+    monkeypatch.setattr(mod, "DEST", tmp_path)
+    (tmp_path / "provenance_manifest.json").write_text("{}")
+    assert mod.main(["x", allow(tmp_path)]) == 2
+    assert (tmp_path / "provenance_manifest.json").read_text() == "{}"
+
+
+def test_existing_subject_directory_stops(fetch, tmp_path, monkeypatch):
+    mod, calls = fetch
+    monkeypatch.setattr(mod, "DEST", tmp_path)
+    (tmp_path / "SUBJ-1").mkdir()
+    assert mod.main(["x", allow(tmp_path), "--manifest", "m2.json"]) == 2
+    assert not (tmp_path / "m2.json").exists()

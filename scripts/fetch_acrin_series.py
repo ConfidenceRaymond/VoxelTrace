@@ -2,6 +2,7 @@
 """Bounded download of EXACT, allow-listed ACRIN series from IDC's public bucket.
 
   fetch_acrin_series.py configs/acrin_longitudinal/allowlist.json [--plan-only]
+      [--manifest provenance_manifest_batch2.json]
 
 Guards (any failure STOPS before or during download, nothing outside the list is fetched):
   * every allow-list entry belongs to an approved subject;
@@ -71,6 +72,12 @@ def list_series(bucket: str, uuid: str) -> list[dict]:
 def main(argv: list[str]) -> int:
     allow = json.loads(Path(argv[1]).read_text())
     plan_only = "--plan-only" in argv
+    manifest_path = DEST / "provenance_manifest.json"
+    if "--manifest" in argv:
+        manifest_path = DEST / argv[argv.index("--manifest") + 1]
+    if not plan_only and manifest_path.exists():
+        print(f"STOP: {manifest_path} exists; refusing to overwrite", file=sys.stderr)
+        return 2
     approved = set(allow["approved_subjects"])
     plans = []
     for s in allow["series"]:
@@ -99,6 +106,10 @@ def main(argv: list[str]) -> int:
     if plan_only:
         return 0
 
+    existing = sorted({s["PatientID"] for s, _o, _m in plans if (DEST / s["PatientID"]).exists()})
+    if existing:
+        print(f"STOP: subject directories already exist: {existing}", file=sys.stderr)
+        return 2
     manifest = {"collection": "ACRIN-NSCLC-FDG-PET", "series": []}
     for s, objs, _mb in plans:
         d = DEST / s["PatientID"] / s["timepoint"] / s["modality"]
@@ -164,7 +175,7 @@ def main(argv: list[str]) -> int:
         )
         print(f"  fetched {s['PatientID']} {s['timepoint']} {s['modality']}: {len(files)} files")
     manifest["total_bytes"] = sum(x["bytes"] for x in manifest["series"])
-    (DEST / "provenance_manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n")
     print(f"total bytes: {manifest['total_bytes']}")
     return 0
 
