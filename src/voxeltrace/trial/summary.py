@@ -141,6 +141,12 @@ def reference_rows(audit: TrialAudit) -> list[dict[str, Any]]:
 def review_status_of(res) -> str:
     """UNREVIEWED / ACCEPTED / ADJUSTED / REJECTED / OUTDATED / INVALID for an automatic
     proposal; '' for supplied regions or when no proposal exists."""
+    if res is not None and res.source == "SYNTHETIC_INHERITED":
+        return (
+            "SYNTHETIC_INHERITED_REFERENCE"
+            if res.status == "SYNTHETIC_INHERITED_REFERENCE"
+            else "INHERITANCE_REFUSED"
+        )
     if res is None or res.source != "AUTO_PROPOSAL" or res.status == "AUTO_NOT_FOUND":
         return ""
     return {

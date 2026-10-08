@@ -469,18 +469,34 @@ STATUS_TO_REASON = {
     "REJECTED_BY_REVIEWER": "REFERENCE_REJECTED_BY_REVIEWER",
     "AUTO_NOT_FOUND": "REFERENCE_AUTO_NOT_FOUND",
     "REFUSED": "REFERENCE_QC_FAILED",
+    "INHERITANCE_REFUSED": "REFERENCE_INHERITANCE_REFUSED",
+    "SYNTHETIC_INHERITED_REFERENCE": "REFERENCE_INHERITANCE_REFUSED",
 }
 
 
 def reference_reason(
-    timepoint: str, res: ReferenceRegionResult | None, region: Region, subject: str | None = None
+    timepoint: str,
+    res: ReferenceRegionResult | None,
+    region: Region,
+    subject: str | None = None,
+    *,
+    synthetic: bool = False,
 ):
-    """Actionable reason when a reference region is not usable (None if COMPUTED). The
-    detail names the exact scan, region and proposal hash that still needs a decision."""
+    """Actionable reason when a reference region is not usable (None if usable). The detail
+    names the exact scan, region and proposal hash that still needs a decision.
+
+    Usable: COMPUTED; or SYNTHETIC_INHERITED_REFERENCE on a SYNTHETIC scan only (it is
+    rejected on real data)."""
     from voxeltrace.trial.reasons import Reason
 
     if res is not None and res.status == "COMPUTED":
         return None
+    if res is not None and res.status == "SYNTHETIC_INHERITED_REFERENCE":
+        if synthetic and res.source == "SYNTHETIC_INHERITED" and res.inherited_from:
+            return None
+        res = res.model_copy(
+            update={"refusal": "synthetic inherited reference offered for a real scan"}
+        )
     where = f"{subject}/{timepoint}" if subject else timepoint
     if res is None:
         return Reason(

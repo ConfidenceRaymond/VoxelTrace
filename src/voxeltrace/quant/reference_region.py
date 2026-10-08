@@ -16,7 +16,7 @@ unless a rule supplies one).
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, Literal
 
 import numpy as np
 from pydantic import BaseModel, Field
@@ -33,6 +33,8 @@ Status = Literal[
     "REJECTED_BY_REVIEWER",
     "REVIEW_OUTDATED",
     "REVIEW_INVALID",
+    "SYNTHETIC_INHERITED_REFERENCE",
+    "INHERITANCE_REFUSED",
     "AUTO_NOT_FOUND",
 ]
 MIN_VOXELS = 10
@@ -66,12 +68,15 @@ class ReferenceRegionResult(BaseModel):
     sul_sd: float | None = None
     qc_warnings: list[QCWarning] = Field(default_factory=list)
     refusal: str | None = None
-    source: Literal["SUPPLIED", "AUTO_PROPOSAL"] | None = None
+    source: Literal["SUPPLIED", "AUTO_PROPOSAL", "SYNTHETIC_INHERITED"] | None = None
     proposal_sha256: str | None = None
     algorithm_version: str | None = None
     review_decision: str | None = None
     reviewer: str | None = None
     qc_image: str | None = None
+    inherited_from: dict[str, Any] | None = Field(
+        default=None, description="SYNTHETIC TEST FIXTURE inheritance provenance"
+    )
 
 
 def _local_grid(

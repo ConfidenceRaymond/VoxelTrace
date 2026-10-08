@@ -44,6 +44,12 @@ class ScanTimepoint(BaseModel):
     injected_bq: float | None = None
     weight_kg: float | None = None
     lesion_suvpeak: float | None = None
+    lesion_suvmax: float | None = None
+    pet_content_sha256: str | None = None
+    pet_synthetic_label: bool = False
+    ct_series_pseudonym: str | None = None
+    ct_geometry_sha256: str | None = None
+    ct_pixel_sha256: str | None = None
     protocol: ProtocolEvidence | None = None
     liver: ReferenceRegionResult | None = None
     blood_pool: ReferenceRegionResult | None = None

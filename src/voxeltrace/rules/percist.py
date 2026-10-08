@@ -104,7 +104,13 @@ MEASURABLE = Rule(
 
 
 def _liver_sul(tp: ScanTimepoint):
-    r = reference_reason(tp.timepoint, tp.liver, "LIVER", subject=tp.subject_id)
+    r = reference_reason(
+        tp.timepoint,
+        tp.liver,
+        "LIVER",
+        subject=tp.subject_id,
+        synthetic=bool(tp.synthetic_perturbation),
+    )
     if r is not None:
         return None, r
     assert tp.liver is not None

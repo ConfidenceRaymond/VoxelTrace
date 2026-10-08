@@ -50,7 +50,15 @@ def _shift_dt(dt: str, minutes: int) -> str:
     return t.strftime("%Y%m%d%H%M%S") + dt[14:]
 
 
-def perturb_case(src_dir: str | Path, dst_dir: str | Path, kind: str) -> Path:
+CT_LABEL = "SYNTHETIC_PERTURBATION CT_COPIED_UNCHANGED_FROM_BASELINE"
+
+
+def perturb_case(
+    src_dir: str | Path, dst_dir: str | Path, kind: str, *, with_ct: bool = False
+) -> Path:
+    """``with_ct`` also copies the baseline CT (pixel data and geometry UNCHANGED) into the
+    synthetic case's new frame of reference, labelled CT_COPIED_UNCHANGED_FROM_BASELINE, and
+    writes ``synthetic_fixture.json`` (trial/synthetic_reference.py)."""
     if kind not in KINDS:
         raise ValueError(kind)
     src_dir, dst_dir = Path(src_dir), Path(dst_dir)
@@ -137,8 +145,65 @@ def perturb_case(src_dir: str | Path, dst_dir: str | Path, kind: str) -> Path:
                             str(s.ReferencedSOPInstanceUID), s.ReferencedSOPInstanceUID
                         )
             ds.save_as(dst_dir / "SEG" / f"{ds.SOPInstanceUID}.dcm", enforce_file_format=True)
+    if with_ct:
+        _copy_ct(case, pet, dst_dir, study, for_uid, src_dir, kind)
     (dst_dir / "SYNTHETIC_PERTURBATION.txt").write_text(
         f"{label}\nDerived from a real public series for testing/demo only. NOT a real "
         "follow-up scan of any patient. Original data were not modified.\n"
     )
     return dst_dir
+
+
+def _copy_ct(case, pet, dst_dir: Path, study: str, for_uid: str, src_dir: Path, kind: str):
+    """Copy the one CT in the PET frame of reference; only UIDs and labels change."""
+    from voxeltrace.trial.synthetic_reference import (
+        FIXTURE_FILE,
+        LABELS,
+        SyntheticFixtureManifest,
+        geometry_sha256,
+        volume_sha256,
+    )
+
+    pet_for = set(pet.frame_of_reference_uids)
+    cts = [
+        s
+        for s in case.series_by_category("CT")
+        if pet_for and set(s.frame_of_reference_uids) == pet_for
+    ]
+    if len(cts) != 1:
+        raise ValueError(f"expected one CT in the PET frame of reference, found {len(cts)}")
+    (ct,) = cts
+    ct_series = generate_uid()
+    (dst_dir / "CT").mkdir()
+    for inst in ct.instances:
+        ds = pydicom.dcmread(inst.path)
+        ds.StudyInstanceUID, ds.SeriesInstanceUID, ds.FrameOfReferenceUID = (
+            study,
+            ct_series,
+            for_uid,
+        )
+        ds.SOPInstanceUID = generate_uid()
+        ds.file_meta.MediaStorageSOPInstanceUID = ds.SOPInstanceUID
+        ds.SeriesDescription = CT_LABEL[:64]
+        ds.ImageComments = (
+            f"{CT_LABEL} - the baseline CT copied unchanged for a synthetic test fixture; "
+            "NOT a real follow-up CT"
+        )
+        ds.save_as(dst_dir / "CT" / f"{ds.SOPInstanceUID}.dcm", enforce_file_format=True)
+    parent_ct = load_series_volume(ct)
+    copied = load_series_volume(next(iter(build_case(dst_dir).series_by_category("CT"))))
+    if volume_sha256(copied.array, copied.geometry) != volume_sha256(
+        parent_ct.array, parent_ct.geometry
+    ):
+        raise RuntimeError("copied CT differs from the parent CT")
+    parent_pet = load_series_volume(pet)
+    manifest = SyntheticFixtureManifest(
+        labels=list(LABELS),
+        perturbation=kind,
+        parent_case_dir=str(Path(src_dir).resolve()),
+        parent_pet_content_sha256=volume_sha256(parent_pet.array, parent_pet.geometry),
+        ct_copied_unchanged=True,
+        ct_geometry_sha256=geometry_sha256(parent_ct.geometry),
+        ct_pixel_sha256=volume_sha256(parent_ct.array, parent_ct.geometry),
+    )
+    (dst_dir / FIXTURE_FILE).write_text(manifest.model_dump_json(indent=2) + "\n")

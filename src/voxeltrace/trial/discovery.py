@@ -29,6 +29,10 @@ class TrialLayout(BaseModel):
     )
     reference_proposals: Literal["auto", "off"] = "auto"
     reference_review_file: str | None = None
+    synthetic_reference_inheritance: dict[str, str] = Field(
+        default_factory=dict,
+        description="synthetic subject/timepoint -> parent subject/timepoint (test fixtures)",
+    )
     synthetic: dict[str, str] = Field(default_factory=dict, description="subject/timepoint")
     scans: dict[str, dict[str, str]] = Field(
         default_factory=dict, description="subject -> timepoint -> dir"
@@ -54,6 +58,9 @@ def discover_trial(root: str | Path) -> TrialLayout:
         reference_proposals=raw.get("reference_proposals", "auto"),
         reference_review_file=str(root / raw.get("reference_review_file", "reference_review.yaml")),
         synthetic=raw.get("synthetic_perturbations", {}) or {},
+        synthetic_reference_inheritance={
+            k: v["parent"] for k, v in (raw.get("synthetic_reference_inheritance") or {}).items()
+        },
     )
     for subj in sorted(p for p in root.iterdir() if p.is_dir()):
         tps = {tp.name: str(tp) for tp in sorted(subj.iterdir()) if tp.is_dir()}

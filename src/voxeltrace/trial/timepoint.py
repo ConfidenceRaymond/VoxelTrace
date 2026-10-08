@@ -23,6 +23,13 @@ from voxeltrace.trial.anonymization import audit_anonymization
 from voxeltrace.trial.reasons import Reason, reason_for_suv_refusal
 from voxeltrace.trial.reference import REGIONS, ReferenceReview, resolve_region
 from voxeltrace.trial.schema import ScanTimepoint
+from voxeltrace.trial.synthetic_reference import (
+    InheritanceRequest,
+    SyntheticFixtureManifest,
+    geometry_sha256,
+    inherit_region,
+    volume_sha256,
+)
 
 SUL_FORMULAS = ("LBMJAMES128", "LBMJANMA")
 
@@ -39,9 +46,12 @@ def build_timepoint(
     reviews: dict[str, ReferenceReview] | None = None,
     auto_reference: bool = True,
     qc_dir: str | Path | None = None,
+    inherit_from: tuple[str, str, ScanTimepoint, dict[str, str | None]] | None = None,
 ) -> ScanTimepoint:
     """``reference_specs``/``reviews`` are keyed by region (LIVER, BLOOD_POOL);
-    ``liver_spec`` is kept for callers that only supply a liver region."""
+    ``liver_spec`` is kept for callers that only supply a liver region.
+    ``inherit_from`` = (parent key, parent case dir, parent timepoint, parent review sha by
+    region) requests SYNTHETIC-fixture reference inheritance (trial/synthetic_reference.py)."""
     specs = dict(reference_specs or {})
     if liver_spec is not None:
         specs.setdefault("LIVER", liver_spec)
@@ -59,6 +69,9 @@ def build_timepoint(
     tp.pet_series_pseudonym = pseudonym(run.pet_series_uid, "pet")
     pet = case.get_series(run.pet_series_uid or "")
     headers = [pydicom.dcmread(i.path, stop_before_pixels=True) for i in pet.instances]
+    tp.pet_synthetic_label = bool(headers) and all(
+        str(h.get("SeriesDescription", "")).startswith("SYNTHETIC_PERTURBATION") for h in headers
+    )
     tp.anonymization = audit_anonymization(headers)
     proto, _ = protocol_for_run(run)
     tp.protocol = proto
@@ -71,6 +84,10 @@ def build_timepoint(
         les = [x for x in run.evidence.measured.lesions if x.voxel_count > 0]
         if les and les[0].suv_peak and les[0].suv_peak.status == "COMPUTED":
             tp.lesion_suvpeak = les[0].suv_peak.value
+        if les:
+            tp.lesion_suvmax = les[0].suv_max
+        act = run.outcome.activity
+        tp.pet_content_sha256 = volume_sha256(act.array, act.geometry)  # type: ignore[union-attr]
         for f in SUL_FORMULAS:
             tp.sul[f] = compute_sul(res, headers, f)  # type: ignore[arg-type]
         sul_img = None
@@ -88,20 +105,48 @@ def build_timepoint(
                 sul=sul_img,
             )
 
-        need_auto = auto_reference and any(r not in specs for r in REGIONS)
+        inherited: dict[str, object] = {}
+        if inherit_from is not None:
+            parent_key, parent_dir, parent_tp, parent_review_sha = inherit_from
+            _ct_fingerprint(case, run, tp)
+            fixture = SyntheticFixtureManifest.load(case_dir)
+            req = InheritanceRequest(
+                child_key=f"{subject}/{timepoint}",
+                parent_key=parent_key,
+                declared_synthetic=bool(synthetic),
+                dicom_synthetic_label=tp.pet_synthetic_label,
+                fixture=fixture,
+                parent_pet_content_sha256=parent_tp.pet_content_sha256,
+                parent_ct_geometry_sha256=parent_tp.ct_geometry_sha256,
+                parent_ct_pixel_sha256=parent_tp.ct_pixel_sha256,
+                child_ct_geometry_sha256=tp.ct_geometry_sha256,
+                child_ct_pixel_sha256=tp.ct_pixel_sha256,
+                parent_fixture_match=fixture is not None
+                and Path(fixture.parent_case_dir).resolve() == Path(parent_dir).resolve(),
+            )
+            for region in REGIONS:
+                if region not in specs:
+                    parent_res = parent_tp.liver if region == "LIVER" else parent_tp.blood_pool
+                    inherited[region] = inherit_region(
+                        region, req, parent_res, parent_review_sha.get(region), measure
+                    )
+        need_auto = auto_reference and any(r not in specs and r not in inherited for r in REGIONS)
         proposals, qc_images, _ = (
             _auto_proposals(case, run, tp, lesion_masks, qc_dir) if need_auto else ({}, {}, None)
         )
         for region in REGIONS:
-            res = resolve_region(
-                region,
-                supplied=specs.get(region),
-                proposal=proposals.get(region),
-                review=(reviews or {}).get(region),
-                measure=measure,
-                auto_enabled=auto_reference,
-                qc_image=qc_images.get(region),
-            )
+            if region in inherited:
+                res = inherited[region]
+            else:
+                res = resolve_region(
+                    region,
+                    supplied=specs.get(region),
+                    proposal=proposals.get(region),
+                    review=(reviews or {}).get(region),
+                    measure=measure,
+                    auto_enabled=auto_reference,
+                    qc_image=qc_images.get(region),
+                )
             if region == "LIVER":
                 tp.liver = res
             else:
@@ -142,6 +187,9 @@ def _auto_proposals(
         ct = load_series_volume(cts[0])
     except IngestError as exc:
         return nf(f"CT not loadable: {exc}"), {}, None
+    tp.ct_series_pseudonym = pseudonym(cts[0].series_uid, "ct")
+    tp.ct_geometry_sha256 = geometry_sha256(ct.geometry)
+    tp.ct_pixel_sha256 = volume_sha256(ct.array, ct.geometry)
     props, work = propose_reference_regions(
         ct.array,
         ct.geometry,
@@ -166,3 +214,27 @@ def _auto_proposals(
             )
             images[region] = f"{d.name}/{name}"
     return props, images, work
+
+
+def _pet_frame_cts(case, run) -> list:
+    pet = case.get_series(run.pet_series_uid or "")
+    pet_for = set(pet.frame_of_reference_uids)
+    return [
+        s
+        for s in case.series
+        if s.category == "CT" and pet_for and set(s.frame_of_reference_uids) == pet_for
+    ]
+
+
+def _ct_fingerprint(case, run, tp: ScanTimepoint) -> None:
+    """Record the CT geometry/pixel hashes (the one CT in the PET frame of reference)."""
+    cts = _pet_frame_cts(case, run)
+    if len(cts) != 1:
+        return
+    try:
+        ct = load_series_volume(cts[0])
+    except IngestError:
+        return
+    tp.ct_series_pseudonym = pseudonym(cts[0].series_uid, "ct")
+    tp.ct_geometry_sha256 = geometry_sha256(ct.geometry)
+    tp.ct_pixel_sha256 = volume_sha256(ct.array, ct.geometry)

@@ -1,0 +1,623 @@
+{
+  "notes": [
+    "Declared from the perturbation code (trial/perturb.py) and the rule logic, before any v2 audit run. Never edited after results.",
+    "EANM-EARL-RECON (warning) is UNKNOWN for SITE-D pairs because the trial configuration declares EARL only for SITE-A.",
+    "Blood-pool regions are inherited and measured but no rule uses them.",
+    "Verdict order: NOT_ASSESSABLE if any blocking FAIL; else INSUFFICIENT_INFORMATION if any blocking UNKNOWN; else ASSESSABLE_WITH_WARNINGS if any warning FAIL/UNKNOWN; else ASSESSABLE. Warnings never change NOT_ASSESSABLE/II verdicts."
+  ],
+  "pairs": {
+    "DEMO-01-IDENTITY": {
+      "basis": "PET copied unchanged (new UIDs only); CT copied unchanged; every rule input identical -> all PASS; inherited liver region measured on identical PET -> delta SUL exactly 0.",
+      "liver_reference": {
+        "delta_sul_abs": 0.0,
+        "expect": "PASS",
+        "tolerance": 1e-12
+      },
+      "perturbation": "identity",
+      "reference_geometry": "identical to the parent baseline's human-accepted geometry (SYNTHETIC_INHERITED_REFERENCE) for every quantified follow-up",
+      "rulesets": {
+        "eanm-fdg-2.0": {
+          "expected_failing_rules": [],
+          "expected_passing_rules": [
+            "EANM-EARL-RECON",
+            "EANM-SAME-SYSTEM-SETTINGS",
+            "EANM-UPTAKE-DIFF",
+            "EANM-UPTAKE-WINDOW",
+            "VT-PROTOCOL-IDENTITY",
+            "VT-SUV-BOTH",
+            "VT-TRACER-SAME"
+          ],
+          "expected_unknown_rules": [],
+          "expected_verdict": "ASSESSABLE",
+          "rule_status": {
+            "EANM-EARL-RECON": "PASS",
+            "EANM-SAME-SYSTEM-SETTINGS": "PASS",
+            "EANM-UPTAKE-DIFF": "PASS",
+            "EANM-UPTAKE-WINDOW": "PASS",
+            "VT-PROTOCOL-IDENTITY": "PASS",
+            "VT-SUV-BOTH": "PASS",
+            "VT-TRACER-SAME": "PASS"
+          }
+        },
+        "percist-1.0": {
+          "expected_failing_rules": [],
+          "expected_passing_rules": [
+            "PERCIST-BASELINE-MEASURABLE",
+            "PERCIST-DOSE-DIFF",
+            "PERCIST-LIVER-SUL-STABILITY",
+            "PERCIST-SAME-SCANNER-SOFTWARE",
+            "PERCIST-UPTAKE-DIFF",
+            "PERCIST-UPTAKE-WINDOW",
+            "VT-PROTOCOL-IDENTITY",
+            "VT-SUV-BOTH",
+            "VT-TRACER-SAME"
+          ],
+          "expected_unknown_rules": [],
+          "expected_verdict": "ASSESSABLE",
+          "rule_status": {
+            "PERCIST-BASELINE-MEASURABLE": "PASS",
+            "PERCIST-DOSE-DIFF": "PASS",
+            "PERCIST-LIVER-SUL-STABILITY": "PASS",
+            "PERCIST-SAME-SCANNER-SOFTWARE": "PASS",
+            "PERCIST-UPTAKE-DIFF": "PASS",
+            "PERCIST-UPTAKE-WINDOW": "PASS",
+            "VT-PROTOCOL-IDENTITY": "PASS",
+            "VT-SUV-BOTH": "PASS",
+            "VT-TRACER-SAME": "PASS"
+          }
+        },
+        "qiba-fdg-1.14": {
+          "expected_failing_rules": [],
+          "expected_passing_rules": [
+            "QIBA-SAME-SYSTEM",
+            "QIBA-UPTAKE-DIFF",
+            "QIBA-UPTAKE-WINDOW",
+            "VT-PROTOCOL-IDENTITY",
+            "VT-SUV-BOTH",
+            "VT-TRACER-SAME"
+          ],
+          "expected_unknown_rules": [],
+          "expected_verdict": "ASSESSABLE",
+          "rule_status": {
+            "QIBA-SAME-SYSTEM": "PASS",
+            "QIBA-UPTAKE-DIFF": "PASS",
+            "QIBA-UPTAKE-WINDOW": "PASS",
+            "VT-PROTOCOL-IDENTITY": "PASS",
+            "VT-SUV-BOTH": "PASS",
+            "VT-TRACER-SAME": "PASS"
+          }
+        }
+      },
+      "site": "SITE-A"
+    },
+    "DEMO-02-RECON_BLUR": {
+      "basis": "pixel data blurred (Gaussian FWHM 6 mm) and ConvolutionKernel changed -> post_filter DIFFERENT -> VT-PROTOCOL-IDENTITY / EANM-SAME-SYSTEM-SETTINGS FAIL; timing, dose and anthropometrics unchanged -> uptake/dose rules PASS; liver: 3 cm sphere deep in homogeneous tissue -> mean nearly preserved, PASS.",
+      "liver_reference": {
+        "delta_sul_abs_max": 0.05,
+        "expect": "PASS",
+        "lesion_suvmax": "DECREASE",
+        "lesion_suvpeak": "DECREASE",
+        "liver_sd": "DECREASE"
+      },
+      "perturbation": "recon_blur",
+      "reference_geometry": "identical to the parent baseline's human-accepted geometry (SYNTHETIC_INHERITED_REFERENCE) for every quantified follow-up",
+      "rulesets": {
+        "eanm-fdg-2.0": {
+          "expected_failing_rules": [
+            "EANM-SAME-SYSTEM-SETTINGS",
+            "VT-PROTOCOL-IDENTITY"
+          ],
+          "expected_passing_rules": [
+            "EANM-UPTAKE-DIFF",
+            "EANM-UPTAKE-WINDOW",
+            "VT-SUV-BOTH",
+            "VT-TRACER-SAME"
+          ],
+          "expected_unknown_rules": [
+            "EANM-EARL-RECON"
+          ],
+          "expected_verdict": "NOT_ASSESSABLE",
+          "rule_status": {
+            "EANM-EARL-RECON": "UNKNOWN",
+            "EANM-SAME-SYSTEM-SETTINGS": "FAIL",
+            "EANM-UPTAKE-DIFF": "PASS",
+            "EANM-UPTAKE-WINDOW": "PASS",
+            "VT-PROTOCOL-IDENTITY": "FAIL",
+            "VT-SUV-BOTH": "PASS",
+            "VT-TRACER-SAME": "PASS"
+          }
+        },
+        "percist-1.0": {
+          "expected_failing_rules": [
+            "VT-PROTOCOL-IDENTITY"
+          ],
+          "expected_passing_rules": [
+            "PERCIST-BASELINE-MEASURABLE",
+            "PERCIST-DOSE-DIFF",
+            "PERCIST-LIVER-SUL-STABILITY",
+            "PERCIST-SAME-SCANNER-SOFTWARE",
+            "PERCIST-UPTAKE-DIFF",
+            "PERCIST-UPTAKE-WINDOW",
+            "VT-SUV-BOTH",
+            "VT-TRACER-SAME"
+          ],
+          "expected_unknown_rules": [],
+          "expected_verdict": "NOT_ASSESSABLE",
+          "rule_status": {
+            "PERCIST-BASELINE-MEASURABLE": "PASS",
+            "PERCIST-DOSE-DIFF": "PASS",
+            "PERCIST-LIVER-SUL-STABILITY": "PASS",
+            "PERCIST-SAME-SCANNER-SOFTWARE": "PASS",
+            "PERCIST-UPTAKE-DIFF": "PASS",
+            "PERCIST-UPTAKE-WINDOW": "PASS",
+            "VT-PROTOCOL-IDENTITY": "FAIL",
+            "VT-SUV-BOTH": "PASS",
+            "VT-TRACER-SAME": "PASS"
+          }
+        },
+        "qiba-fdg-1.14": {
+          "expected_failing_rules": [
+            "VT-PROTOCOL-IDENTITY"
+          ],
+          "expected_passing_rules": [
+            "QIBA-SAME-SYSTEM",
+            "QIBA-UPTAKE-DIFF",
+            "QIBA-UPTAKE-WINDOW",
+            "VT-SUV-BOTH",
+            "VT-TRACER-SAME"
+          ],
+          "expected_unknown_rules": [],
+          "expected_verdict": "NOT_ASSESSABLE",
+          "rule_status": {
+            "QIBA-SAME-SYSTEM": "PASS",
+            "QIBA-UPTAKE-DIFF": "PASS",
+            "QIBA-UPTAKE-WINDOW": "PASS",
+            "VT-PROTOCOL-IDENTITY": "FAIL",
+            "VT-SUV-BOTH": "PASS",
+            "VT-TRACER-SAME": "PASS"
+          }
+        }
+      },
+      "site": "SITE-D"
+    },
+    "DEMO-03-RECON_METADATA": {
+      "basis": "ReconstructionMethod iterations changed in metadata only (pixels identical) -> protocol identity FAIL; liver delta SUL exactly 0 -> PASS.",
+      "liver_reference": {
+        "delta_sul_abs": 0.0,
+        "expect": "PASS",
+        "tolerance": 1e-12
+      },
+      "perturbation": "recon_metadata",
+      "reference_geometry": "identical to the parent baseline's human-accepted geometry (SYNTHETIC_INHERITED_REFERENCE) for every quantified follow-up",
+      "rulesets": {
+        "eanm-fdg-2.0": {
+          "expected_failing_rules": [
+            "EANM-SAME-SYSTEM-SETTINGS",
+            "VT-PROTOCOL-IDENTITY"
+          ],
+          "expected_passing_rules": [
+            "EANM-EARL-RECON",
+            "EANM-UPTAKE-DIFF",
+            "EANM-UPTAKE-WINDOW",
+            "VT-SUV-BOTH",
+            "VT-TRACER-SAME"
+          ],
+          "expected_unknown_rules": [],
+          "expected_verdict": "NOT_ASSESSABLE",
+          "rule_status": {
+            "EANM-EARL-RECON": "PASS",
+            "EANM-SAME-SYSTEM-SETTINGS": "FAIL",
+            "EANM-UPTAKE-DIFF": "PASS",
+            "EANM-UPTAKE-WINDOW": "PASS",
+            "VT-PROTOCOL-IDENTITY": "FAIL",
+            "VT-SUV-BOTH": "PASS",
+            "VT-TRACER-SAME": "PASS"
+          }
+        },
+        "percist-1.0": {
+          "expected_failing_rules": [
+            "VT-PROTOCOL-IDENTITY"
+          ],
+          "expected_passing_rules": [
+            "PERCIST-BASELINE-MEASURABLE",
+            "PERCIST-DOSE-DIFF",
+            "PERCIST-LIVER-SUL-STABILITY",
+            "PERCIST-SAME-SCANNER-SOFTWARE",
+            "PERCIST-UPTAKE-DIFF",
+            "PERCIST-UPTAKE-WINDOW",
+            "VT-SUV-BOTH",
+            "VT-TRACER-SAME"
+          ],
+          "expected_unknown_rules": [],
+          "expected_verdict": "NOT_ASSESSABLE",
+          "rule_status": {
+            "PERCIST-BASELINE-MEASURABLE": "PASS",
+            "PERCIST-DOSE-DIFF": "PASS",
+            "PERCIST-LIVER-SUL-STABILITY": "PASS",
+            "PERCIST-SAME-SCANNER-SOFTWARE": "PASS",
+            "PERCIST-UPTAKE-DIFF": "PASS",
+            "PERCIST-UPTAKE-WINDOW": "PASS",
+            "VT-PROTOCOL-IDENTITY": "FAIL",
+            "VT-SUV-BOTH": "PASS",
+            "VT-TRACER-SAME": "PASS"
+          }
+        },
+        "qiba-fdg-1.14": {
+          "expected_failing_rules": [
+            "VT-PROTOCOL-IDENTITY"
+          ],
+          "expected_passing_rules": [
+            "QIBA-SAME-SYSTEM",
+            "QIBA-UPTAKE-DIFF",
+            "QIBA-UPTAKE-WINDOW",
+            "VT-SUV-BOTH",
+            "VT-TRACER-SAME"
+          ],
+          "expected_unknown_rules": [],
+          "expected_verdict": "NOT_ASSESSABLE",
+          "rule_status": {
+            "QIBA-SAME-SYSTEM": "PASS",
+            "QIBA-UPTAKE-DIFF": "PASS",
+            "QIBA-UPTAKE-WINDOW": "PASS",
+            "VT-PROTOCOL-IDENTITY": "FAIL",
+            "VT-SUV-BOTH": "PASS",
+            "VT-TRACER-SAME": "PASS"
+          }
+        }
+      },
+      "site": "SITE-A"
+    },
+    "DEMO-04-UPTAKE_VIOLATION": {
+      "basis": "RadiopharmaceuticalStartTime 30 min earlier -> follow-up uptake 90.38 min (outside 55-75 / 50-70; diff 30 > 10 / 15 min) -> uptake rules FAIL; decayed dose smaller -> SUV and SUL x 2^(1800/6586.2) = 1.20857 -> liver SUL 1.5918 -> 1.9238, delta 0.332 > 0.3 -> PERCIST-LIVER-SUL-STABILITY FAIL; pixels and recon unchanged -> protocol identity PASS.",
+      "liver_reference": {
+        "delta_sul_approx": 0.332,
+        "expect": "FAIL",
+        "followup_over_baseline_ratio": 1.208568,
+        "ratio_tolerance": 0.0001
+      },
+      "perturbation": "uptake_violation",
+      "reference_geometry": "identical to the parent baseline's human-accepted geometry (SYNTHETIC_INHERITED_REFERENCE) for every quantified follow-up",
+      "rulesets": {
+        "eanm-fdg-2.0": {
+          "expected_failing_rules": [
+            "EANM-UPTAKE-DIFF",
+            "EANM-UPTAKE-WINDOW"
+          ],
+          "expected_passing_rules": [
+            "EANM-SAME-SYSTEM-SETTINGS",
+            "VT-PROTOCOL-IDENTITY",
+            "VT-SUV-BOTH",
+            "VT-TRACER-SAME"
+          ],
+          "expected_unknown_rules": [
+            "EANM-EARL-RECON"
+          ],
+          "expected_verdict": "NOT_ASSESSABLE",
+          "rule_status": {
+            "EANM-EARL-RECON": "UNKNOWN",
+            "EANM-SAME-SYSTEM-SETTINGS": "PASS",
+            "EANM-UPTAKE-DIFF": "FAIL",
+            "EANM-UPTAKE-WINDOW": "FAIL",
+            "VT-PROTOCOL-IDENTITY": "PASS",
+            "VT-SUV-BOTH": "PASS",
+            "VT-TRACER-SAME": "PASS"
+          }
+        },
+        "percist-1.0": {
+          "expected_failing_rules": [
+            "PERCIST-LIVER-SUL-STABILITY",
+            "PERCIST-UPTAKE-DIFF",
+            "PERCIST-UPTAKE-WINDOW"
+          ],
+          "expected_passing_rules": [
+            "PERCIST-BASELINE-MEASURABLE",
+            "PERCIST-DOSE-DIFF",
+            "PERCIST-SAME-SCANNER-SOFTWARE",
+            "VT-PROTOCOL-IDENTITY",
+            "VT-SUV-BOTH",
+            "VT-TRACER-SAME"
+          ],
+          "expected_unknown_rules": [],
+          "expected_verdict": "NOT_ASSESSABLE",
+          "rule_status": {
+            "PERCIST-BASELINE-MEASURABLE": "PASS",
+            "PERCIST-DOSE-DIFF": "PASS",
+            "PERCIST-LIVER-SUL-STABILITY": "FAIL",
+            "PERCIST-SAME-SCANNER-SOFTWARE": "PASS",
+            "PERCIST-UPTAKE-DIFF": "FAIL",
+            "PERCIST-UPTAKE-WINDOW": "FAIL",
+            "VT-PROTOCOL-IDENTITY": "PASS",
+            "VT-SUV-BOTH": "PASS",
+            "VT-TRACER-SAME": "PASS"
+          }
+        },
+        "qiba-fdg-1.14": {
+          "expected_failing_rules": [
+            "QIBA-UPTAKE-DIFF",
+            "QIBA-UPTAKE-WINDOW"
+          ],
+          "expected_passing_rules": [
+            "QIBA-SAME-SYSTEM",
+            "VT-PROTOCOL-IDENTITY",
+            "VT-SUV-BOTH",
+            "VT-TRACER-SAME"
+          ],
+          "expected_unknown_rules": [],
+          "expected_verdict": "NOT_ASSESSABLE",
+          "rule_status": {
+            "QIBA-SAME-SYSTEM": "PASS",
+            "QIBA-UPTAKE-DIFF": "FAIL",
+            "QIBA-UPTAKE-WINDOW": "FAIL",
+            "VT-PROTOCOL-IDENTITY": "PASS",
+            "VT-SUV-BOTH": "PASS",
+            "VT-TRACER-SAME": "PASS"
+          }
+        }
+      },
+      "site": "SITE-D"
+    },
+    "DEMO-05-MISSING_DOSE": {
+      "basis": "RadionuclideTotalDose removed -> strict SUV refused at follow-up -> VT-SUV-BOTH and every rule needing follow-up SUV/uptake/dose/liver UNKNOWN; no FAIL -> INSUFFICIENT_INFORMATION; follow-up liver not evaluated (no inheritance attempted).",
+      "liver_reference": {
+        "expect": "UNKNOWN",
+        "followup_liver": "NOT_EVALUATED"
+      },
+      "perturbation": "missing_dose",
+      "reference_geometry": "identical to the parent baseline's human-accepted geometry (SYNTHETIC_INHERITED_REFERENCE) for every quantified follow-up",
+      "rulesets": {
+        "eanm-fdg-2.0": {
+          "expected_failing_rules": [],
+          "expected_passing_rules": [
+            "EANM-EARL-RECON",
+            "EANM-SAME-SYSTEM-SETTINGS",
+            "VT-PROTOCOL-IDENTITY",
+            "VT-TRACER-SAME"
+          ],
+          "expected_unknown_rules": [
+            "EANM-UPTAKE-DIFF",
+            "EANM-UPTAKE-WINDOW",
+            "VT-SUV-BOTH"
+          ],
+          "expected_verdict": "INSUFFICIENT_INFORMATION",
+          "rule_status": {
+            "EANM-EARL-RECON": "PASS",
+            "EANM-SAME-SYSTEM-SETTINGS": "PASS",
+            "EANM-UPTAKE-DIFF": "UNKNOWN",
+            "EANM-UPTAKE-WINDOW": "UNKNOWN",
+            "VT-PROTOCOL-IDENTITY": "PASS",
+            "VT-SUV-BOTH": "UNKNOWN",
+            "VT-TRACER-SAME": "PASS"
+          }
+        },
+        "percist-1.0": {
+          "expected_failing_rules": [],
+          "expected_passing_rules": [
+            "PERCIST-BASELINE-MEASURABLE",
+            "PERCIST-SAME-SCANNER-SOFTWARE",
+            "VT-PROTOCOL-IDENTITY",
+            "VT-TRACER-SAME"
+          ],
+          "expected_unknown_rules": [
+            "PERCIST-DOSE-DIFF",
+            "PERCIST-LIVER-SUL-STABILITY",
+            "PERCIST-UPTAKE-DIFF",
+            "PERCIST-UPTAKE-WINDOW",
+            "VT-SUV-BOTH"
+          ],
+          "expected_verdict": "INSUFFICIENT_INFORMATION",
+          "rule_status": {
+            "PERCIST-BASELINE-MEASURABLE": "PASS",
+            "PERCIST-DOSE-DIFF": "UNKNOWN",
+            "PERCIST-LIVER-SUL-STABILITY": "UNKNOWN",
+            "PERCIST-SAME-SCANNER-SOFTWARE": "PASS",
+            "PERCIST-UPTAKE-DIFF": "UNKNOWN",
+            "PERCIST-UPTAKE-WINDOW": "UNKNOWN",
+            "VT-PROTOCOL-IDENTITY": "PASS",
+            "VT-SUV-BOTH": "UNKNOWN",
+            "VT-TRACER-SAME": "PASS"
+          }
+        },
+        "qiba-fdg-1.14": {
+          "expected_failing_rules": [],
+          "expected_passing_rules": [
+            "QIBA-SAME-SYSTEM",
+            "VT-PROTOCOL-IDENTITY",
+            "VT-TRACER-SAME"
+          ],
+          "expected_unknown_rules": [
+            "QIBA-UPTAKE-DIFF",
+            "QIBA-UPTAKE-WINDOW",
+            "VT-SUV-BOTH"
+          ],
+          "expected_verdict": "INSUFFICIENT_INFORMATION",
+          "rule_status": {
+            "QIBA-SAME-SYSTEM": "PASS",
+            "QIBA-UPTAKE-DIFF": "UNKNOWN",
+            "QIBA-UPTAKE-WINDOW": "UNKNOWN",
+            "VT-PROTOCOL-IDENTITY": "PASS",
+            "VT-SUV-BOTH": "UNKNOWN",
+            "VT-TRACER-SAME": "PASS"
+          }
+        }
+      },
+      "site": "SITE-A"
+    },
+    "DEMO-06-ANONYMIZATION_LOSS": {
+      "basis": "ReconstructionMethod, ConvolutionKernel and the Siemens 0x0071 private group removed -> reconstruction fields UNKNOWN -> VT-PROTOCOL-IDENTITY / EANM-SAME-SYSTEM-SETTINGS UNKNOWN (AMBIGUOUS_RECONSTRUCTION); pixels, dose, timing and anthropometrics unchanged -> liver delta 0, PASS.",
+      "liver_reference": {
+        "delta_sul_abs": 0.0,
+        "expect": "PASS",
+        "tolerance": 1e-12
+      },
+      "perturbation": "anonymization_loss",
+      "reference_geometry": "identical to the parent baseline's human-accepted geometry (SYNTHETIC_INHERITED_REFERENCE) for every quantified follow-up",
+      "rulesets": {
+        "eanm-fdg-2.0": {
+          "expected_failing_rules": [],
+          "expected_passing_rules": [
+            "EANM-UPTAKE-DIFF",
+            "EANM-UPTAKE-WINDOW",
+            "VT-SUV-BOTH",
+            "VT-TRACER-SAME"
+          ],
+          "expected_unknown_rules": [
+            "EANM-EARL-RECON",
+            "EANM-SAME-SYSTEM-SETTINGS",
+            "VT-PROTOCOL-IDENTITY"
+          ],
+          "expected_verdict": "INSUFFICIENT_INFORMATION",
+          "rule_status": {
+            "EANM-EARL-RECON": "UNKNOWN",
+            "EANM-SAME-SYSTEM-SETTINGS": "UNKNOWN",
+            "EANM-UPTAKE-DIFF": "PASS",
+            "EANM-UPTAKE-WINDOW": "PASS",
+            "VT-PROTOCOL-IDENTITY": "UNKNOWN",
+            "VT-SUV-BOTH": "PASS",
+            "VT-TRACER-SAME": "PASS"
+          }
+        },
+        "percist-1.0": {
+          "expected_failing_rules": [],
+          "expected_passing_rules": [
+            "PERCIST-BASELINE-MEASURABLE",
+            "PERCIST-DOSE-DIFF",
+            "PERCIST-LIVER-SUL-STABILITY",
+            "PERCIST-SAME-SCANNER-SOFTWARE",
+            "PERCIST-UPTAKE-DIFF",
+            "PERCIST-UPTAKE-WINDOW",
+            "VT-SUV-BOTH",
+            "VT-TRACER-SAME"
+          ],
+          "expected_unknown_rules": [
+            "VT-PROTOCOL-IDENTITY"
+          ],
+          "expected_verdict": "INSUFFICIENT_INFORMATION",
+          "rule_status": {
+            "PERCIST-BASELINE-MEASURABLE": "PASS",
+            "PERCIST-DOSE-DIFF": "PASS",
+            "PERCIST-LIVER-SUL-STABILITY": "PASS",
+            "PERCIST-SAME-SCANNER-SOFTWARE": "PASS",
+            "PERCIST-UPTAKE-DIFF": "PASS",
+            "PERCIST-UPTAKE-WINDOW": "PASS",
+            "VT-PROTOCOL-IDENTITY": "UNKNOWN",
+            "VT-SUV-BOTH": "PASS",
+            "VT-TRACER-SAME": "PASS"
+          }
+        },
+        "qiba-fdg-1.14": {
+          "expected_failing_rules": [],
+          "expected_passing_rules": [
+            "QIBA-SAME-SYSTEM",
+            "QIBA-UPTAKE-DIFF",
+            "QIBA-UPTAKE-WINDOW",
+            "VT-SUV-BOTH",
+            "VT-TRACER-SAME"
+          ],
+          "expected_unknown_rules": [
+            "VT-PROTOCOL-IDENTITY"
+          ],
+          "expected_verdict": "INSUFFICIENT_INFORMATION",
+          "rule_status": {
+            "QIBA-SAME-SYSTEM": "PASS",
+            "QIBA-UPTAKE-DIFF": "PASS",
+            "QIBA-UPTAKE-WINDOW": "PASS",
+            "VT-PROTOCOL-IDENTITY": "UNKNOWN",
+            "VT-SUV-BOTH": "PASS",
+            "VT-TRACER-SAME": "PASS"
+          }
+        }
+      },
+      "site": "SITE-D"
+    },
+    "DEMO-07-CORRECTION_MISMATCH": {
+      "basis": "SCAT removed from CorrectedImage (metadata only) -> correction_state DIFFERENT -> protocol identity FAIL; liver delta 0 -> PASS.",
+      "liver_reference": {
+        "delta_sul_abs": 0.0,
+        "expect": "PASS",
+        "tolerance": 1e-12
+      },
+      "perturbation": "correction_mismatch",
+      "reference_geometry": "identical to the parent baseline's human-accepted geometry (SYNTHETIC_INHERITED_REFERENCE) for every quantified follow-up",
+      "rulesets": {
+        "eanm-fdg-2.0": {
+          "expected_failing_rules": [
+            "EANM-SAME-SYSTEM-SETTINGS",
+            "VT-PROTOCOL-IDENTITY"
+          ],
+          "expected_passing_rules": [
+            "EANM-EARL-RECON",
+            "EANM-UPTAKE-DIFF",
+            "EANM-UPTAKE-WINDOW",
+            "VT-SUV-BOTH",
+            "VT-TRACER-SAME"
+          ],
+          "expected_unknown_rules": [],
+          "expected_verdict": "NOT_ASSESSABLE",
+          "rule_status": {
+            "EANM-EARL-RECON": "PASS",
+            "EANM-SAME-SYSTEM-SETTINGS": "FAIL",
+            "EANM-UPTAKE-DIFF": "PASS",
+            "EANM-UPTAKE-WINDOW": "PASS",
+            "VT-PROTOCOL-IDENTITY": "FAIL",
+            "VT-SUV-BOTH": "PASS",
+            "VT-TRACER-SAME": "PASS"
+          }
+        },
+        "percist-1.0": {
+          "expected_failing_rules": [
+            "VT-PROTOCOL-IDENTITY"
+          ],
+          "expected_passing_rules": [
+            "PERCIST-BASELINE-MEASURABLE",
+            "PERCIST-DOSE-DIFF",
+            "PERCIST-LIVER-SUL-STABILITY",
+            "PERCIST-SAME-SCANNER-SOFTWARE",
+            "PERCIST-UPTAKE-DIFF",
+            "PERCIST-UPTAKE-WINDOW",
+            "VT-SUV-BOTH",
+            "VT-TRACER-SAME"
+          ],
+          "expected_unknown_rules": [],
+          "expected_verdict": "NOT_ASSESSABLE",
+          "rule_status": {
+            "PERCIST-BASELINE-MEASURABLE": "PASS",
+            "PERCIST-DOSE-DIFF": "PASS",
+            "PERCIST-LIVER-SUL-STABILITY": "PASS",
+            "PERCIST-SAME-SCANNER-SOFTWARE": "PASS",
+            "PERCIST-UPTAKE-DIFF": "PASS",
+            "PERCIST-UPTAKE-WINDOW": "PASS",
+            "VT-PROTOCOL-IDENTITY": "FAIL",
+            "VT-SUV-BOTH": "PASS",
+            "VT-TRACER-SAME": "PASS"
+          }
+        },
+        "qiba-fdg-1.14": {
+          "expected_failing_rules": [
+            "VT-PROTOCOL-IDENTITY"
+          ],
+          "expected_passing_rules": [
+            "QIBA-SAME-SYSTEM",
+            "QIBA-UPTAKE-DIFF",
+            "QIBA-UPTAKE-WINDOW",
+            "VT-SUV-BOTH",
+            "VT-TRACER-SAME"
+          ],
+          "expected_unknown_rules": [],
+          "expected_verdict": "NOT_ASSESSABLE",
+          "rule_status": {
+            "QIBA-SAME-SYSTEM": "PASS",
+            "QIBA-UPTAKE-DIFF": "PASS",
+            "QIBA-UPTAKE-WINDOW": "PASS",
+            "VT-PROTOCOL-IDENTITY": "FAIL",
+            "VT-SUV-BOTH": "PASS",
+            "VT-TRACER-SAME": "PASS"
+          }
+        }
+      },
+      "site": "SITE-A"
+    }
+  },
+  "schema": "voxeltrace.synthetic-expectations/1",
+  "trial": "VOXELTRACE-DEMO-002 (outputs/synthetic_comparability/trial_demo_v2)",
+  "written_before_first_v2_audit": true
+}

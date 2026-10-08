@@ -56,20 +56,38 @@ def run_trial_audit(
         layout.config = layout.config.model_copy(update={"ruleset": ruleset})
     rs = effective_ruleset(layout.config)
     tps: dict[tuple[str, str], ScanTimepoint] = {}
-    for subj, scans in layout.scans.items():
-        for tp_name, d in scans.items():
-            key = f"{subj}/{tp_name}"
-            tps[(subj, tp_name)] = build_timepoint(
-                d,
-                subject=subj,
-                timepoint=tp_name,
-                site=layout.sites.get(subj),
-                synthetic=layout.synthetic.get(key),
-                reference_specs=layout.reference_regions.get(key),
-                reviews=reviews.get(key),
-                auto_reference=layout.reference_proposals == "auto",
-                qc_dir=qc_dir,
+    inheriting = layout.synthetic_reference_inheritance
+    order = [
+        (subj, tp_name, d) for subj, scans in layout.scans.items() for tp_name, d in scans.items()
+    ]
+    # parents first: a synthetic fixture can only inherit from an already-audited scan
+    order.sort(key=lambda x: f"{x[0]}/{x[1]}" in inheriting)
+    for subj, tp_name, d in order:
+        key = f"{subj}/{tp_name}"
+        inherit = None
+        if key in inheriting:
+            pkey = inheriting[key]
+            psubj, ptp = pkey.split("/", 1)
+            parent_reviews = reviews.get(pkey, {})
+            inherit = (
+                pkey,
+                layout.scans.get(psubj, {}).get(ptp, ""),
+                tps.get((psubj, ptp)) or ScanTimepoint(subject_id=psubj, timepoint=ptp),
+                {r: getattr(v, "review_sha256", None) for r, v in parent_reviews.items()},
             )
+        tps[(subj, tp_name)] = build_timepoint(
+            d,
+            subject=subj,
+            timepoint=tp_name,
+            site=layout.sites.get(subj),
+            synthetic=layout.synthetic.get(key),
+            reference_specs=layout.reference_regions.get(key),
+            reviews=reviews.get(key),
+            auto_reference=layout.reference_proposals == "auto",
+            qc_dir=qc_dir,
+            inherit_from=inherit,
+        )
+    tps = {k: tps[k] for k in sorted(tps, key=lambda k: list(layout.scans).index(k[0]))}
     pairs = []
     for subj, scans in layout.scans.items():
         for pair in make_pairs(subj, list(scans), layout.timepoint_order):

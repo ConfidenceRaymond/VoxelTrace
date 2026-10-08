@@ -33,6 +33,7 @@ ReasonCode = Literal[
     "REFERENCE_REJECTED_BY_REVIEWER",
     "REFERENCE_AUTO_NOT_FOUND",
     "REFERENCE_QC_FAILED",
+    "REFERENCE_INHERITANCE_REFUSED",
     "ANTHROPOMETRICS_MISSING",
     "SUV_REFUSED",
 ]
@@ -192,6 +193,18 @@ CATALOG: dict[str, ReasonInfo] = {
         site_can_fix="YES",
         remediation="supply a reference-region mask or reviewed centre in trial.yaml "
         "reference_regions, or provide the attenuation-correction CT with the PET",
+    ),
+    "REFERENCE_INHERITANCE_REFUSED": ReasonInfo(
+        code="REFERENCE_INHERITANCE_REFUSED",
+        what="a synthetic-fixture reference inheritance was declared but refused (real scan, "
+        "missing synthetic label or fixture manifest, parent PET hash, CT geometry or CT pixel "
+        "mismatch, or no accepted parent region), or an inherited region was offered for "
+        "a real scan",
+        why_it_matters="inherited reference geometry is valid only for synthetic test fixtures "
+        "whose CT is the unchanged parent CT; it is never a substitute for human review",
+        site_can_fix="NO",
+        remediation="real scans need a supplied region or a human-reviewed proposal; fix the "
+        "synthetic fixture if this is a test fixture",
     ),
     "REFERENCE_QC_FAILED": ReasonInfo(
         code="REFERENCE_QC_FAILED",
