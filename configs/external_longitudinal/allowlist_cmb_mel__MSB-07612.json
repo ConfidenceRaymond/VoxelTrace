@@ -1,0 +1,69 @@
+{
+  "schema": "voxeltrace.bounded-download/1",
+  "approval": "autonomous session budget (<=3 pairs, <=2.5 GB); frozen plan cmb_mel__MSB-07612.json sha256 566af5f935aae7fc57feeac556831a3c216065a524f98414d7766dfa4b810682",
+  "approved_subjects": [
+    "MSB-07612"
+  ],
+  "collection": "cmb_mel",
+  "expected_MB": 41.912,
+  "expected_instances": 486,
+  "expected_series": 4,
+  "series": [
+    {
+      "PatientID": "MSB-07612",
+      "collection": "cmb_mel",
+      "timepoint": "baseline",
+      "modality": "PET",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.1.24055841503661793155034863552885250157",
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.1.20847958817106647557734308212955091330",
+      "SeriesDescription": "PET Legs",
+      "aws_bucket": "idc-open-data",
+      "crdc_series_uuid": "5a6b5925-f1ba-4509-bdd5-8e0a2a805f2d",
+      "expected_instances": 242,
+      "expected_MB": 20.42907,
+      "license": "CC BY 4.0"
+    },
+    {
+      "PatientID": "MSB-07612",
+      "collection": "cmb_mel",
+      "timepoint": "baseline",
+      "modality": "CT",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.1.24055841503661793155034863552885250157",
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.1.15960766418368701575291184768576325791",
+      "SeriesDescription": "Topogram  0.6  T80s",
+      "aws_bucket": "idc-open-data",
+      "crdc_series_uuid": "f16f0879-8b92-4a96-9c10-99e3bef56493",
+      "expected_instances": 1,
+      "expected_MB": 0.527542,
+      "license": "CC BY 4.0"
+    },
+    {
+      "PatientID": "MSB-07612",
+      "collection": "cmb_mel",
+      "timepoint": "followup",
+      "modality": "PET",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.1.27947005095968694959507874549794657382",
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.1.14121659268465273120301421351228861317",
+      "SeriesDescription": "PET Legs",
+      "aws_bucket": "idc-open-data",
+      "crdc_series_uuid": "95842d8f-e5f5-4caf-afec-9931060d9156",
+      "expected_instances": 242,
+      "expected_MB": 20.427544,
+      "license": "CC BY 4.0"
+    },
+    {
+      "PatientID": "MSB-07612",
+      "collection": "cmb_mel",
+      "timepoint": "followup",
+      "modality": "CT",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.1.27947005095968694959507874549794657382",
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.1.24311648417789211691098928663041970430",
+      "SeriesDescription": "Topogram  0.6  T80s",
+      "aws_bucket": "idc-open-data",
+      "crdc_series_uuid": "0ee2697e-96ee-494f-b4f8-cb2180dc8829",
+      "expected_instances": 1,
+      "expected_MB": 0.527546,
+      "license": "CC BY 4.0"
+    }
+  ]
+}

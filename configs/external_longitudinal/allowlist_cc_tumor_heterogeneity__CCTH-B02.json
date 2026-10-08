@@ -1,0 +1,69 @@
+{
+  "schema": "voxeltrace.bounded-download/1",
+  "approval": "autonomous session budget (<=3 pairs, <=2.5 GB); frozen plan cc_tumor_heterogeneity__CCTH-B02.json sha256 ce68f3b022f4ba17940c480c078ff548091fa79e464ecf86a03a5fbc814758a8",
+  "approved_subjects": [
+    "CCTH-B02"
+  ],
+  "collection": "cc_tumor_heterogeneity",
+  "expected_MB": 348.568,
+  "expected_instances": 1059,
+  "expected_series": 4,
+  "series": [
+    {
+      "PatientID": "CCTH-B02",
+      "collection": "cc_tumor_heterogeneity",
+      "timepoint": "baseline",
+      "modality": "PET",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.196114644343233994210662291805492812225",
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.96620522366548990494456841589368684401",
+      "SeriesDescription": "PET AC WB",
+      "aws_bucket": "idc-open-data",
+      "crdc_series_uuid": "10188f45-5afe-455c-aaa2-9bd767eefc61",
+      "expected_instances": 250,
+      "expected_MB": 21.309258,
+      "license": "CC BY 4.0"
+    },
+    {
+      "PatientID": "CCTH-B02",
+      "collection": "cc_tumor_heterogeneity",
+      "timepoint": "baseline",
+      "modality": "CT",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.196114644343233994210662291805492812225",
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.215206712697595927313084343107235168731",
+      "SeriesDescription": "CT WB  FUSION",
+      "aws_bucket": "idc-open-data",
+      "crdc_series_uuid": "0f7a88e7-53c5-4991-90e2-8e7c23e7ea25",
+      "expected_instances": 260,
+      "expected_MB": 137.412576,
+      "license": "CC BY 4.0"
+    },
+    {
+      "PatientID": "CCTH-B02",
+      "collection": "cc_tumor_heterogeneity",
+      "timepoint": "followup",
+      "modality": "PET",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.75909761304113700902597075497437769350",
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.169824462257312048501899085355769046642",
+      "SeriesDescription": "PET AC WB",
+      "aws_bucket": "idc-open-data",
+      "crdc_series_uuid": "8e3e90de-26e9-4b1f-b3e9-3ae5b0539bd2",
+      "expected_instances": 226,
+      "expected_MB": 19.21222,
+      "license": "CC BY 4.0"
+    },
+    {
+      "PatientID": "CCTH-B02",
+      "collection": "cc_tumor_heterogeneity",
+      "timepoint": "followup",
+      "modality": "CT",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.75909761304113700902597075497437769350",
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.267153819049775512592677922150942201799",
+      "SeriesDescription": "CT WB  FUSION2mm",
+      "aws_bucket": "idc-open-data",
+      "crdc_series_uuid": "b54f2c89-5207-4515-9bb5-c5c4355b28db",
+      "expected_instances": 323,
+      "expected_MB": 170.634114,
+      "license": "CC BY 4.0"
+    }
+  ]
+}

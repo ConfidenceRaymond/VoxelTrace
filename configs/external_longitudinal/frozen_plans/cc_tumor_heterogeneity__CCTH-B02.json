@@ -1,0 +1,101 @@
+{
+  "schema": "voxeltrace.download-plan/1",
+  "created": "2026-10-08T23:53:42+00:00",
+  "frozen_before_download": true,
+  "collection": "cc_tumor_heterogeneity",
+  "subject": "CCTH-B02",
+  "timepoints": {
+    "baseline": "1.3.6.1.4.1.14519.5.2.1.96620522366548990494456841589368684401",
+    "followup": "1.3.6.1.4.1.14519.5.2.1.169824462257312048501899085355769046642"
+  },
+  "series": [
+    {
+      "PatientID": "CCTH-B02",
+      "collection": "cc_tumor_heterogeneity",
+      "timepoint": "baseline",
+      "modality": "PET",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.196114644343233994210662291805492812225",
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.96620522366548990494456841589368684401",
+      "SeriesDescription": "PET AC WB",
+      "aws_bucket": "idc-open-data",
+      "crdc_series_uuid": "10188f45-5afe-455c-aaa2-9bd767eefc61",
+      "expected_instances": 250,
+      "expected_MB": 21.309258,
+      "license": "CC BY 4.0"
+    },
+    {
+      "PatientID": "CCTH-B02",
+      "collection": "cc_tumor_heterogeneity",
+      "timepoint": "baseline",
+      "modality": "CT",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.196114644343233994210662291805492812225",
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.215206712697595927313084343107235168731",
+      "SeriesDescription": "CT WB  FUSION",
+      "aws_bucket": "idc-open-data",
+      "crdc_series_uuid": "0f7a88e7-53c5-4991-90e2-8e7c23e7ea25",
+      "expected_instances": 260,
+      "expected_MB": 137.412576,
+      "license": "CC BY 4.0"
+    },
+    {
+      "PatientID": "CCTH-B02",
+      "collection": "cc_tumor_heterogeneity",
+      "timepoint": "followup",
+      "modality": "PET",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.75909761304113700902597075497437769350",
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.169824462257312048501899085355769046642",
+      "SeriesDescription": "PET AC WB",
+      "aws_bucket": "idc-open-data",
+      "crdc_series_uuid": "8e3e90de-26e9-4b1f-b3e9-3ae5b0539bd2",
+      "expected_instances": 226,
+      "expected_MB": 19.21222,
+      "license": "CC BY 4.0"
+    },
+    {
+      "PatientID": "CCTH-B02",
+      "collection": "cc_tumor_heterogeneity",
+      "timepoint": "followup",
+      "modality": "CT",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.75909761304113700902597075497437769350",
+      "SeriesInstanceUID": "1.3.6.1.4.1.14519.5.2.1.267153819049775512592677922150942201799",
+      "SeriesDescription": "CT WB  FUSION2mm",
+      "aws_bucket": "idc-open-data",
+      "crdc_series_uuid": "b54f2c89-5207-4515-9bb5-c5c4355b28db",
+      "expected_instances": 323,
+      "expected_MB": 170.634114,
+      "license": "CC BY 4.0"
+    }
+  ],
+  "expected_files": 1059,
+  "expected_MB": 348.568,
+  "license": [
+    "CC BY 4.0"
+  ],
+  "expected_vendor_scanner": "SIEMENS Biograph64 / SIEMENS Biograph64",
+  "census_prediction": {
+    "class": "FULLY_DECIDABLE_LIKELY",
+    "qiba": "INSUFFICIENT_INFORMATION",
+    "eanm": "INSUFFICIENT_INFORMATION",
+    "percist": "INSUFFICIENT_INFORMATION",
+    "qiba_if_voxel_confirmed": "ASSESSABLE",
+    "eanm_if_voxel_confirmed": "ASSESSABLE_WITH_WARNINGS",
+    "percist_if_voxel_confirmed": "INSUFFICIENT_INFORMATION",
+    "percist_readiness": "PERCIST_BLOCKED_BY_SUL",
+    "suv": "PASS / PASS",
+    "decay_crosscheck": "CHECKED_ON_SAMPLES",
+    "height": "False / False",
+    "uptake_min": "71.1 / 66.2",
+    "ct_for": "True / True",
+    "tracer": "Fluorodeoxyglucose / Fluorodeoxyglucose",
+    "recon_reconstruction_method": "PSF 3i24s / PSF 3i24s",
+    "recon_iterations": "3 / 3",
+    "recon_subsets": "24 / 24",
+    "recon_convolution_kernel": "['XYZ Gauss4.00'] / ['XYZ Gauss4.00']",
+    "recon_time_of_flight": "None / None",
+    "recon_psf_resolution_modelling": "True / True",
+    "seg_baseline": "none"
+  },
+  "expected_blockers": "voxel size: confirm on download",
+  "why_worth_downloading": "Different site/collection and older Siemens software (Biograph64, syngo MI.PET/CT 2011A). Predicted QIBA ASSESSABLE / EANM ASSESSABLE_WITH_WARNINGS, but no PatientSize: exercises real-data SUL refusal (PERCIST_BLOCKED_BY_SUL) while QIBA/EANM can be decided. Tests census accuracy on a collection whose first sampling pass failed.",
+  "guards": "exact series prefixes only; instance count and size checked before download"
+}

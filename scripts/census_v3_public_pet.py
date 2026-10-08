@@ -24,6 +24,8 @@ Analysis:
   * classification (precedence order):
       FULLY_DECIDABLE_LIKELY   FDG; QIBA and EANM have no blocking UNKNOWN; strict SUV passes
                                at both timepoints without DECAY_FACTOR_UNVERIFIED
+      QIBA_DECIDABLE_LIKELY    as above for QIBA only (EANM still has a blocking UNKNOWN)
+      EANM_DECIDABLE_LIKELY    as above for EANM only
       DECIDABLE_WITH_WARNING   as above but SUV passes only with DECAY_FACTOR_UNVERIFIED, or
                                the only blocking unknown is voxel size (a 12-slice sampling
                                artefact that a full download resolves)
@@ -491,6 +493,8 @@ def score_pair(col, pid, b, f, rulesets, segs) -> dict:
             b["pet_MB"] + f["pet_MB"] + (b["ct_min_MB"] or 0) + (f["ct_min_MB"] or 0), 1
         ),
         "license": b["license"],
+        "pet_series_baseline": b["SeriesInstanceUID"],
+        "pet_series_followup": f["SeriesInstanceUID"],
     }
     if any(t in ("PSMA", "AMYLOID", "TAU", "OTHER") for t in tc) and "UNKNOWN" not in tc:
         out.update(cls="REQUIRES_TRACER_SPECIFIC_RULESET", qiba="NOT_EVALUATED (non-FDG)",
@@ -549,12 +553,24 @@ def score_pair(col, pid, b, f, rulesets, segs) -> dict:
         readiness = "PERCIST_READY (pending human review of liver + lesion)"
     else:
         readiness = "PERCIST_LIVER_READY_BUT_LESION_MISSING"
-    decided = not unk or sampling_only
+
+    def rs_decided(res) -> bool:
+        u = set(_blocking(res, "UNKNOWN"))
+        return not u or (
+            sampling_only and u <= {"VT-PROTOCOL-IDENTITY", "EANM-SAME-SYSTEM-SETTINGS"}
+        )
+
+    q_dec, e_dec = rs_decided(q), rs_decided(e)
+    decided = q_dec and e_dec
     if tc != ("FDG", "FDG"):
         cls = "LIKELY_INSUFFICIENT"  # tracer unknown at >= 1 timepoint: never a pass
     elif suv_both and decided and not unverified:
         cls = "FULLY_DECIDABLE_LIKELY"
-    elif suv_both and decided:
+    elif suv_both and q_dec and not unverified:
+        cls = "QIBA_DECIDABLE_LIKELY"
+    elif suv_both and e_dec and not unverified:
+        cls = "EANM_DECIDABLE_LIKELY"
+    elif suv_both and (q_dec or e_dec):
         cls = "DECIDABLE_WITH_WARNING"
     elif suv_both and height and ct_both and lesion_ok and not pfail:
         cls = "PERCIST_POSSIBLE"
@@ -564,6 +580,8 @@ def score_pair(col, pid, b, f, rulesets, segs) -> dict:
     out.update(
         {
             "class": cls,
+            "qiba_decidable": q_dec,
+            "eanm_decidable": e_dec,
             "qiba": q.verdict,
             "eanm": e.verdict,
             "percist": p.verdict,
@@ -588,9 +606,11 @@ def score_pair(col, pid, b, f, rulesets, segs) -> dict:
     )
     order = {
         "FULLY_DECIDABLE_LIKELY": 0,
-        "DECIDABLE_WITH_WARNING": 1,
-        "PERCIST_POSSIBLE": 2,
-        "LIKELY_INSUFFICIENT": 3,
+        "QIBA_DECIDABLE_LIKELY": 1,
+        "EANM_DECIDABLE_LIKELY": 1,
+        "DECIDABLE_WITH_WARNING": 2,
+        "PERCIST_POSSIBLE": 3,
+        "LIKELY_INSUFFICIENT": 4,
     }
     out["_key"] = (
         order[cls],
