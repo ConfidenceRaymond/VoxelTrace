@@ -83,3 +83,14 @@ CURRENT_ASSIGNMENT_COMPLETE = YES
 
   Every series download was planned and committed before the fetch.
 - **No review of any kind was created.** SIMULATED reviews exist only inside tests.
+
+## Commercialization-preparation cycle (2026-10-09, from a46526c)
+
+| # | Workstream | Status | Commit |
+|---|---|---|---|
+| C1 | Internal DEVELOPMENT_ONLY review records (Parts 1, 2, 28) | **BLOCKED**: the action was denied by the session's permission classifier; no record or schema change was written. Needs the owner's direct confirmation or the owner's own review in the app | — |
+| C2 | Tag v0.3.0-external-validation | already created and pushed by the owner (tag 7baabfe → a46526c); verified: 27/27 answer-key verdicts reproduce | — |
+| C3 | External validation gate doc | COMPLETE | 1465cd1 |
+| C4 | Friction removal: init-trial, Intake and Audit page, product Home, workspace_root | COMPLETE | b8377a2 |
+| C5 | Bundle fixes: review-file copy crash, path privacy, executive-summary counts | COMPLETE | bd930ed, 8f15fb7, 8f84c5a |
+| C6 | Commercialization package and DEMONSTRATION sample audit | COMPLETE | 1465cd1 |
