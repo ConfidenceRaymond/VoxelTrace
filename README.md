@@ -234,6 +234,21 @@ make app              # http://127.0.0.1:8501
 #    subject_timepoint_matrix.csv,pair_checks.csv,site_summary.json}
 ```
 
+### Intake, one-command audit and inventory
+
+```bash
+voxeltrace validate-input <folder>     # ACCEPT_FOR_AUDIT / ACCEPT_WITH_WARNINGS / NEEDS_REEXPORT / UNSUPPORTED
+voxeltrace audit --input <trial> --output <new_dir>   # immutable evidence bundle, all three rule sets
+voxeltrace verify-bundle <new_dir>/audit_bundle       # checksum check
+voxeltrace summarize <new_dir>/audit_bundle           # counts + deterministic executive summary
+voxeltrace data-inventory                             # read-only workspace inventory (never deletes)
+```
+
+`validate-input` exits with 0 to accept (with or without warnings), 2 for NEEDS_REEXPORT and
+3 for UNSUPPORTED. The bundle's `reports/` folder holds `EXECUTIVE_SUMMARY.md` and a
+byte-reproducible `AUDIT_PACKAGE_REPORT.pdf`. Lesion segmentations count as PERCIST targets
+only after human review ([docs/lesion_review.md](docs/lesion_review.md)).
+
 ## Build a development example dataset (no model involved)
 
 ```bash

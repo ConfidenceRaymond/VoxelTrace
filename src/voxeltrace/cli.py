@@ -19,6 +19,34 @@ from pathlib import Path
 DISCLAIMER = "RESEARCH PROTOTYPE - NOT FOR CLINICAL DIAGNOSIS."
 
 
+def _validate_input(a: argparse.Namespace) -> int:
+    from voxeltrace.validate_input import EXIT_CODES, format_text, validate_input
+
+    r = validate_input(a.path)
+    print(json.dumps(r, indent=2) if a.format == "json" else format_text(r))
+    return EXIT_CODES[r["decision"]]
+
+
+def _data_inventory(a: argparse.Namespace) -> int:
+    from voxeltrace.config import REPO_ROOT
+    from voxeltrace.inventory import format_text, inventory
+
+    root = Path(a.root) if a.root else REPO_ROOT.parent
+    r = inventory(root, REPO_ROOT)
+    text = json.dumps(r, indent=2) if a.format == "json" else format_text(r)
+    if a.out:
+        out = Path(a.out).resolve()
+        if not out.is_relative_to(REPO_ROOT.parent.resolve()):
+            print(f"error: --out must be inside {REPO_ROOT.parent}", file=sys.stderr)
+            return 2
+        if out.exists():
+            print(f"error: {out} exists (never overwritten)", file=sys.stderr)
+            return 2
+        out.write_text(text + "\n")
+    print(text)
+    return 0
+
+
 def _preflight(a: argparse.Namespace) -> int:
     from voxeltrace.preflight import preflight_batch
     from voxeltrace.preflight.export import export_preflight, rows
@@ -314,6 +342,25 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--out", help="write preflight.json and preflight.csv to this directory")
     p.add_argument("--format", choices=["text", "json", "csv"], default="text")
     p.set_defaults(func=_preflight)
+
+    p = sub.add_parser(
+        "validate-input",
+        help="intake decision for a submitted folder: ACCEPT_FOR_AUDIT / ACCEPT_WITH_WARNINGS / "
+        "NEEDS_REEXPORT / UNSUPPORTED (read-only)",
+        description="Exit code 0 = accept (with or without warnings), 2 = NEEDS_REEXPORT, 3 = UNSUPPORTED.",
+    )
+    p.add_argument("path", help="series, scan, subject or trial directory")
+    p.add_argument("--format", choices=["text", "json"], default="text")
+    p.set_defaults(func=_validate_input)
+
+    p = sub.add_parser(
+        "data-inventory",
+        help="read-only inventory of project data, outputs and disk use (never deletes)",
+    )
+    p.add_argument("--root", help="workspace root (default: parent of this repository)")
+    p.add_argument("--format", choices=["text", "json"], default="text")
+    p.add_argument("--out", help="also write the inventory to this new file inside the workspace")
+    p.set_defaults(func=_data_inventory)
 
     p = sub.add_parser("inspect", help="list the DICOM series found under a path (read-only)")
     p.add_argument("path")
