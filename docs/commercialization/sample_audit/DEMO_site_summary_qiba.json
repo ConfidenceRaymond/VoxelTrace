@@ -1,0 +1,72 @@
+{
+  "scans_analyzed": 16,
+  "pairs_analyzed": 7,
+  "verdicts": {
+    "ASSESSABLE": 1,
+    "NOT_ASSESSABLE": 4,
+    "INSUFFICIENT_INFORMATION": 2
+  },
+  "synthetic_pairs": 7,
+  "by_site": {
+    "SITE-A": {
+      "ASSESSABLE": 1,
+      "NOT_ASSESSABLE": 2,
+      "INSUFFICIENT_INFORMATION": 1
+    },
+    "SITE-D": {
+      "NOT_ASSESSABLE": 2,
+      "INSUFFICIENT_INFORMATION": 1
+    }
+  },
+  "by_scanner": {
+    "SIEMENS Biograph128_mCT": {
+      "ASSESSABLE": 1,
+      "NOT_ASSESSABLE": 4,
+      "INSUFFICIENT_INFORMATION": 2
+    }
+  },
+  "by_software": {
+    "VG60A": {
+      "ASSESSABLE": 1,
+      "NOT_ASSESSABLE": 4,
+      "INSUFFICIENT_INFORMATION": 2
+    }
+  },
+  "by_reconstruction": {
+    "PSF+TOF 2i21s": {
+      "ASSESSABLE": 1,
+      "NOT_ASSESSABLE": 3,
+      "INSUFFICIENT_INFORMATION": 1
+    },
+    "PSF+TOF 4i21s": {
+      "NOT_ASSESSABLE": 1
+    },
+    "UNKNOWN": {
+      "INSUFFICIENT_INFORMATION": 1
+    }
+  },
+  "insufficient_information_by_reason": {
+    "SUV_REFUSED": 1,
+    "MISSING_REQUIRED_TAG": 1,
+    "AMBIGUOUS_RECONSTRUCTION": 1
+  },
+  "reference_regions": {
+    "LIVER": {
+      "COMPUTED": 7,
+      "SYNTHETIC_INHERITED_REFERENCE": 6,
+      "NOT_EVALUATED": 1,
+      "PROPOSED_REQUIRES_REVIEW": 2
+    },
+    "BLOOD_POOL": {
+      "COMPUTED": 7,
+      "SYNTHETIC_INHERITED_REFERENCE": 6,
+      "NOT_EVALUATED": 1,
+      "PROPOSED_REQUIRES_REVIEW": 2
+    }
+  },
+  "failures_by_rule": {
+    "VT-PROTOCOL-IDENTITY": 3,
+    "QIBA-UPTAKE-WINDOW": 1,
+    "QIBA-UPTAKE-DIFF": 1
+  }
+}

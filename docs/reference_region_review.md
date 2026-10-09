@@ -155,4 +155,4 @@ A hand-completed entry is accepted if it validates. The review page is the prefe
 - **REJECT:** gives `REFERENCE_REJECTED_BY_REVIEWER`. Supply a region, or ADJUST it instead.
 - **Blood pool:** it is reviewed and reported, but no rule uses it.
 
-Re-run the audit after recording (`scripts/run_trial_audit.py`, or the button on the page).
+Re-run the audit after recording (`voxeltrace audit` into a new folder, the *Intake and Audit* page, or the button on this page).

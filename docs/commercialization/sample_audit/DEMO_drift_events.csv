@@ -1,0 +1,15 @@
+site,event,field,previous_value,new_value,previous_trust,new_trust,previous_scan,new_scan,previous_date,new_date,heuristic,note
+SITE-A,RECONSTRUCTION_CHANGE,reconstruction_method,PSF+TOF 2i21s,PSF+TOF 4i21s,LEVEL_A,LEVEL_A,pet_35e8ed54e8107ce3,pet_f4203f19d2846892,2003-03-23,2003-03-23,False,
+SITE-A,RECONSTRUCTION_CHANGE,iterations,2,4,LEVEL_D,LEVEL_D,pet_35e8ed54e8107ce3,pet_f4203f19d2846892,2003-03-23,2003-03-23,False,
+SITE-A,RECONSTRUCTION_CHANGE,reconstruction_method,PSF+TOF 4i21s,PSF+TOF 2i21s,LEVEL_A,LEVEL_A,pet_f4203f19d2846892,pet_35e8ed54e8107ce3,2003-03-23,2003-03-23,False,
+SITE-A,RECONSTRUCTION_CHANGE,iterations,4,2,LEVEL_D,LEVEL_D,pet_f4203f19d2846892,pet_35e8ed54e8107ce3,2003-03-23,2003-03-23,False,
+SITE-A,CORRECTION_CHANGE,corrections,"['attenuation', 'dead_time', 'decay', 'normalization', 'randoms', 'scatter']","['attenuation', 'dead_time', 'decay', 'normalization', 'randoms']",LEVEL_A,LEVEL_A,pet_35e8ed54e8107ce3,pet_b9b42c1532002245,2003-03-23,2003-03-23,False,
+SITE-D,FILTER_CHANGE,filter_kernel,['XYZ Gauss2.00'],['XYZ Gauss6.00'],LEVEL_A,LEVEL_A,pet_35e8ed54e8107ce3,pet_b197853f27b6bce1,2003-03-23,2003-03-23,False,
+SITE-D,FILTER_CHANGE,filter_kernel,['XYZ Gauss6.00'],['XYZ Gauss2.00'],LEVEL_A,LEVEL_A,pet_b197853f27b6bce1,pet_35e8ed54e8107ce3,2003-03-23,2003-03-23,False,
+SITE-D,UNKNOWN_PROTOCOL_DRIFT,reconstruction_method,PSF+TOF 2i21s,,LEVEL_A,NONE,pet_35e8ed54e8107ce3,pet_7e338865db5c95f8,2003-03-23,2003-03-23,False,evidence availability changed: PRESENT -> MISSING
+SITE-D,UNKNOWN_PROTOCOL_DRIFT,iterations,2,,LEVEL_D,NONE,pet_35e8ed54e8107ce3,pet_7e338865db5c95f8,2003-03-23,2003-03-23,False,evidence availability changed: PRESENT -> MISSING
+SITE-D,UNKNOWN_PROTOCOL_DRIFT,subsets,21,,LEVEL_D,NONE,pet_35e8ed54e8107ce3,pet_7e338865db5c95f8,2003-03-23,2003-03-23,False,evidence availability changed: PRESENT -> MISSING
+SITE-D,UNKNOWN_PROTOCOL_DRIFT,filter_kernel,['XYZ Gauss2.00'],,LEVEL_A,NONE,pet_35e8ed54e8107ce3,pet_7e338865db5c95f8,2003-03-23,2003-03-23,False,evidence availability changed: PRESENT -> MISSING
+SITE-D,UNKNOWN_PROTOCOL_DRIFT,time_of_flight,True,,LEVEL_D,NONE,pet_35e8ed54e8107ce3,pet_7e338865db5c95f8,2003-03-23,2003-03-23,False,evidence availability changed: PRESENT -> MISSING
+SITE-D,UNKNOWN_PROTOCOL_DRIFT,psf_resolution_modelling,True,,LEVEL_D,NONE,pet_35e8ed54e8107ce3,pet_7e338865db5c95f8,2003-03-23,2003-03-23,False,evidence availability changed: PRESENT -> MISSING
+SITE-D,UPTAKE_OUTLIER,uptake_interval_s,60.38,90.38,SITE_MEDIAN,LEVEL_A,(site median),pet_125a19ebce3dbb9d,,2003-03-23,True,|uptake - site median| > 15.0 min (heuristic)

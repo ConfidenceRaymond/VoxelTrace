@@ -44,7 +44,7 @@ Each run writes a **new** output directory; bundles are never overwritten.
 
 1. Run `voxeltrace list-reviews <bundle>` to list the pending liver / blood-pool proposals.
 2. A qualified reviewer opens the app's **Reference Review** page
-   (`scripts/run_app.sh`, page 4). They inspect each proposal's QC image and record
+   (`streamlit run app/Home.py`, or `scripts/run_app.sh` in a source checkout; page *Reference Review*). They inspect each proposal's QC image and record
    ACCEPT / ADJUST / REJECT with their identifier.
    - Decisions are written to the trial's `reference_review.yaml`, bound to the proposal hash.
    - Software never records a decision.

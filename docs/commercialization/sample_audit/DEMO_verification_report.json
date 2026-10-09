@@ -1,0 +1,24 @@
+{
+  "bundle": "outputs/commercial_demo_audit/audit/audit_bundle",
+  "status": "OK",
+  "modified": [],
+  "missing": [],
+  "unlisted": [],
+  "checksum_list": "OK",
+  "schema_versions": {
+    "evidence": "VT-EVIDENCE-1",
+    "protocol_fingerprint": "VT-PROTOCOL-FP-1",
+    "preflight": "VT-PREFLIGHT-1",
+    "trial_audit": "VT-TRIAL-AUDIT-1",
+    "audit_package": "VT-AUDIT-PACKAGE-1",
+    "drift": "VT-DRIFT-1",
+    "attestation": "voxeltrace.recon-attestation/2",
+    "adjudication": "VT-ADJUDICATION-1",
+    "bundle": "VT-BUNDLE-1",
+    "site_query": "VT-SITE-QUERY-1",
+    "executive_summary": "VT-EXECUTIVE-SUMMARY-1",
+    "lesion_review": "voxeltrace.lesion-review/1"
+  },
+  "git_commit": "8f84c5aefb744d6779220b29ed1fa9ead2b2858d",
+  "files_checked": 58
+}

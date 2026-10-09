@@ -1,0 +1,365 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [7 0 R 9 0 R 11 0 R 13 0 R 15 0 R] /Count 5 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier /Encoding /WinAnsiEncoding >>
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+6 0 obj
+<< /Length 6036 >>
+stream
+BT /F1 10 Tf 50 778.50 Td () Tj ET
+BT /F3 15 Tf 50 758.25 Td (Audit summary: VOXELTRACE-DEMONSTRATION-AUDIT) Tj ET
+BT /F1 9 Tf 50 746.10 Td () Tj ET
+BT /F1 9 Tf 50 733.95 Td (RESEARCH PROTOTYPE - NOT FOR CLINICAL DIAGNOSIS) Tj ET
+BT /F1 9 Tf 50 721.80 Td () Tj ET
+BT /F2 7 Tf 50 712.35 Td (| Subjects | Pairs | Real pairs | Scans | Pending reference reviews |) Tj ET
+BT /F2 7 Tf 50 702.90 Td (| 9 | 7 | 0 | 16 | 4 |) Tj ET
+BT /F1 9 Tf 50 690.75 Td () Tj ET
+BT /F1 10 Tf 50 677.25 Td () Tj ET
+BT /F3 12 Tf 50 661.05 Td (Verdicts) Tj ET
+BT /F1 9 Tf 50 648.90 Td () Tj ET
+BT /F2 7 Tf 50 639.45 Td (| Rule set | ASSESSABLE | ASSESSABLE_WITH_WARNINGS | INSUFFICIENT_INFORMATION | NOT_ASSESSABLE |) Tj ET
+BT /F2 7 Tf 50 630.00 Td (| qiba-fdg-1.14 | 1 | 0 | 2 | 4 |) Tj ET
+BT /F2 7 Tf 50 620.55 Td (| eanm-fdg-2.0 | 1 | 0 | 2 | 4 |) Tj ET
+BT /F2 7 Tf 50 611.10 Td (| percist-1.0 | 1 | 0 | 2 | 4 |) Tj ET
+BT /F1 9 Tf 50 598.95 Td () Tj ET
+BT /F1 10 Tf 50 585.45 Td () Tj ET
+BT /F3 12 Tf 50 569.25 Td (Top blocking reasons \(pairs affected, any rule set\)) Tj ET
+BT /F1 9 Tf 50 557.10 Td () Tj ET
+BT /F2 7 Tf 50 547.65 Td (| Reason | Pairs | Rule sets | Site can fix | Recommendation |) Tj ET
+BT /F2 7 Tf 50 538.20 Td (| EANM-SAME-SYSTEM-SETTINGS FAIL | 3 | eanm-fdg-2.0 | NO | criterion not met \(identical) Tj ET
+BT /F2 7 Tf 50 528.75 Td (acquisition/reconstruction/correction settings: manufacturer, scanner_model, image_units, decay_correction,) Tj ET
+BT /F2 7 Tf 50 519.30 Td (correction_state, voxel_size, reconstruction_method, iterations, subsets, time_of_flight, psf_resolution_modelling,) Tj ET
+BT /F2 7 Tf 50 509.85 Td (post_filter\); a re-export cannot change measured values |) Tj ET
+BT /F2 7 Tf 50 500.40 Td (| VT-PROTOCOL-IDENTITY FAIL | 3 | eanm-fdg-2.0, percist-1.0, qiba-fdg-1.14 | NO | criterion not met \(identical) Tj ET
+BT /F2 7 Tf 50 490.95 Td (acquisition/reconstruction/correction settings: manufacturer, scanner_model, image_units, decay_correction,) Tj ET
+BT /F2 7 Tf 50 481.50 Td (correction_state, voxel_size, reconstruction_method, iterations, subsets, time_of_flight, psf_resolution_modelling,) Tj ET
+BT /F2 7 Tf 50 472.05 Td (post_filter\); a re-export cannot change measured values |) Tj ET
+BT /F2 7 Tf 50 462.60 Td (| AMBIGUOUS_RECONSTRUCTION | 1 | eanm-fdg-2.0, percist-1.0, qiba-fdg-1.14 | YES | provide reconstruction protocol) Tj ET
+BT /F2 7 Tf 50 453.15 Td (\(algorithm, iterations, subsets, TOF, PSF, filter, voxel size\) from the site imaging manual or structured attributes |) Tj ET
+BT /F2 7 Tf 50 443.70 Td (| EANM-UPTAKE-DIFF FAIL | 1 | eanm-fdg-2.0 | NO | criterion not met \(|follow-up - baseline| <= 10.0 min\); a re-export) Tj ET
+BT /F2 7 Tf 50 434.25 Td (cannot change measured values |) Tj ET
+BT /F2 7 Tf 50 424.80 Td (| EANM-UPTAKE-WINDOW FAIL | 1 | eanm-fdg-2.0 | NO | criterion not met \(55.0 <= uptake <= 75.0 min at every timepoint\);) Tj ET
+BT /F2 7 Tf 50 415.35 Td (a re-export cannot change measured values |) Tj ET
+BT /F1 9 Tf 50 403.20 Td () Tj ET
+BT /F1 10 Tf 50 389.70 Td () Tj ET
+BT /F3 12 Tf 50 373.50 Td (Executive summary) Tj ET
+BT /F1 9 Tf 50 361.35 Td () Tj ET
+BT /F1 9 Tf 50 349.20 Td (VOXELTRACE-DEMONSTRATION-AUDIT: 7 baseline/follow-up pair\(s\) from 9 subject\(s\), 16 scan\(s\); 0 pair\(s\) are) Tj ET
+BT /F1 9 Tf 50 337.05 Td (real data.) Tj ET
+BT /F1 9 Tf 50 324.90 Td (qiba-fdg-1.14: 1 ASSESSABLE, 2 INSUFFICIENT_INFORMATION, 4 NOT_ASSESSABLE.) Tj ET
+BT /F1 9 Tf 50 312.75 Td (eanm-fdg-2.0: 1 ASSESSABLE, 2 INSUFFICIENT_INFORMATION, 4 NOT_ASSESSABLE.) Tj ET
+BT /F1 9 Tf 50 300.60 Td (percist-1.0: 1 ASSESSABLE, 2 INSUFFICIENT_INFORMATION, 4 NOT_ASSESSABLE.) Tj ET
+BT /F1 9 Tf 50 288.45 Td (1 scan\(s\) cannot be quantified as exported \(preflight DO_NOT_QUANTIFY\).) Tj ET
+BT /F1 9 Tf 50 276.30 Td (4 reference-region proposal\(s\) await a human decision; until then the dependent rules stay UNKNOWN.) Tj ET
+BT /F1 9 Tf 50 264.15 Td (Recommended actions, most frequent blocking reason first:) Tj ET
+BT /F1 9 Tf 50 252.00 Td (1. EANM-SAME-SYSTEM-SETTINGS FAIL \(3 pair\(s\); site can fix: NO\): criterion not met \(identical) Tj ET
+BT /F1 9 Tf 50 239.85 Td (acquisition/reconstruction/correction settings: manufacturer, scanner_model, image_units,) Tj ET
+BT /F1 9 Tf 50 227.70 Td (decay_correction, correction_state, voxel_size, reconstruction_method, iterations, subsets,) Tj ET
+BT /F1 9 Tf 50 215.55 Td (time_of_flight, psf_resolution_modelling, post_filter\); a re-export cannot change measured values.) Tj ET
+BT /F1 9 Tf 50 203.40 Td (2. VT-PROTOCOL-IDENTITY FAIL \(3 pair\(s\); site can fix: NO\): criterion not met \(identical) Tj ET
+BT /F1 9 Tf 50 191.25 Td (acquisition/reconstruction/correction settings: manufacturer, scanner_model, image_units,) Tj ET
+BT /F1 9 Tf 50 179.10 Td (decay_correction, correction_state, voxel_size, reconstruction_method, iterations, subsets,) Tj ET
+BT /F1 9 Tf 50 166.95 Td (time_of_flight, psf_resolution_modelling, post_filter\); a re-export cannot change measured values.) Tj ET
+BT /F1 9 Tf 50 154.80 Td (3. AMBIGUOUS_RECONSTRUCTION \(1 pair\(s\); site can fix: YES\): provide reconstruction protocol \(algorithm,) Tj ET
+BT /F1 9 Tf 50 142.65 Td (iterations, subsets, TOF, PSF, filter, voxel size\) from the site imaging manual or structured attributes.) Tj ET
+BT /F1 9 Tf 50 130.50 Td (4. EANM-UPTAKE-DIFF FAIL \(1 pair\(s\); site can fix: NO\): criterion not met \(|follow-up - baseline| <= 10.0) Tj ET
+BT /F1 9 Tf 50 118.35 Td (min\); a re-export cannot change measured values.) Tj ET
+BT /F1 9 Tf 50 106.20 Td (5. EANM-UPTAKE-WINDOW FAIL \(1 pair\(s\); site can fix: NO\): criterion not met \(55.0 <= uptake <= 75.0 min) Tj ET
+BT /F1 9 Tf 50 94.05 Td (at every timepoint\); a re-export cannot change measured values.) Tj ET
+BT /F1 9 Tf 50 81.90 Td (These recommendations are the catalogued remediations of the observed reason codes. They do not change) Tj ET
+BT /F1 9 Tf 50 69.75 Td (any verdict.) Tj ET
+BT /F1 9 Tf 50 57.60 Td () Tj ET
+BT /F1 7 Tf 50 25 Td (VoxelTrace audit VOXELTRACE-DEMONSTRATION-AUDIT - page 1/5) Tj ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 6 0 R /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> >>
+endobj
+8 0 obj
+<< /Length 3565 >>
+stream
+BT /F1 9 Tf 50 779.85 Td (---) Tj ET
+BT /F1 9 Tf 50 767.70 Td () Tj ET
+BT /F1 10 Tf 50 754.20 Td () Tj ET
+BT /F3 15 Tf 50 733.95 Td (VoxelTrace PET Comparability Audit: VOXELTRACE-DEMONSTRATION-AUDIT) Tj ET
+BT /F1 9 Tf 50 721.80 Td () Tj ET
+BT /F1 9 Tf 50 709.65 Td (RESEARCH PROTOTYPE - NOT FOR CLINICAL DIAGNOSIS Deterministic audit; no AI. Automated verdicts are never) Tj ET
+BT /F1 9 Tf 50 697.50 Td (modified by review, attestation or adjudication records, which are reported separately.) Tj ET
+BT /F1 9 Tf 50 685.35 Td () Tj ET
+BT /F1 10 Tf 50 671.85 Td () Tj ET
+BT /F3 12 Tf 50 655.65 Td (Preflight) Tj ET
+BT /F1 9 Tf 50 643.50 Td () Tj ET
+BT /F2 7 Tf 50 634.05 Td ({) Tj ET
+BT /F2 7 Tf 50 624.60 Td (  "scans": 16,) Tj ET
+BT /F2 7 Tf 50 615.15 Td (  "pet_series": 16,) Tj ET
+BT /F2 7 Tf 50 605.70 Td (  "scan_states": {) Tj ET
+BT /F2 7 Tf 50 596.25 Td (    "READY_WITH_WARNINGS": 15,) Tj ET
+BT /F2 7 Tf 50 586.80 Td (    "DO_NOT_QUANTIFY": 1) Tj ET
+BT /F2 7 Tf 50 577.35 Td (  },) Tj ET
+BT /F2 7 Tf 50 567.90 Td (  "series_states": {) Tj ET
+BT /F2 7 Tf 50 558.45 Td (    "READY_WITH_WARNINGS": 15,) Tj ET
+BT /F2 7 Tf 50 549.00 Td (    "DO_NOT_QUANTIFY": 1) Tj ET
+BT /F2 7 Tf 50 539.55 Td (  },) Tj ET
+BT /F2 7 Tf 50 530.10 Td (  "reason_codes": {) Tj ET
+BT /F2 7 Tf 50 520.65 Td (    "DERIVED_IMAGE": 16,) Tj ET
+BT /F2 7 Tf 50 511.20 Td (    "ANONYMIZATION_LOSS": 2,) Tj ET
+BT /F2 7 Tf 50 501.75 Td (    "MISSING_RADIONUCLIDETOTALDOSE": 1,) Tj ET
+BT /F2 7 Tf 50 492.30 Td (    "RECONSTRUCTION_INCOMPLETE": 1,) Tj ET
+BT /F2 7 Tf 50 482.85 Td (    "CORRECTIONS_NOT_DECLARED": 1,) Tj ET
+BT /F2 7 Tf 50 473.40 Td (    "INJECTION_DATE_FROM_SERIES": 1,) Tj ET
+BT /F2 7 Tf 50 463.95 Td (    "MISSING_PATIENTSIZE": 1) Tj ET
+BT /F2 7 Tf 50 454.50 Td (  }) Tj ET
+BT /F2 7 Tf 50 445.05 Td (}) Tj ET
+BT /F1 9 Tf 50 432.90 Td () Tj ET
+BT /F1 10 Tf 50 419.40 Td () Tj ET
+BT /F3 12 Tf 50 403.20 Td (Scanners) Tj ET
+BT /F1 9 Tf 50 391.05 Td () Tj ET
+BT /F1 9 Tf 50 378.90 Td (- SIEMENS Biograph128_mCT sw=['VG60A']: 14 scan\(s\)) Tj ET
+BT /F1 9 Tf 50 366.75 Td (- SIEMENS Biograph128_mCT sw=['VG70A']: 1 scan\(s\)) Tj ET
+BT /F1 9 Tf 50 354.60 Td (- SIEMENS SOMATOM Definition AS_mCT sw=['syngo MI.PET/CT 2012A']: 1 scan\(s\)) Tj ET
+BT /F1 9 Tf 50 342.45 Td () Tj ET
+BT /F1 10 Tf 50 328.95 Td () Tj ET
+BT /F3 12 Tf 50 312.75 Td (qiba-fdg-1.14) Tj ET
+BT /F1 9 Tf 50 300.60 Td () Tj ET
+BT /F1 10 Tf 50 287.10 Td () Tj ET
+BT /F3 10 Tf 50 273.60 Td (REAL DATA verdicts) Tj ET
+BT /F1 9 Tf 50 261.45 Td () Tj ET
+BT /F1 9 Tf 50 249.30 Td (none) Tj ET
+BT /F1 9 Tf 50 237.15 Td () Tj ET
+BT /F1 10 Tf 50 223.65 Td () Tj ET
+BT /F3 10 Tf 50 210.15 Td (SYNTHETIC TEST DATA verdicts) Tj ET
+BT /F1 9 Tf 50 198.00 Td () Tj ET
+BT /F1 9 Tf 50 185.85 Td ({'ASSESSABLE': 1, 'NOT_ASSESSABLE': 4, 'INSUFFICIENT_INFORMATION': 2}) Tj ET
+BT /F1 9 Tf 50 173.70 Td () Tj ET
+BT /F1 10 Tf 50 160.20 Td () Tj ET
+BT /F3 10 Tf 50 146.70 Td (HUMAN-REVIEWED EVIDENCE) Tj ET
+BT /F1 9 Tf 50 134.55 Td () Tj ET
+BT /F1 9 Tf 50 122.40 Td (reference regions with a human decision: ['DEMO-01-IDENTITY/BASELINE', 'DEMO-02-RECON_BLUR/BASELINE',) Tj ET
+BT /F1 9 Tf 50 110.25 Td ('DEMO-03-RECON_METADATA/BASELINE', 'DEMO-04-UPTAKE_VIOLATION/BASELINE', 'DEMO-05-MISSING_DOSE/BASELINE',) Tj ET
+BT /F1 9 Tf 50 98.10 Td ('DEMO-06-ANONYMIZATION_LOSS/BASELINE', 'DEMO-07-CORRECTION_MISMATCH/BASELINE']) Tj ET
+BT /F1 9 Tf 50 85.95 Td () Tj ET
+BT /F1 10 Tf 50 72.45 Td () Tj ET
+BT /F3 10 Tf 50 58.95 Td (EXTERNALLY ATTESTED EVIDENCE) Tj ET
+BT /F1 7 Tf 50 25 Td (VoxelTrace audit VOXELTRACE-DEMONSTRATION-AUDIT - page 2/5) Tj ET
+endstream
+endobj
+9 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 8 0 R /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> >>
+endobj
+10 0 obj
+<< /Length 3385 >>
+stream
+BT /F1 9 Tf 50 779.85 Td () Tj ET
+BT /F1 9 Tf 50 767.70 Td (pairs whose protocol identity rests on a LEVEL_C attestation: none) Tj ET
+BT /F1 9 Tf 50 755.55 Td () Tj ET
+BT /F1 10 Tf 50 742.05 Td () Tj ET
+BT /F3 10 Tf 50 728.55 Td (IMAGE-DERIVED CORROBORATION) Tj ET
+BT /F1 9 Tf 50 716.40 Td () Tj ET
+BT /F1 9 Tf 50 704.25 Td (none \(the audit never uses image-derived evidence for a rule\)) Tj ET
+BT /F1 9 Tf 50 692.10 Td () Tj ET
+BT /F1 10 Tf 50 678.60 Td () Tj ET
+BT /F3 10 Tf 50 665.10 Td (UNRESOLVED EVIDENCE) Tj ET
+BT /F1 9 Tf 50 652.95 Td () Tj ET
+BT /F1 9 Tf 50 640.80 Td (blocking UNKNOWN rules: {'VT-SUV-BOTH': 1, 'QIBA-UPTAKE-WINDOW': 1, 'QIBA-UPTAKE-DIFF': 1, 'VT-PROTOCOL-) Tj ET
+BT /F1 9 Tf 50 628.65 Td (IDENTITY': 1}) Tj ET
+BT /F1 9 Tf 50 616.50 Td (II reason codes: {'MISSING_REQUIRED_TAG': 1, 'SUV_REFUSED': 1, 'AMBIGUOUS_RECONSTRUCTION': 1}) Tj ET
+BT /F1 9 Tf 50 604.35 Td () Tj ET
+BT /F1 10 Tf 50 590.85 Td () Tj ET
+BT /F3 10 Tf 50 577.35 Td (Rule status) Tj ET
+BT /F1 9 Tf 50 565.20 Td () Tj ET
+BT /F1 9 Tf 50 553.05 Td (- VT-SUV-BOTH: {'PASS': 6, 'UNKNOWN': 1}) Tj ET
+BT /F1 9 Tf 50 540.90 Td (- VT-TRACER-SAME: {'PASS': 7}) Tj ET
+BT /F1 9 Tf 50 528.75 Td (- VT-PROTOCOL-IDENTITY: {'PASS': 3, 'FAIL': 3, 'UNKNOWN': 1}) Tj ET
+BT /F1 9 Tf 50 516.60 Td (- QIBA-UPTAKE-WINDOW: {'PASS': 5, 'FAIL': 1, 'UNKNOWN': 1}) Tj ET
+BT /F1 9 Tf 50 504.45 Td (- QIBA-UPTAKE-DIFF: {'PASS': 5, 'FAIL': 1, 'UNKNOWN': 1}) Tj ET
+BT /F1 9 Tf 50 492.30 Td (- QIBA-SAME-SYSTEM: {'PASS': 7}) Tj ET
+BT /F1 9 Tf 50 480.15 Td () Tj ET
+BT /F1 10 Tf 50 466.65 Td () Tj ET
+BT /F3 12 Tf 50 450.45 Td (eanm-fdg-2.0) Tj ET
+BT /F1 9 Tf 50 438.30 Td () Tj ET
+BT /F1 10 Tf 50 424.80 Td () Tj ET
+BT /F3 10 Tf 50 411.30 Td (REAL DATA verdicts) Tj ET
+BT /F1 9 Tf 50 399.15 Td () Tj ET
+BT /F1 9 Tf 50 387.00 Td (none) Tj ET
+BT /F1 9 Tf 50 374.85 Td () Tj ET
+BT /F1 10 Tf 50 361.35 Td () Tj ET
+BT /F3 10 Tf 50 347.85 Td (SYNTHETIC TEST DATA verdicts) Tj ET
+BT /F1 9 Tf 50 335.70 Td () Tj ET
+BT /F1 9 Tf 50 323.55 Td ({'ASSESSABLE': 1, 'NOT_ASSESSABLE': 4, 'INSUFFICIENT_INFORMATION': 2}) Tj ET
+BT /F1 9 Tf 50 311.40 Td () Tj ET
+BT /F1 10 Tf 50 297.90 Td () Tj ET
+BT /F3 10 Tf 50 284.40 Td (HUMAN-REVIEWED EVIDENCE) Tj ET
+BT /F1 9 Tf 50 272.25 Td () Tj ET
+BT /F1 9 Tf 50 260.10 Td (reference regions with a human decision: ['DEMO-01-IDENTITY/BASELINE', 'DEMO-02-RECON_BLUR/BASELINE',) Tj ET
+BT /F1 9 Tf 50 247.95 Td ('DEMO-03-RECON_METADATA/BASELINE', 'DEMO-04-UPTAKE_VIOLATION/BASELINE', 'DEMO-05-MISSING_DOSE/BASELINE',) Tj ET
+BT /F1 9 Tf 50 235.80 Td ('DEMO-06-ANONYMIZATION_LOSS/BASELINE', 'DEMO-07-CORRECTION_MISMATCH/BASELINE']) Tj ET
+BT /F1 9 Tf 50 223.65 Td () Tj ET
+BT /F1 10 Tf 50 210.15 Td () Tj ET
+BT /F3 10 Tf 50 196.65 Td (EXTERNALLY ATTESTED EVIDENCE) Tj ET
+BT /F1 9 Tf 50 184.50 Td () Tj ET
+BT /F1 9 Tf 50 172.35 Td (pairs whose protocol identity rests on a LEVEL_C attestation: none) Tj ET
+BT /F1 9 Tf 50 160.20 Td () Tj ET
+BT /F1 10 Tf 50 146.70 Td () Tj ET
+BT /F3 10 Tf 50 133.20 Td (IMAGE-DERIVED CORROBORATION) Tj ET
+BT /F1 9 Tf 50 121.05 Td () Tj ET
+BT /F1 9 Tf 50 108.90 Td (none \(the audit never uses image-derived evidence for a rule\)) Tj ET
+BT /F1 9 Tf 50 96.75 Td () Tj ET
+BT /F1 10 Tf 50 83.25 Td () Tj ET
+BT /F3 10 Tf 50 69.75 Td (UNRESOLVED EVIDENCE) Tj ET
+BT /F1 9 Tf 50 57.60 Td () Tj ET
+BT /F1 7 Tf 50 25 Td (VoxelTrace audit VOXELTRACE-DEMONSTRATION-AUDIT - page 3/5) Tj ET
+endstream
+endobj
+11 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 10 0 R /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> >>
+endobj
+12 0 obj
+<< /Length 3647 >>
+stream
+BT /F1 9 Tf 50 779.85 Td (blocking UNKNOWN rules: {'VT-SUV-BOTH': 1, 'EANM-UPTAKE-WINDOW': 1, 'EANM-UPTAKE-DIFF': 1, 'VT-PROTOCOL-) Tj ET
+BT /F1 9 Tf 50 767.70 Td (IDENTITY': 1, 'EANM-SAME-SYSTEM-SETTINGS': 1}) Tj ET
+BT /F1 9 Tf 50 755.55 Td (II reason codes: {'MISSING_REQUIRED_TAG': 1, 'SUV_REFUSED': 1, 'AMBIGUOUS_RECONSTRUCTION': 1,) Tj ET
+BT /F1 9 Tf 50 743.40 Td ('NEVER_ENCODED': 1}) Tj ET
+BT /F1 9 Tf 50 731.25 Td () Tj ET
+BT /F1 10 Tf 50 717.75 Td () Tj ET
+BT /F3 10 Tf 50 704.25 Td (Rule status) Tj ET
+BT /F1 9 Tf 50 692.10 Td () Tj ET
+BT /F1 9 Tf 50 679.95 Td (- VT-SUV-BOTH: {'PASS': 6, 'UNKNOWN': 1}) Tj ET
+BT /F1 9 Tf 50 667.80 Td (- VT-TRACER-SAME: {'PASS': 7}) Tj ET
+BT /F1 9 Tf 50 655.65 Td (- VT-PROTOCOL-IDENTITY: {'PASS': 3, 'FAIL': 3, 'UNKNOWN': 1}) Tj ET
+BT /F1 9 Tf 50 643.50 Td (- EANM-UPTAKE-WINDOW: {'PASS': 5, 'FAIL': 1, 'UNKNOWN': 1}) Tj ET
+BT /F1 9 Tf 50 631.35 Td (- EANM-UPTAKE-DIFF: {'PASS': 5, 'FAIL': 1, 'UNKNOWN': 1}) Tj ET
+BT /F1 9 Tf 50 619.20 Td (- EANM-SAME-SYSTEM-SETTINGS: {'PASS': 3, 'FAIL': 3, 'UNKNOWN': 1}) Tj ET
+BT /F1 9 Tf 50 607.05 Td (- EANM-EARL-RECON: {'PASS': 4, 'UNKNOWN': 3}) Tj ET
+BT /F1 9 Tf 50 594.90 Td () Tj ET
+BT /F1 10 Tf 50 581.40 Td () Tj ET
+BT /F3 12 Tf 50 565.20 Td (percist-1.0) Tj ET
+BT /F1 9 Tf 50 553.05 Td () Tj ET
+BT /F1 10 Tf 50 539.55 Td () Tj ET
+BT /F3 10 Tf 50 526.05 Td (REAL DATA verdicts) Tj ET
+BT /F1 9 Tf 50 513.90 Td () Tj ET
+BT /F1 9 Tf 50 501.75 Td (none) Tj ET
+BT /F1 9 Tf 50 489.60 Td () Tj ET
+BT /F1 10 Tf 50 476.10 Td () Tj ET
+BT /F3 10 Tf 50 462.60 Td (SYNTHETIC TEST DATA verdicts) Tj ET
+BT /F1 9 Tf 50 450.45 Td () Tj ET
+BT /F1 9 Tf 50 438.30 Td ({'ASSESSABLE': 1, 'NOT_ASSESSABLE': 4, 'INSUFFICIENT_INFORMATION': 2}) Tj ET
+BT /F1 9 Tf 50 426.15 Td () Tj ET
+BT /F1 10 Tf 50 412.65 Td () Tj ET
+BT /F3 10 Tf 50 399.15 Td (HUMAN-REVIEWED EVIDENCE) Tj ET
+BT /F1 9 Tf 50 387.00 Td () Tj ET
+BT /F1 9 Tf 50 374.85 Td (reference regions with a human decision: ['DEMO-01-IDENTITY/BASELINE', 'DEMO-02-RECON_BLUR/BASELINE',) Tj ET
+BT /F1 9 Tf 50 362.70 Td ('DEMO-03-RECON_METADATA/BASELINE', 'DEMO-04-UPTAKE_VIOLATION/BASELINE', 'DEMO-05-MISSING_DOSE/BASELINE',) Tj ET
+BT /F1 9 Tf 50 350.55 Td ('DEMO-06-ANONYMIZATION_LOSS/BASELINE', 'DEMO-07-CORRECTION_MISMATCH/BASELINE']) Tj ET
+BT /F1 9 Tf 50 338.40 Td () Tj ET
+BT /F1 10 Tf 50 324.90 Td () Tj ET
+BT /F3 10 Tf 50 311.40 Td (EXTERNALLY ATTESTED EVIDENCE) Tj ET
+BT /F1 9 Tf 50 299.25 Td () Tj ET
+BT /F1 9 Tf 50 287.10 Td (pairs whose protocol identity rests on a LEVEL_C attestation: none) Tj ET
+BT /F1 9 Tf 50 274.95 Td () Tj ET
+BT /F1 10 Tf 50 261.45 Td () Tj ET
+BT /F3 10 Tf 50 247.95 Td (IMAGE-DERIVED CORROBORATION) Tj ET
+BT /F1 9 Tf 50 235.80 Td () Tj ET
+BT /F1 9 Tf 50 223.65 Td (none \(the audit never uses image-derived evidence for a rule\)) Tj ET
+BT /F1 9 Tf 50 211.50 Td () Tj ET
+BT /F1 10 Tf 50 198.00 Td () Tj ET
+BT /F3 10 Tf 50 184.50 Td (UNRESOLVED EVIDENCE) Tj ET
+BT /F1 9 Tf 50 172.35 Td () Tj ET
+BT /F1 9 Tf 50 160.20 Td (blocking UNKNOWN rules: {'VT-SUV-BOTH': 1, 'PERCIST-UPTAKE-DIFF': 1, 'PERCIST-LIVER-SUL-STABILITY': 1,) Tj ET
+BT /F1 9 Tf 50 148.05 Td ('VT-PROTOCOL-IDENTITY': 1}) Tj ET
+BT /F1 9 Tf 50 135.90 Td (II reason codes: {'MANUAL_OR_REFERENCE_MASK_REQUIRED': 1, 'MISSING_REQUIRED_TAG': 1, 'SUV_REFUSED': 1,) Tj ET
+BT /F1 9 Tf 50 123.75 Td ('AMBIGUOUS_RECONSTRUCTION': 1}) Tj ET
+BT /F1 9 Tf 50 111.60 Td () Tj ET
+BT /F1 10 Tf 50 98.10 Td () Tj ET
+BT /F3 10 Tf 50 84.60 Td (Rule status) Tj ET
+BT /F1 9 Tf 50 72.45 Td () Tj ET
+BT /F1 9 Tf 50 60.30 Td (- VT-SUV-BOTH: {'PASS': 6, 'UNKNOWN': 1}) Tj ET
+BT /F1 7 Tf 50 25 Td (VoxelTrace audit VOXELTRACE-DEMONSTRATION-AUDIT - page 4/5) Tj ET
+endstream
+endobj
+13 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 12 0 R /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> >>
+endobj
+14 0 obj
+<< /Length 2371 >>
+stream
+BT /F1 9 Tf 50 779.85 Td (- VT-TRACER-SAME: {'PASS': 7}) Tj ET
+BT /F1 9 Tf 50 767.70 Td (- VT-PROTOCOL-IDENTITY: {'PASS': 3, 'FAIL': 3, 'UNKNOWN': 1}) Tj ET
+BT /F1 9 Tf 50 755.55 Td (- PERCIST-UPTAKE-WINDOW: {'PASS': 5, 'FAIL': 1, 'UNKNOWN': 1}) Tj ET
+BT /F1 9 Tf 50 743.40 Td (- PERCIST-UPTAKE-DIFF: {'PASS': 5, 'FAIL': 1, 'UNKNOWN': 1}) Tj ET
+BT /F1 9 Tf 50 731.25 Td (- PERCIST-LIVER-SUL-STABILITY: {'PASS': 5, 'FAIL': 1, 'UNKNOWN': 1}) Tj ET
+BT /F1 9 Tf 50 719.10 Td (- PERCIST-DOSE-DIFF: {'PASS': 6, 'UNKNOWN': 1}) Tj ET
+BT /F1 9 Tf 50 706.95 Td (- PERCIST-SAME-SCANNER-SOFTWARE: {'PASS': 7}) Tj ET
+BT /F1 9 Tf 50 694.80 Td (- PERCIST-BASELINE-MEASURABLE: {'PASS': 7}) Tj ET
+BT /F1 9 Tf 50 682.65 Td () Tj ET
+BT /F1 10 Tf 50 669.15 Td () Tj ET
+BT /F3 12 Tf 50 652.95 Td (Protocol drift) Tj ET
+BT /F1 9 Tf 50 640.80 Td () Tj ET
+BT /F1 9 Tf 50 628.65 Td (events: {'RECONSTRUCTION_CHANGE': 4, 'CORRECTION_CHANGE': 1, 'FILTER_CHANGE': 2,) Tj ET
+BT /F1 9 Tf 50 616.50 Td ('UNKNOWN_PROTOCOL_DRIFT': 6, 'UPTAKE_OUTLIER': 1}) Tj ET
+BT /F1 9 Tf 50 604.35 Td (- SITE-A: 8 scans, 3 distinct protocols, events {'RECONSTRUCTION_CHANGE': 4, 'CORRECTION_CHANGE': 1}) Tj ET
+BT /F1 9 Tf 50 592.20 Td (- SITE-B: 1 scans, 1 distinct protocols, events none) Tj ET
+BT /F1 9 Tf 50 580.05 Td (- SITE-C: 1 scans, 1 distinct protocols, events none) Tj ET
+BT /F1 9 Tf 50 567.90 Td (- SITE-D: 6 scans, 3 distinct protocols, events {'FILTER_CHANGE': 2, 'UNKNOWN_PROTOCOL_DRIFT': 6,) Tj ET
+BT /F1 9 Tf 50 555.75 Td ('UPTAKE_OUTLIER': 1}) Tj ET
+BT /F1 9 Tf 50 543.60 Td () Tj ET
+BT /F1 10 Tf 50 530.10 Td () Tj ET
+BT /F3 12 Tf 50 513.90 Td (Review tasks) Tj ET
+BT /F1 9 Tf 50 501.75 Td () Tj ET
+BT /F1 9 Tf 50 489.60 Td (pending human reference-region reviews: 4) Tj ET
+BT /F1 9 Tf 50 477.45 Td () Tj ET
+BT /F1 10 Tf 50 463.95 Td () Tj ET
+BT /F3 12 Tf 50 447.75 Td (Attestations / adjudications) Tj ET
+BT /F1 9 Tf 50 435.60 Td () Tj ET
+BT /F1 9 Tf 50 423.45 Td (attestations supplied: 0) Tj ET
+BT /F1 9 Tf 50 411.30 Td (adjudication status: {'NOT_ADJUDICATED': 21}) Tj ET
+BT /F1 9 Tf 50 399.15 Td () Tj ET
+BT /F1 10 Tf 50 385.65 Td () Tj ET
+BT /F3 12 Tf 50 369.45 Td (DRAFT site queries \(7\)) Tj ET
+BT /F1 9 Tf 50 357.30 Td () Tj ET
+BT /F1 9 Tf 50 345.15 Td (See reports/site_queries.md \(not sent\).) Tj ET
+BT /F1 7 Tf 50 25 Td (VoxelTrace audit VOXELTRACE-DEMONSTRATION-AUDIT - page 5/5) Tj ET
+endstream
+endobj
+15 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 14 0 R /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> >>
+endobj
+16 0 obj
+<< /Title (VoxelTrace audit VOXELTRACE-DEMONSTRATION-AUDIT) /Producer (VoxelTrace) >>
+endobj
+xref
+0 17
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000148 00000 n 
+0000000245 00000 n 
+0000000340 00000 n 
+0000000442 00000 n 
+0000006530 00000 n 
+0000006676 00000 n 
+0000010293 00000 n 
+0000010439 00000 n 
+0000013877 00000 n 
+0000014025 00000 n 
+0000017725 00000 n 
+0000017873 00000 n 
+0000020297 00000 n 
+0000020445 00000 n 
+trailer
+<< /Size 17 /Root 1 0 R /Info 16 0 R >>
+startxref
+20547
+%%EOF
