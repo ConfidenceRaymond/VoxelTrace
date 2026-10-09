@@ -18,7 +18,9 @@ Deterministic; no AI in the audit; every result ships in a checksum-verified evi
 Research prototype.
 
 **Current evidence** (see `docs/external_validation_v1.md`):
-- 8 real public longitudinal pairs analysed;
-- 2 reach a QIBA ASSESSABLE verdict and 1 a decided NOT_ASSESSABLE;
+- 9 real public longitudinal pairs analysed (4 collections, 6 scanner models);
+- under QIBA, 2 reach ASSESSABLE, 1 ASSESSABLE_WITH_WARNINGS, 3 NOT_ASSESSABLE and 3
+  INSUFFICIENT_INFORMATION;
+- no expert agreement has been measured yet;
 - the census of 43 public PET collections shows most open data cannot be decided, mainly
   because of missing reconstruction metadata, tracer coding or decay-timing inconsistencies.

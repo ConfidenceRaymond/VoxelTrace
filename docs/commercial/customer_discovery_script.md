@@ -17,3 +17,8 @@
 
 **Record:** pains in their words, frequency, current workaround, decision maker.
 **Do not record:** identifiable patient information.
+
+Short role-specific versions (20 min, same rules):
+[PET physicist](discovery_pet_physicist.md),
+[core-lab director](discovery_core_lab_director.md),
+[radiopharmaceutical imaging lead](discovery_radiopharma_imaging_lead.md).
