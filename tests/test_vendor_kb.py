@@ -15,7 +15,7 @@ REQUIRED = {"vendor", "model", "architecture", "public_dicom_availability", "pub
 def test_schema_and_architecture():
     assert KB["schema"] == "VT-VENDOR-KB-1"
     for e in KB["entries"]:
-        assert REQUIRED <= set(e), e["model"]
+        assert set(e) >= REQUIRED, e["model"]
         assert e["architecture"] in {"CONVENTIONAL_AFOV", "LONG_AFOV", "TOTAL_BODY", "PET_MR"}
 
 
