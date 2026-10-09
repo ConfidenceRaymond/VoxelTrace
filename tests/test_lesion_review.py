@@ -348,3 +348,97 @@ def test_generic_tissue_category_stays_eligible():
         and target_eligible(None)
     )
     assert not target_eligible("Anatomical Structure") and not target_eligible("Body Substance")
+
+
+# ---------------------------------------------------------------- unit paths of resolve / choose_target
+def _cand(n=1, peak=5.0, **kw):
+    import hashlib
+
+    from voxeltrace.trial.lesion_review import LesionCandidate
+
+    h = lambda t: hashlib.sha256(t.encode()).hexdigest()  # noqa: E731
+    base = dict(subject="S1", timepoint="baseline", study_hash="study_0123456789abcdef", pet_series_hash="pet_0123456789abcdef",
+                seg_series_hash="seg_0123456789abcdef", seg_file_sha256=h("file"), segment_number=n, segment_label=f"L{n}",
+                mask_sha256=h(f"m{n}"),
+                source_type="HUMAN_MANUAL", source_provenance={}, segment_category="Tissue", segment_type="Lesion",
+                target_eligible=True, voxel_count=10, volume_ml=1.0, suv_max=peak + 1, suv_mean=peak - 1,
+                suv_peak=peak, mtv_ml=1.0, tlg=1.0, bbox_kji=None, centroid_kji=None)  # fmt: skip
+    base.update(kw)
+    return LesionCandidate(**base)
+
+
+OK = {"status": "OK"}
+
+
+def test_changed_seg_file_with_identical_mask_is_outdated():
+    from voxeltrace.trial.lesion_review import resolve
+
+    c = _cand()
+    r = review_for(c)
+    ev = resolve(c.model_copy(update={"seg_file_sha256": "f" * 64}), [r], OK)
+    assert ev.review_status == "OUTDATED" and ev.reasons == ["MASK_CHANGED_SINCE_REVIEW"]
+
+
+def test_latest_review_wins_and_reject_after_accept_blocks_target():
+    from voxeltrace.trial.lesion_review import choose_target, resolve
+
+    c = _cand()
+    ev = resolve(c, [review_for(c, "ACCEPT"), review_for(c, "REJECT")], OK)
+    assert ev.review_status == "REJECTED"
+    target, status = choose_target([ev], "REVIEW_REQUIRED")
+    assert target is None and status == "LESION_REVIEW_REQUIRED:REJECTED"
+
+
+def test_target_is_accepted_eligible_segment_with_highest_suvpeak():
+    from voxeltrace.trial.lesion_review import choose_target, resolve
+
+    a, b, organ = _cand(1, 4.0), _cand(2, 9.0), _cand(3, 50.0, target_eligible=False)
+    unrev = _cand(4, 99.0)
+    evs = [resolve(x, [review_for(x)], OK) for x in (a, b, organ)] + [resolve(unrev, [], OK)]
+    target, status = choose_target(evs, "REVIEW_REQUIRED")
+    assert (
+        status == "REVIEWED_TARGET" and target.candidate.segment_number == 2
+    )  # not the organ, not unreviewed
+    assert target.evidence_label == "HUMAN_REVIEWED (HUMAN_MANUAL accepted)"
+    assert [e.used_as_target for e in evs] == [False, True, False, False]
+
+
+def test_no_segments_and_invalid_chain_paths():
+    from voxeltrace.trial.lesion_review import choose_target, resolve
+
+    assert choose_target([], "REVIEW_REQUIRED") == (None, "NO_LESION_SUPPLIED")
+    c = _cand()
+    ev = resolve(c, [review_for(c)], {"status": "TAMPERED"})
+    assert ev.review_status == "INVALID" and ev.reasons == ["REVIEW_LOG_TAMPERED"]
+    empty = _cand(voxel_count=0)
+    assert choose_target([resolve(empty, [], OK)], "LEGACY_UNREVIEWED_ALLOWED") == (
+        None,
+        "NO_NONEMPTY_LESION",
+    )
+
+
+def test_append_requires_confirmation_and_refuses_broken_log(tmp_path):
+    c = _cand()
+    p = tmp_path / "lr.jsonl"
+    with pytest.raises(PermissionError):
+        append_review(p, review_for(c), confirmed=False)
+    assert not p.exists()  # nothing written without confirmation
+    append_review(p, review_for(c), confirmed=True)
+    p.write_text(p.read_text() + "not json\n")
+    chain = verify_log(p)
+    assert chain["status"] == "INVALID" and chain["line"] == 2
+    with pytest.raises(ValueError, match="INVALID"):
+        append_review(p, review_for(c), confirmed=True)
+    assert load_reviews(p)[0] == []  # an invalid log yields no usable review
+
+
+def test_classify_source_branches():
+    cs = lambda *a: classify_source(*a)[0]  # noqa: E731
+    assert (
+        cs("tumor radiologist corrected segmentation", "SEMIAUTOMATIC", None) == "HUMAN_CORRECTED"
+    )
+    assert cs("Segmentation", "MANUAL", None) == "HUMAN_MANUAL"
+    assert cs("x", "SEMIAUTOMATIC", "threshold 41%") == "ALGORITHM_GENERATED"
+    assert cs("x", "AUTOMATIC", "TotalSegmentator") == "AI_GENERATED"
+    assert cs("x", "AUTOMATIC", "region growing") == "ALGORITHM_GENERATED"
+    assert cs(None, None, None) == "UNKNOWN"
