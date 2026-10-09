@@ -98,6 +98,11 @@ class LesionCandidate(BaseModel):
     mask_sha256: str
     source_type: SourceType
     source_provenance: dict[str, Any] = Field(default_factory=dict)
+    segment_category: str | None = None
+    segment_type: str | None = None
+    target_eligible: bool = Field(
+        default=True, description="False for anatomical-structure segments (e.g. an organ mask)"
+    )
     voxel_count: int = 0
     volume_ml: float | None = None
     suv_max: float | None = None
@@ -241,7 +246,8 @@ def choose_target(
             t.evidence_label = f"UNREVIEWED_LEGACY_POLICY ({t.review_status})"
             return t, "LEGACY_UNREVIEWED_TARGET"
         return None, "NO_NONEMPTY_LESION"
-    ok = [e for e in evidence if e.review_status == "ACCEPTED" and e.candidate.suv_peak is not None]
+    ok = [e for e in evidence if e.review_status == "ACCEPTED" and e.candidate.suv_peak is not None
+          and e.candidate.target_eligible]  # fmt: skip
     if not ok:
         statuses = sorted({e.review_status for e in evidence})
         return None, "LESION_REVIEW_REQUIRED:" + ",".join(statuses)
@@ -249,6 +255,14 @@ def choose_target(
     t.used_as_target = True
     t.evidence_label = f"HUMAN_REVIEWED ({t.candidate.source_type} accepted)"
     return t, "REVIEWED_TARGET"
+
+
+NON_TARGET_CATEGORIES = re.compile(r"anatomical structure|body substance|tissue", re.I)
+
+
+def target_eligible(category: str | None) -> bool:
+    """Organ / tissue segments (DICOM SegmentedPropertyCategory) are never lesion targets."""
+    return not (category and NON_TARGET_CATEGORIES.search(category))
 
 
 def hashes(study_uid: str | None, pet_uid: str | None, seg_uid: str | None) -> dict[str, str]:

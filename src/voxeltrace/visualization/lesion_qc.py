@@ -74,6 +74,8 @@ def render_lesion_qc(
     (k0, j0, i0), (k1, j1, i1) = idx.min(0), idx.max(0)
     ks = np.bincount(idx[:, 0])
     k = int(np.argmax(ks))
+    if suvmax_kji is not None and m[suvmax_kji[0]].any():
+        k = int(suvmax_kji[0])  # centre the review on the hottest voxel's slice
     jc, ic = (int(round(v)) for v in idx[:, 1:].mean(0))
     J0, J1 = max(0, j0 - MARGIN), min(pet.shape[1], j1 + MARGIN + 1)
     I0, I1 = max(0, i0 - MARGIN), min(pet.shape[2], i1 + MARGIN + 1)

@@ -230,7 +230,13 @@ def lesion_candidates(run, subject: str, timepoint: str) -> list:
     import numpy as np
 
     from voxeltrace.bundle import sha256_file
-    from voxeltrace.trial.lesion_review import LesionCandidate, classify_source, hashes, mask_sha256
+    from voxeltrace.trial.lesion_review import (
+        LesionCandidate,
+        classify_source,
+        hashes,
+        mask_sha256,
+        target_eligible,
+    )
 
     if run.seg is None or not run.seg_masks:
         return []
@@ -267,6 +273,8 @@ def lesion_candidates(run, subject: str, timepoint: str) -> list:
             subject=subject, timepoint=timepoint, **ids, seg_file_sha256=seg_sha,
             segment_number=num, segment_label=label,
             mask_sha256=mask_sha256(mask), source_type=src, source_provenance=prov,
+            segment_category=si.category if si else None, segment_type=si.type if si else None,
+            target_eligible=target_eligible(si.category if si else None),
             voxel_count=int(idx.shape[0]),
             volume_ml=m.mtv_ml if m else None, mtv_ml=m.mtv_ml if m else None,
             suv_max=m.suv_max if m else None, suv_mean=m.suv_mean if m else None,

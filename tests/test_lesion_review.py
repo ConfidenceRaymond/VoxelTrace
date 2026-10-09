@@ -322,3 +322,18 @@ def test_lesion_review_page_smoke(tmp_path):
     button = at.button[0]
     assert button.disabled  # nothing chosen, no reviewer: cannot record
     assert not (root / "lesion_review.jsonl").exists()
+
+
+def test_accepted_organ_segment_is_never_a_target(tmp_path):
+    d = make_scan(tmp_path / "o", ai=True)
+    seg = next((d / "SEG").glob("*.dcm"))
+    ds = pydicom.dcmread(seg)
+    ds.SegmentSequence[0].SegmentedPropertyCategoryCodeSequence[
+        0
+    ].CodeMeaning = "Anatomical Structure"
+    ds.save_as(seg)
+    cand = tp_of(d).lesion_evidence[0].candidate
+    assert cand.target_eligible is False and cand.segment_category == "Anatomical Structure"
+    tp = tp_of(d, reviews=load_reviews(log_with(tmp_path, review_for(cand)), allow_simulated=True))
+    (ev,) = tp.lesion_evidence
+    assert ev.review_status == "ACCEPTED" and not ev.used_as_target and tp.lesion_suvpeak is None
