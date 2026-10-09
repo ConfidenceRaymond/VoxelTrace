@@ -14,12 +14,14 @@ from voxeltrace.evidence.fingerprint import FP_SCHEMA
 from voxeltrace.preflight.schema import PREFLIGHT_SCHEMA
 from voxeltrace.trial.adjudication import ADJUDICATION_SCHEMA
 from voxeltrace.trial.drift import DRIFT_SCHEMA
+from voxeltrace.trial.lesion_review import SCHEMA as LESION_REVIEW_SCHEMA
 
 EVIDENCE_SCHEMA = "VT-EVIDENCE-1"  # ProtocolEvidence / EvidenceField (evidence/protocol.py)
 TRIAL_AUDIT_SCHEMA = "VT-TRIAL-AUDIT-1"  # TrialAudit JSON (trial/audit.py); earlier files = v1
 AUDIT_PACKAGE_SCHEMA = "VT-AUDIT-PACKAGE-1"  # whole-trial audit v2 outputs (pilot.py)
 BUNDLE_SCHEMA = "VT-BUNDLE-1"  # immutable evidence bundle (bundle.py)
 SITE_QUERY_SCHEMA = "VT-SITE-QUERY-1"
+EXECUTIVE_SUMMARY_SCHEMA = "VT-EXECUTIVE-SUMMARY-1"  # reports/executive_summary.json (executive.py)
 
 SCHEMAS = {
     "evidence": EVIDENCE_SCHEMA,
@@ -32,6 +34,8 @@ SCHEMAS = {
     "adjudication": ADJUDICATION_SCHEMA,
     "bundle": BUNDLE_SCHEMA,
     "site_query": SITE_QUERY_SCHEMA,
+    "executive_summary": EXECUTIVE_SUMMARY_SCHEMA,
+    "lesion_review": LESION_REVIEW_SCHEMA,
 }
 
 

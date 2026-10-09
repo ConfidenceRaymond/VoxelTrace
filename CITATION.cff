@@ -1,18 +1,23 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
-title: "VoxelTrace: Local AI for Quantitative PET Intelligence"
+title: "VoxelTrace: vendor-neutral quantitative PET comparability, provenance and trial audit"
 abstract: >-
-  Local-first research prototype combining deterministic quantitative PET image
-  analysis with structured evidence and local AI reasoning. Not a medical device.
+  Research prototype that checks, before analysis, whether quantitative FDG PET/CT
+  measurements can be compared across timepoints, scanners and sites under explicit,
+  source-cited rule sets (QIBA, EANM, PERCIST), with deterministic preflight, strict SUV/SUL,
+  hash-bound human review of reference regions and lesion targets, and immutable evidence
+  bundles. Not a medical device; not for clinical diagnosis.
 type: software
 authors:
   - given-names: Raymond
     family-names: Confidence
-version: 0.1.0
-date-released: 2026-10-07
+version: 0.3.0
 license: MIT
+repository-code: "https://github.com/ConfidenceRaymond/VoxelTrace"
 keywords:
   - PET
   - quantitative imaging
-  - local AI
-  - NVIDIA GB10
+  - FDG
+  - multicentre trials
+  - quality control
+  - provenance

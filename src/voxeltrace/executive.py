@@ -61,7 +61,10 @@ def top_page(trial_id: str, summary: dict[str, Any], audits: dict[str, Any]) -> 
                     "site_can_fix": fix, "recommendation": rem})  # fmt: skip
     pf = summary.get("preflight", {})
     pf_codes = pf.get("reason_codes", {})
+    from voxeltrace.versions import EXECUTIVE_SUMMARY_SCHEMA
+
     return {
+        "schema": EXECUTIVE_SUMMARY_SCHEMA,
         "trial_id": trial_id,
         "subjects": len(subjects),
         "pairs": len({k for a in audits.values() for k in (f"{p.pair.subject_id}:{p.pair.baseline}->{p.pair.followup}" for p in a.pairs)}),

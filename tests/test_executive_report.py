@@ -50,3 +50,22 @@ def test_pdf_escapes_and_paginates():
     assert b"\\(paren\\)" in pdf
     assert int(re.search(rb"/Count (\d+)", pdf).group(1)) >= 3  # 200 lines do not fit one page
     assert markdown_to_pdf(md, title="t") == pdf
+
+
+def test_version_flag_reports_code_rules_and_schemas(capsys):
+    import pytest
+
+    import voxeltrace
+    from voxeltrace.cli import main
+
+    with pytest.raises(SystemExit) as e:
+        main(["--version"])
+    out = capsys.readouterr().out
+    assert e.value.code == 0 and f"voxeltrace {voxeltrace.__version__}" in out
+    for token in (
+        "percist-1.0",
+        "rule bundle sha256",
+        "VT-EXECUTIVE-SUMMARY-1",
+        "voxeltrace.lesion-review/1",
+    ):
+        assert token in out

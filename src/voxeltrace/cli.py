@@ -27,6 +27,17 @@ def _validate_input(a: argparse.Namespace) -> int:
     return EXIT_CODES[r["decision"]]
 
 
+def _version_text() -> str:
+    import voxeltrace
+    from voxeltrace.versions import SCHEMAS, rule_bundle
+
+    rb = rule_bundle()
+    rules = ", ".join(f"{k} ({v['version']})" for k, v in sorted(rb["rulesets"].items()))
+    schemas = ", ".join(f"{k}={v}" for k, v in sorted(SCHEMAS.items()))
+    return (f"voxeltrace {voxeltrace.__version__}\nrule sets: {rules}\n"
+            f"rule bundle sha256: {rb['rule_bundle_sha256']}\nschemas: {schemas}")  # fmt: skip
+
+
 def _data_inventory(a: argparse.Namespace) -> int:
     from voxeltrace.config import REPO_ROOT
     from voxeltrace.inventory import format_text, inventory
@@ -328,9 +339,11 @@ def _lesion_review(a: argparse.Namespace) -> int:
 def build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(
         prog="voxeltrace",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
         description="VoxelTrace: vendor-neutral quantitative PET comparability, provenance and "
         f"trial audit. {DISCLAIMER}",
     )
+    ap.add_argument("--version", action="version", version=_version_text())
     sub = ap.add_subparsers(dest="command", required=True)
     p = sub.add_parser(
         "preflight",

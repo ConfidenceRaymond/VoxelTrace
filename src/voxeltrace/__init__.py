@@ -3,6 +3,6 @@
 Research prototype. Not a medical device. Not for clinical diagnosis.
 """
 
-__version__ = "0.1.0"
+__version__ = "0.3.0"
 
 DISCLAIMER = "RESEARCH PROTOTYPE - NOT FOR CLINICAL DIAGNOSIS"

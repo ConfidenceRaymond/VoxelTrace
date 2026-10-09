@@ -32,3 +32,26 @@ changes the hash, and the bundle manifest records it.
    version N+1 to a new location, records both versions, and never overwrites the source.
 4. **Bundles are immutable.** A re-run writes a new bundle; `voxeltrace verify-bundle`
    detects modified, missing or unlisted files and a changed checksum list.
+
+## Version record for 0.3.0
+
+`voxeltrace --version` prints everything below. Every bundle manifest also records it
+(`voxeltrace_version`, `schema_versions`, `rule_versions`, `rule_bundle_sha256`).
+
+| Component | Version |
+|---|---|
+| Code / CLI | 0.3.0 (`pyproject.toml`, `voxeltrace.__version__`, `voxeltrace --version`); 0.x series (see `CHANGELOG.md`) |
+| Rule sets | `qiba-fdg-1.14` QIBA-FDG-PETCT-1.14, `eanm-fdg-2.0` EANM-FDG-2.0, `percist-1.0` PERCIST-1.0/PRACTICAL-2016; each rule also carries its own version |
+| Rule bundle sha256 | `413186131a357163959cb161358e9193899c9675278bcc1a8a8c8d194f9d411d` (unchanged by 0.3.0) |
+| Evidence | VT-EVIDENCE-1, VT-PROTOCOL-FP-1, VT-PREFLIGHT-1, `voxeltrace.recon-attestation/2` |
+| Review logs | `voxeltrace.lesion-review/1` (lesions), hash-bound reference reviews (proposal algorithm `vt-refauto-1`), VT-ADJUDICATION-1 |
+| Audit outputs | VT-TRIAL-AUDIT-1, VT-AUDIT-PACKAGE-1, VT-BUNDLE-1, VT-DRIFT-1, VT-SITE-QUERY-1 |
+| Reports | VT-EXECUTIVE-SUMMARY-1 (`reports/executive_summary.json`; Markdown and PDF have the same content) |
+| Other tools | VT-EXPERT-VALIDATION-1, VT-VALIDATE-INPUT-1, VT-DATA-INVENTORY-1, VT-BRAIN-INTAKE-1 |
+
+**Strategy:**
+- 0.x minor versions mark research and external-validation milestones; patch versions are
+  fixes with no change to any verdict.
+- A change to a rule threshold or verdict logic needs a new rule version and a new rule-bundle
+  hash, even inside 0.x.
+- 1.0 is reserved for a release backed by completed external expert validation.
