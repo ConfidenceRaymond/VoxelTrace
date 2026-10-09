@@ -470,3 +470,27 @@ def test_report_view_from_exported_json(tmp_path):
     d = json.loads((tmp_path / "p" / "trial_audit.json").read_text())
     assert not banner_needed(d) and attestation_table(d) == []
     assert identity_rows(d)[0]["protocol_identity"] == "NOT_ESTABLISHED"
+
+
+def test_cli_template_is_never_a_valid_attestation(tmp_path):
+    from voxeltrace.cli import main as cli
+
+    root, afile = _trial(tmp_path)
+    out = tmp_path / "template.yaml"
+    assert cli(["attestation-template", "--scan-dir", str(root / "S1" / "baseline"), "--subject",
+                "S1", "--timepoint", "baseline", "--out", str(out)]) == 0  # fmt: skip
+    doc = yaml.safe_load(out.read_text())
+    rec = doc["attestations"][0]
+    assert rec["series_instance_uid"] and rec["manufacturer"] == "GE MEDICAL SYSTEMS"
+    assert rec["reconstruction_method"] is None and rec["attestor_id"] == ""  # never filled
+    good, rejected = load_attestations(out)
+    assert good == {} and rejected[0].status == "INVALID"
+    # production validation refuses the simulated fixture file
+    assert cli(["validate-attestations", "--input", str(root), "--attestations", str(afile)]) == 1
+    # a completed, non-simulated record (test folder only) validates
+    data = yaml.safe_load(afile.read_text())
+    for r in data["attestations"]:
+        r["simulated"] = False
+    real = afile.parent / "completed.yaml"
+    real.write_text(yaml.safe_dump(data))
+    assert cli(["validate-attestations", "--input", str(root), "--attestations", str(real)]) == 0
