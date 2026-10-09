@@ -215,6 +215,21 @@ def _att_validate(a: argparse.Namespace) -> int:
     return 0 if rows and all(r["status"] == "VALID" for r in rows) else 1
 
 
+def _export_validation(a: argparse.Namespace) -> int:
+    from voxeltrace.expert_validation import export_package
+
+    paths = export_package(a.bundle, a.out, mode=a.mode)
+    print(f"{len(paths)} case packets ({a.mode}) in {a.out}; answer key is COORDINATOR_ONLY")
+    return 0
+
+
+def _score_validation(a: argparse.Namespace) -> int:
+    from voxeltrace.expert_validation import score_responses
+
+    print(json.dumps(score_responses(a.package, a.responses), indent=2))
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(
         prog="voxeltrace",
@@ -280,6 +295,22 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--input", required=True, help="trial folder <subject>/<timepoint>/")
     p.add_argument("--attestations", required=True)
     p.set_defaults(func=_att_validate)
+
+    p = sub.add_parser(
+        "export-validation",
+        help="export a BLINDED/UNBLINDED expert validation package from a bundle",
+    )
+    p.add_argument("--bundle", required=True)
+    p.add_argument("--out", required=True)
+    p.add_argument("--mode", choices=["BLINDED", "UNBLINDED"], default="BLINDED")
+    p.set_defaults(func=_export_validation)
+
+    p = sub.add_parser(
+        "score-validation", help="score filled expert response forms against VoxelTrace verdicts"
+    )
+    p.add_argument("--package", required=True)
+    p.add_argument("--responses")
+    p.set_defaults(func=_score_validation)
 
     p = sub.add_parser("adjudicate", help="append ONE human pair adjudication (requires --confirm)")
     for name in ("log", "id", "subject", "baseline", "followup", "ruleset", "automated-verdict",
