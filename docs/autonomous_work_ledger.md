@@ -24,3 +24,7 @@ CURRENT_ASSIGNMENT_COMPLETE = YES
 | 11 | Pair-level human adjudication | COMPLETE | trial/adjudication.py, cli adjudicate | test_pilot_bundle | 33962d5 | yes | no UI page yet (CLI only); no lesion review gate yet | — |
 | 12 | Site query generator | COMPLETE | trial/site_queries.py | test_pilot_bundle | 33962d5 | yes | template set covers main codes only | — |
 | 13 | Pilot CLI | COMPLETE | cli.py (preflight, inspect, audit, verify-bundle, summarize, list-reviews, adjudicate) | CLI tests | 33962d5 | yes | — | WS21 install test |
+| 15 | Failure-injection suite + coverage matrix | COMPLETE | tests/test_failure_injection.py, scripts/reason_coverage.py, docs/failure_injection_coverage.md | 117/117 emittable codes | 620dfd9 | yes | 4 pixel-stage guards are GUARD_ONLY; 3 catalog codes never emitted | — |
+| 20 | CI | COMPLETE | .github/workflows/ci.yml | GitHub run 37864931413 success (3.11, 3.12) | 56e6e88 | yes | synthetic data only by design | — |
+| 21 | Package/install hardening | COMPLETE | pyproject.toml (Pillow declared) | fresh venv: install + CLI + 567 tests | 56e6e88 | yes | Python 3.12 verified locally, 3.11 in CI | — |
+| 14 | Performance benchmark | COMPLETE_WITH_LIMITATION | scripts/benchmark.py, docs/performance.md | measured | 69e0cda | yes | single machine; repeated per-rule-set ingestion | WS28 debt |
