@@ -257,11 +257,13 @@ def choose_target(
     return t, "REVIEWED_TARGET"
 
 
-NON_TARGET_CATEGORIES = re.compile(r"anatomical structure|body substance|tissue", re.I)
+# Only unambiguous non-lesion categories are excluded. Generic categories such as "Tissue"
+# (used e.g. by the autoPET manual lesion SEGs) stay eligible: the human reviewer decides.
+NON_TARGET_CATEGORIES = re.compile(r"anatomical structure|body substance", re.I)
 
 
 def target_eligible(category: str | None) -> bool:
-    """Organ / tissue segments (DICOM SegmentedPropertyCategory) are never lesion targets."""
+    """Organ / body-substance segments (DICOM SegmentedPropertyCategory) are never targets."""
     return not (category and NON_TARGET_CATEGORIES.search(category))
 
 

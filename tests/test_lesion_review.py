@@ -337,3 +337,14 @@ def test_accepted_organ_segment_is_never_a_target(tmp_path):
     tp = tp_of(d, reviews=load_reviews(log_with(tmp_path, review_for(cand)), allow_simulated=True))
     (ev,) = tp.lesion_evidence
     assert ev.review_status == "ACCEPTED" and not ev.used_as_target and tp.lesion_suvpeak is None
+
+
+def test_generic_tissue_category_stays_eligible():
+    from voxeltrace.trial.lesion_review import target_eligible
+
+    assert (
+        target_eligible("Tissue")
+        and target_eligible("Radiologic Finding")
+        and target_eligible(None)
+    )
+    assert not target_eligible("Anatomical Structure") and not target_eligible("Body Substance")
