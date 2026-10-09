@@ -66,3 +66,56 @@ def test_kappa():
     assert _kappa([("A", "A"), ("B", "B")]) == 1.0
     assert _kappa([("A", "B"), ("B", "A")]) == -1.0
     assert _kappa([("A", "A")]) is None
+
+
+def test_weighted_metrics_false_safe_severity_and_ii_agreement():
+    from voxeltrace.expert_validation import (
+        _false_safe,
+        _ii_agreement,
+        _weighted_agreement,
+        _weighted_kappa,
+    )
+
+    pairs = [("ASSESSABLE", "NOT_ASSESSABLE"), ("ASSESSABLE_WITH_WARNINGS", "INSUFFICIENT_INFORMATION"),
+             ("INSUFFICIENT_INFORMATION", "NOT_ASSESSABLE"), ("INSUFFICIENT_INFORMATION", "INSUFFICIENT_INFORMATION"),
+             ("NOT_ASSESSABLE", "ASSESSABLE")]  # fmt: skip
+    assert _false_safe(pairs) == {"CRITICAL": 1, "MAJOR": 1, "MINOR": 1, "total": 3}
+    assert _ii_agreement(pairs) == {
+        "both": 1,
+        "voxeltrace_only": 1,
+        "expert_only": 1,
+        "positive_agreement": 0.5,
+    }
+    assert _weighted_agreement([("ASSESSABLE", "ASSESSABLE")]) == 1.0
+    assert _weighted_agreement([("ASSESSABLE", "NOT_ASSESSABLE")]) == 0.0
+    perfect = [("ASSESSABLE", "ASSESSABLE"), ("NOT_ASSESSABLE", "NOT_ASSESSABLE")]
+    assert (
+        _weighted_kappa(perfect) == 1.0 and _weighted_kappa([("ASSESSABLE", "ASSESSABLE")]) is None
+    )
+
+
+def test_blinded_packets_carry_no_voxeltrace_labels(package):
+    from voxeltrace.expert_validation import find_leaks, forbidden_tokens
+
+    bundle = package.parent / "out" / "audit_bundle"
+    pf = json.loads((bundle / "preflight" / "preflight.json").read_text())
+    rulesets = sorted(p.name for p in (bundle / "rules").iterdir() if p.is_dir())
+    forbidden = forbidden_tokens(bundle, pf, rulesets)
+    assert "VT-PROTOCOL-IDENTITY" in forbidden or any(
+        t.startswith(("QIBA-", "VT-")) for t in forbidden
+    )
+    for case in (package / "cases").glob("*.json"):
+        text = case.read_text()
+        assert find_leaks(text, forbidden) == set()
+        assert '"state"' not in text and '"reason_code"' not in text and '"suv_status"' not in text
+
+
+def test_blinded_export_refuses_on_leak(tmp_path, monkeypatch):
+    import voxeltrace.expert_validation as ev
+
+    root, _ = trial(tmp_path)
+    run_audit(root, tmp_path / "out", hash_inputs=False)
+    monkeypatch.setattr(ev, "BLINDED_QUANT_FIELDS", ("subject", "timepoint", "suv_status"))
+    monkeypatch.setattr(ev, "forbidden_tokens", lambda *a: {"PASS_LABEL_X", "REFUSED", "PASS"})
+    with pytest.raises(ev.BlindingLeakError):
+        export_package(tmp_path / "out" / "audit_bundle", tmp_path / "pkg", mode="BLINDED")

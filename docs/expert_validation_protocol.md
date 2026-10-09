@@ -34,6 +34,12 @@ empty forms and, by default, any record marked `simulated`.
 
 ## Metrics (per rule set)
 
+The full, pre-specified list is in
+[external_validation/analysis_plan.md](external_validation/analysis_plan.md). It adds
+weighted agreement, linear-weighted κ, false-safe counts by severity, false-unsafe counts and
+INSUFFICIENT_INFORMATION agreement. In BLINDED mode the export refuses to write a packet
+that contains any verdict, rule ID, reason code or preflight state produced for the bundle.
+
 | Metric | Definition |
 |---|---|
 | Raw agreement | identical verdicts / cases |
