@@ -132,7 +132,8 @@ def test_qwen_export_format(built):
 def test_validation_detects_tampering(built):
     res, _, _ = built
     out = res["out_dir"]
-    img = next(out.glob("images/*.png"))
+    image_ref = next(img for example in res["examples"] for img in example.images)
+    img = out / image_ref.path
     original = img.read_bytes()
     try:
         img.write_bytes(original + b"x")
