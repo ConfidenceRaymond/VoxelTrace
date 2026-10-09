@@ -231,6 +231,13 @@ def _score_validation(a: argparse.Namespace) -> int:
     return 0
 
 
+def _inspect_brain(a: argparse.Namespace) -> int:
+    from voxeltrace.brain_intake import inspect_brain
+
+    print(json.dumps(inspect_brain(a.path), indent=2, default=str))
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(
         prog="voxeltrace",
@@ -252,6 +259,13 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("inspect", help="list the DICOM series found under a path (read-only)")
     p.add_argument("path")
     p.set_defaults(func=_inspect)
+
+    p = sub.add_parser(
+        "inspect-brain",
+        help="read-only inventory of a brain PET study (BIDS or DICOM); no quantification",
+    )
+    p.add_argument("path")
+    p.set_defaults(func=_inspect_brain)
 
     p = sub.add_parser("audit", help="whole-trial comparability audit -> immutable evidence bundle")
     p.add_argument("--input", required=True, help="trial folder: <subject>/<timepoint>/<DICOM>")
