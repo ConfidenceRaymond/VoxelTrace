@@ -17,6 +17,21 @@ from pydantic_settings import (
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_CONFIG_PATH = REPO_ROOT / "configs" / "default.yaml"
 
+
+def workspace_root() -> Path:
+    """Where VoxelTrace data and outputs live by default: $VOXELTRACE_WORKSPACE if set; the
+    parent of a source checkout (development layout); otherwise the current directory. An
+    installed package never points into site-packages."""
+    import os
+
+    env = os.environ.get("VOXELTRACE_WORKSPACE")
+    if env:
+        return Path(env).expanduser().resolve()
+    if (REPO_ROOT / "pyproject.toml").exists() and (REPO_ROOT / "src" / "voxeltrace").is_dir():
+        return REPO_ROOT.parent.resolve()
+    return Path.cwd().resolve()
+
+
 LOOPBACK_HOSTS = frozenset({"127.0.0.1", "localhost", "::1"})
 
 

@@ -50,64 +50,81 @@ def synthetic_array() -> np.ndarray:
 
 
 st.title("VoxelTrace")
-st.subheader("Local AI for Quantitative PET Intelligence")
+st.subheader("Quantitative trust for PET imaging")
 st.error(f"**{voxeltrace.DISCLAIMER}**  \nResearch software only. Not a medical device.")
-
 st.markdown(
-    "**Design principle:** deterministic quantitative imaging + structured evidence + "
-    "local AI reasoning. Python computes the numbers; the local model only interprets them."
+    "VoxelTrace checks whether quantitative FDG PET/CT scans across timepoints, sites, scanners "
+    "and reconstruction protocols are comparable **before** SUV changes are interpreted, under "
+    "QIBA FDG-PET/CT 1.14, EANM FDG 2.0 or PERCIST 1.0. Every result is deterministic, explained "
+    "by reason codes and delivered as a checksum-verified evidence bundle. It does not diagnose, "
+    "classify response or harmonize images."
+)
+st.markdown(
+    """
+#### Workflow
+1. **Intake and audit**: check the data (`validate-input`), create `trial.yaml`, run the audit, download reports.
+2. **Reference Review**: accept, adjust or reject liver / blood-pool proposals (human decision, hash-bound).
+3. **Lesion Review**: accept or reject supplied lesion segmentations for PERCIST targets.
+4. **Reconstruction Evidence**: reconstruction identity and site attestations behind each pair.
+5. **Ingestion / Quantitative PET / Protocol and Claims**: single-scan provenance detail.
+
+Adjudication of disputed pairs is recorded with `voxeltrace adjudicate` (hash-chained log).
+"""
+)
+st.caption(
+    "External expert validation is pending: no agreement figure exists yet "
+    "(docs/external_validation_pending.md)."
 )
 
-col1, col2 = st.columns(2)
-with col1:
-    st.markdown("#### Runtime")
-    st.table(
-        {
-            "Item": ["VoxelTrace", "Python", "NumPy", "Platform", "Machine", "GPU (name, driver)"],
-            "Value": [
-                voxeltrace.__version__,
-                platform.python_version(),
-                np.__version__,
-                platform.platform(),
-                platform.machine(),
-                gpu_info(),
-            ],
-        }
-    )
-
-with col2:
-    st.markdown("#### Local AI server")
-    settings = get_settings()
-    with LocalAIClient(settings=settings) as client:
-        status = client.health()
-    st.caption(f"Endpoint: `{status.base_url}` (local only, no cloud fallback)")
-    if status.reachable:
-        st.success(f"Reachable. Models: {', '.join(status.models) or 'none listed'}")
-    else:
-        st.warning("No local model server reachable. This is expected until one is started.")
-        with st.expander("Details"):
-            st.code(status.error or "", language=None)
-
-st.divider()
-st.markdown("#### Deterministic image-statistics smoke test")
-st.info(
-    "**SYNTHETIC DATA.** An 8×16×16 float32 Gaussian blob generated in code, with a few "
-    "zeros, one NaN and one +inf injected to exercise the edge-case handling. "
-    "This is **not** a PET case and has no clinical meaning."
-)
-arr = synthetic_array()
-stats = compute_image_stats(arr)
-
-c1, c2 = st.columns([1, 1])
-with c1:
-    st.json(stats.model_dump(), expanded=True)
-with c2:
-    mid = arr[arr.shape[0] // 2]
-    fig = go.Figure(go.Heatmap(z=mid, colorscale="Inferno", colorbar={"title": "a.u."}))
-    fig.update_layout(
-        title=f"Synthetic array, slice z={arr.shape[0] // 2} (arbitrary units)",
-        yaxis={"scaleanchor": "x", "autorange": "reversed"},
-        margin={"l": 10, "r": 10, "t": 40, "b": 10},
-        height=420,
-    )
-    st.plotly_chart(fig, width="stretch")
+with st.expander("System status and developer smoke test"):
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown("#### Runtime")
+        st.table(
+            {
+                "Item": [
+                    "VoxelTrace",
+                    "Python",
+                    "NumPy",
+                    "Platform",
+                    "Machine",
+                    "GPU (name, driver)",
+                ],
+                "Value": [
+                    voxeltrace.__version__,
+                    platform.python_version(),
+                    np.__version__,
+                    platform.platform(),
+                    platform.machine(),
+                    gpu_info(),
+                ],
+            }
+        )
+    with col2:
+        st.markdown("#### Optional local explanation model")
+        settings = get_settings()
+        with LocalAIClient(settings=settings) as client:
+            status = client.health()
+        st.caption(
+            f"Endpoint: `{status.base_url}` (local only, no cloud fallback). Never used by the audit."
+        )
+        if status.reachable:
+            st.success(f"Reachable. Models: {', '.join(status.models) or 'none listed'}")
+        else:
+            st.info("No local model server reachable. Not needed for any audit function.")
+    st.markdown("#### Deterministic image-statistics smoke test (SYNTHETIC DATA, not PET)")
+    arr = synthetic_array()
+    stats = compute_image_stats(arr)
+    c1, c2 = st.columns([1, 1])
+    with c1:
+        st.json(stats.model_dump(), expanded=False)
+    with c2:
+        mid = arr[arr.shape[0] // 2]
+        fig = go.Figure(go.Heatmap(z=mid, colorscale="Inferno", colorbar={"title": "a.u."}))
+        fig.update_layout(
+            title=f"Synthetic array, slice z={arr.shape[0] // 2} (arbitrary units)",
+            yaxis={"scaleanchor": "x", "autorange": "reversed"},
+            margin={"l": 10, "r": 10, "t": 40, "b": 10},
+            height=360,
+        )
+        st.plotly_chart(fig, width="stretch")

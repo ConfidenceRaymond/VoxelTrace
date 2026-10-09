@@ -37,7 +37,7 @@ LOCAL AI (planned)                      Qwen3-VL-8B baseline via local runtime (
 | AI reasoning | `voxeltrace.ai` | Talks to a local OpenAI-compatible server (default `http://127.0.0.1:8000/v1`). Non-loopback endpoints are refused unless explicitly enabled. No cloud fallback. No API key required. The model interprets evidence; it never produces measurements. |
 | Ingestion | `voxeltrace.ingest` | `dicom.py` handles discovery, PET metadata, geometry and volumes. `nifti.py` loads NIfTI. `segmentation.py` handles NIfTI masks and DICOM SEG. `case.py` builds a `VoxelTraceCase`. Header-first: pixels are read only on request. Missing means missing. Ambiguous geometry raises `IngestError`. |
 | Config | `voxeltrace.config` | `configs/default.yaml`, overridden by `VOXELTRACE_*` env vars. |
-| UI | `app/Home.py` | Streamlit. Currently a smoke-test landing page. |
+| UI | `app/Home.py`, `app/pages/` | Streamlit. Home = product overview and workflow; `0_Intake_and_Audit` runs intake, `init-trial`, the audit and report downloads; review pages record human decisions. |
 
 ## Geometry conventions
 

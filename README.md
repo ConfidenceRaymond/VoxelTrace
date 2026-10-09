@@ -167,7 +167,7 @@ See [docs/architecture.md](docs/architecture.md).
 Requires Python ≥ 3.11 (developed on 3.12.3, aarch64, Ubuntu 24.04).
 
 ```bash
-cd /home/dell/voxeltrace_hackathon/voxeltrace
+cd <workspace>/voxeltrace
 make install          # creates .venv and installs -e ".[app,dev]"; pip cache -> ../tmp/pip-cache
 ```
 
@@ -238,11 +238,16 @@ make app              # http://127.0.0.1:8501
 
 ```bash
 voxeltrace validate-input <folder>     # ACCEPT_FOR_AUDIT / ACCEPT_WITH_WARNINGS / NEEDS_REEXPORT / UNSUPPORTED
+voxeltrace init-trial <folder> --trial-id <id> --ruleset percist-1.0   # starter trial.yaml (no hand editing)
 voxeltrace audit --input <trial> --output <new_dir>   # immutable evidence bundle, all three rule sets
 voxeltrace verify-bundle <new_dir>/audit_bundle       # checksum check
 voxeltrace summarize <new_dir>/audit_bundle           # counts + deterministic executive summary
 voxeltrace data-inventory                             # read-only workspace inventory (never deletes)
 ```
+
+Without Claude Code or Python commands: `streamlit run app/Home.py` (page *Intake and Audit*
+runs the same steps and offers the PDF and bundle downloads). Data and outputs default to
+`$VOXELTRACE_WORKSPACE`, else the current directory for an installed package.
 
 `validate-input` exits with 0 to accept (with or without warnings), 2 for NEEDS_REEXPORT and
 3 for UNSUPPORTED. The bundle's `reports/` folder holds `EXECUTIVE_SUMMARY.md` and a

@@ -8,7 +8,7 @@ Records of what has actually been verified. Do not add claims that were not run.
 |---|---|---|
 | Unit tests | `make test` | `18 passed in 0.14s` |
 | Lint | `make lint` / `ruff format --check .` | `All checks passed!` / `15 files already formatted` |
-| App import / render | Streamlit `AppTest` headless run of `app/Home.py` | no exceptions; title, disclaimer, synthetic-data banner, AI-status warning rendered |
+| App import / render | Streamlit `AppTest` headless run of `app/Home.py` | no exceptions; product overview, disclaimer and workflow rendered; system status and the synthetic smoke test sit in a collapsed expander (`tests/test_product_workflow.py`) |
 | App server | `scripts/run_app.sh` on port 8599, `GET /_stcore/health` | `200 ok`; server stopped afterwards |
 
 ### `compute_image_stats` verified behaviours (tests/test_image_stats.py)

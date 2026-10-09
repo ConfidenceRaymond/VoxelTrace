@@ -38,17 +38,32 @@ def _version_text() -> str:
             f"rule bundle sha256: {rb['rule_bundle_sha256']}\nschemas: {schemas}")  # fmt: skip
 
 
+def _init_trial(a: argparse.Namespace) -> int:
+    from voxeltrace.trial.init_trial import write_trial_yaml
+
+    try:
+        p = write_trial_yaml(
+            a.folder, trial_id=a.trial_id, ruleset=a.ruleset, timepoint_order=a.timepoints
+        )
+    except (FileExistsError, ValueError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    print(f"wrote {p}\n{p.read_text()}")
+    return 0
+
+
 def _data_inventory(a: argparse.Namespace) -> int:
-    from voxeltrace.config import REPO_ROOT
+    from voxeltrace.config import REPO_ROOT, workspace_root
     from voxeltrace.inventory import format_text, inventory
 
-    root = Path(a.root) if a.root else REPO_ROOT.parent
-    r = inventory(root, REPO_ROOT)
+    ws = workspace_root()
+    root = Path(a.root) if a.root else ws
+    r = inventory(root, REPO_ROOT if (REPO_ROOT / "configs").is_dir() else root / "voxeltrace")
     text = json.dumps(r, indent=2) if a.format == "json" else format_text(r)
     if a.out:
         out = Path(a.out).resolve()
-        if not out.is_relative_to(REPO_ROOT.parent.resolve()):
-            print(f"error: --out must be inside {REPO_ROOT.parent}", file=sys.stderr)
+        if not out.is_relative_to(ws):
+            print(f"error: --out must be inside the workspace {ws}", file=sys.stderr)
             return 2
         if out.exists():
             print(f"error: {out} exists (never overwritten)", file=sys.stderr)
@@ -365,6 +380,20 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("path", help="series, scan, subject or trial directory")
     p.add_argument("--format", choices=["text", "json"], default="text")
     p.set_defaults(func=_validate_input)
+
+    p = sub.add_parser(
+        "init-trial",
+        help="write a starter trial.yaml for a <subject>/<timepoint>/<DICOM> folder (never overwrites)",
+    )
+    p.add_argument("folder")
+    p.add_argument("--trial-id", required=True)
+    p.add_argument(
+        "--ruleset",
+        choices=["qiba-fdg-1.14", "eanm-fdg-2.0", "percist-1.0"],
+        default="qiba-fdg-1.14",
+    )
+    p.add_argument("--timepoints", nargs="+", help="timepoint folder names in chronological order")
+    p.set_defaults(func=_init_trial)
 
     p = sub.add_parser(
         "data-inventory",
