@@ -1,0 +1,46 @@
+{
+  "schema": "voxeltrace.download-plan/1",
+  "created": "2026-10-09T17:20:35+00:00",
+  "frozen_before_download": true,
+  "collection": "acrin_nsclc_fdg_pet",
+  "subject": "ACRIN-NSCLC-FDG-PET-168",
+  "timepoints": {
+    "baseline": "1.2.276.0.7230010.3.1.3.17436516.2276198.1720642481.650569"
+  },
+  "series": [
+    {
+      "PatientID": "ACRIN-NSCLC-FDG-PET-168",
+      "collection": "acrin_nsclc_fdg_pet",
+      "timepoint": "baseline",
+      "modality": "SEG",
+      "StudyInstanceUID": "1.3.6.1.4.1.14519.5.2.1.7009.2403.171553852103131089589528610233",
+      "SeriesInstanceUID": "1.2.276.0.7230010.3.1.3.17436516.2276198.1720642481.650569",
+      "SeriesDescription": "AIMI lung and FDG tumor AI segmentation",
+      "aws_bucket": "idc-open-data",
+      "crdc_series_uuid": "5f7fad74-d110-4494-900e-493daefd6b5f",
+      "expected_instances": 1,
+      "expected_MB": 0.225734,
+      "license": "CC BY 4.0"
+    }
+  ],
+  "expected_files": 1,
+  "expected_MB": 0.225734,
+  "license": [
+    "CC BY 4.0"
+  ],
+  "provenance": {
+    "analysis_result_id": "bamf_aimi_annotations",
+    "source_DOI": "10.5281/zenodo.8345959",
+    "manufacturer": "QIICR",
+    "IDC": "v25"
+  },
+  "expected_import": {
+    "source_type": "AI_GENERATED",
+    "review_status": "UNREVIEWED",
+    "ground_truth": false
+  },
+  "expected_verdict_path": "PERCIST stays INSUFFICIENT_INFORMATION: VT-PROTOCOL-IDENTITY UNKNOWN (reconstruction NOT_ESTABLISHED) and PERCIST-BASELINE-MEASURABLE needs a human lesion review",
+  "expected_blockers": "reconstruction identity; lesion review; SEG must reference the 168 baseline PET series (verified after download)",
+  "why_worth_downloading": "Only lesion source for the best-reviewed real pair (human-accepted livers); exercises the lesion review gate on real data; 0.23 MB",
+  "guards": "exact series prefix; 1 object; size checked before download; written to a NEW directory (existing 168 data untouched)"
+}
