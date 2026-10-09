@@ -6,9 +6,9 @@ from collections.abc import Sequence
 
 from pydicom.dataset import Dataset
 
+from voxeltrace.ids import pseudonym
 from voxeltrace.preflight.checks import finding, pet_checks
 from voxeltrace.preflight.schema import SeriesPreflight, worst_state
-from voxeltrace.training.ground_truth import pseudonym
 
 
 def preflight_series_headers(

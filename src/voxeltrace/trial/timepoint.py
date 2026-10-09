@@ -8,6 +8,7 @@ from pathlib import Path
 import pydicom
 
 from voxeltrace.evidence.outputs import protocol_for_run
+from voxeltrace.ids import pseudonym
 from voxeltrace.ingest import build_case
 from voxeltrace.ingest.dicom import IngestError, load_series_volume
 from voxeltrace.quant.evidence import quantify_case
@@ -18,7 +19,6 @@ from voxeltrace.quant.reference_auto import (
 )
 from voxeltrace.quant.reference_region import ReferenceRegionSpec, measure_reference_region
 from voxeltrace.quant.sul import apply_sul, compute_sul
-from voxeltrace.training.ground_truth import pseudonym
 from voxeltrace.trial.anonymization import audit_anonymization
 from voxeltrace.trial.reasons import Reason, reason_for_suv_refusal
 from voxeltrace.trial.reference import REGIONS, ReferenceReview, resolve_region

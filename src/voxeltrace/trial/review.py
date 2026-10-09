@@ -15,6 +15,7 @@ from typing import Any
 
 import numpy as np
 
+from voxeltrace.ids import pseudonym
 from voxeltrace.ingest import build_case
 from voxeltrace.quant.evidence import quantify_case
 from voxeltrace.quant.reference_auto import ReferenceProposal, WorkGrid
@@ -26,7 +27,6 @@ from voxeltrace.quant.reference_region import (
 )
 from voxeltrace.quant.sul import apply_sul, compute_sul
 from voxeltrace.schemas import ImageGeometry
-from voxeltrace.training.ground_truth import pseudonym
 from voxeltrace.trial.schema import ScanTimepoint
 
 SUL_FORMULA = "LBMJAMES128"
