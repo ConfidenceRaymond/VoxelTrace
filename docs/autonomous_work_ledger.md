@@ -35,3 +35,20 @@ CURRENT_ASSIGNMENT_COMPLETE = YES
 | 19 | Security/privacy review | COMPLETE_WITH_LIMITATION | scripts/privacy_scan.py, bundle path pseudonymisation, docs/security_and_privacy.md | test_pilot_bundle | e4d12c2 | yes | no signature; no compliance claimed | — |
 | 26 | AI architecture freeze | COMPLETE | docs/ai_policy.md, tests/test_ai_freeze.py, voxeltrace/ids.py | test_ai_freeze | 0be7288 (red), 47a0cbc (fix) | yes | INCIDENT: 0be7288 was pushed with a failing test (pytest exit masked by a pipe); fixed in 47a0cbc; commit gate now checks the real exit code | — |
 | 29 | End-to-end dry run | COMPLETE | docs/end_to_end_example.md | real ACRIN 168 via CLI; review hash unchanged | 28ec777 | yes | — | — |
+| 22 | Brain PET / OpenNeuro metadata census | COMPLETE_WITH_LIMITATION | scripts/brain_pet_census.py, docs/brain_pet_census.md | — | c00dcee | yes | ≤ 3 sidecars per dataset; 15 datasets UNKNOWN static/dynamic (sidecar beyond listing cap) | — |
+| 23 | Local brain-study intake | COMPLETE | brain_intake.py, cli inspect-brain | test_brain_intake | c00dcee | yes | inventory only by design | — |
+| 24 | PET/MR future architecture | COMPLETE (planning) | docs/pet_mr_architecture.md | — | c00dcee | yes | no implementation by design | — |
+| 25 | Commercial pilot package | COMPLETE | docs/commercial/* | — | c00dcee | yes | no discovery interviews held | customer discovery |
+| 27 | Product readiness scorecard | COMPLETE | docs/product_readiness.md | — | e216066 | yes | — | — |
+| 28 | Technical debt audit | COMPLETE_WITH_LIMITATION | docs/technical_debt.md, app path fixes | full suite | cc8ba5d | yes | repeated per-rule-set ingestion and lesion review gate remain | — |
+| 30 | Storage / cleanup audit | COMPLETE | docs/storage_audit.md | — | 0c18f2b | yes | INCIDENT: ~/.cache/pip created by the install test, removed | — |
+
+## Session closure (2026-10-09)
+
+- Final validation: pytest 580 passed (exit 0); ruff check and format clean; git diff --check
+  clean; working tree clean; main == origin/main; no history rewritten.
+- Invariants since session start f4b25d8: no change to `quant/`, the QIBA/EANM/PERCIST/common/
+  VT rule modules, `evaluation/` or `configs/expectations` (manifest 603df5ef); the 168 review
+  file is unchanged (6433b89f); frozen evaluation outputs have no newer files.
+- Downloads: 3 pairs, 859,077,842 bytes (budget ≤ 3 pairs, ≤ 2.5 GB), plans frozen before
+  download (b06cfd9).
