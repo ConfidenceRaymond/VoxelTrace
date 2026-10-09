@@ -40,6 +40,12 @@ def export_audit(audit: TrialAudit, out_dir: str | Path) -> list[Path]:
     paths = []
     full = out / "trial_audit.json"
     exclude: dict = {"timepoints": {"__all__": {"protocol"}}}
+    if not audit.lesion_evidence:  # no supplied lesion masks -> outputs identical to before
+        exclude |= {
+            "lesion_review_file": True,
+            "lesion_evidence_policy": True,
+            "lesion_evidence": True,
+        }
     if audit.recon_attestation_file is None and not audit.recon_attestations:
         # keep audits without attestations byte-identical to earlier versions
         exclude |= {"recon_attestation_file": True, "recon_attestations": True}
@@ -112,6 +118,17 @@ def export_audit(audit: TrialAudit, out_dir: str | Path) -> list[Path]:
             w.writeheader()
             w.writerows(rows)
         paths.append(path)
+    if audit.lesion_evidence:  # written only when lesion masks were supplied
+        lpath = out / "lesion_review_status.csv"
+        cols = ["subject", "timepoint", "segment_number", "segment_label", "source_type",
+                "review_status", "used_as_target", "evidence_label", "reviewer", "decision",
+                "voxel_count", "volume_ml", "suv_max", "suv_peak", "mask_sha256",
+                "seg_series_hash", "review_reasons"]  # fmt: skip
+        with lpath.open("w", newline="") as fh:
+            w = csv.DictWriter(fh, fieldnames=cols, extrasaction="ignore")
+            w.writeheader()
+            w.writerows(audit.lesion_evidence)
+        paths.append(lpath)
     att = attestation_rows(audit)
     if att:  # report only; written only when attestations were supplied
         apath = out / "reconstruction_attestations.csv"

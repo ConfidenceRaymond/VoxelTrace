@@ -35,6 +35,11 @@ class TrialAudit(BaseModel):
     reference_reviews_unmatched: list[str] = Field(
         default_factory=list, description="review keys with no matching subject/timepoint"
     )
+    lesion_review_file: str | None = None
+    lesion_evidence_policy: str | None = None
+    lesion_evidence: list[dict] = Field(
+        default_factory=list, description="every supplied lesion segment with its review status"
+    )
     recon_attestation_file: str | None = None
     recon_attestations: list[AttestationOutcome] = Field(
         default_factory=list, description="validation outcome of every supplied attestation"
@@ -57,6 +62,7 @@ def run_trial_audit(
     attestations_file: str | Path | None = None,
     allow_simulated_attestations: bool = False,
     config_path: str | Path | None = None,
+    allow_simulated_lesion_reviews: bool = False,
 ) -> TrialAudit:
     """Audit a trial directory. ``ruleset`` overrides trial.yaml (explicit, recorded).
     ``qc_dir`` receives reference-proposal QC renders; ``reviews_file`` overrides the
@@ -68,6 +74,11 @@ def run_trial_audit(
     layout = discover_trial(root, config_path)
     review_path = reviews_file or layout.reference_review_file
     reviews = load_reviews(review_path, allow_simulated=allow_simulated_reviews)
+    from voxeltrace.trial.lesion_review import load_reviews as load_lesion_reviews
+
+    lesion_reviews = load_lesion_reviews(
+        layout.lesion_review_file, allow_simulated=allow_simulated_lesion_reviews
+    )
     if ruleset is not None:
         layout.config = layout.config.model_copy(update={"ruleset": ruleset})
     rs = effective_ruleset(layout.config)
@@ -102,6 +113,8 @@ def run_trial_audit(
             auto_reference=layout.reference_proposals == "auto",
             qc_dir=qc_dir,
             inherit_from=inherit,
+            lesion_reviews=lesion_reviews,
+            lesion_policy=layout.lesion_evidence_policy,
         )
     tps = {k: tps[k] for k in sorted(tps, key=lambda k: list(layout.scans).index(k[0]))}
     att_path = attestations_file or layout.recon_attestation_file
@@ -165,6 +178,23 @@ def run_trial_audit(
             and r.status not in ("REVIEW_OUTDATED", "REVIEW_INVALID")
         ),
         reference_reviews_unmatched=sorted(k for k in reviews if tuple(k.split("/", 1)) not in tps),
+        lesion_review_file=layout.lesion_review_file,
+        lesion_evidence_policy=layout.lesion_evidence_policy,
+        lesion_evidence=[
+            {
+                **e.candidate.model_dump(mode="json"),
+                "review_status": e.review_status,
+                "reviewer": e.reviewer,
+                "decision": e.decision,
+                "review_reasons": e.reasons,
+                "used_as_target": e.used_as_target,
+                "evidence_label": e.evidence_label
+                or ("NOT_USED (" + e.review_status + ")" if not e.used_as_target else ""),
+                "review_log_status": lesion_reviews[1].get("status"),
+            }
+            for t in tps.values()
+            for e in t.lesion_evidence
+        ],
         recon_attestation_file=str(att_path) if att_path else None,
         recon_attestations=att_outcomes,
         timepoints=list(tps.values()),

@@ -47,6 +47,8 @@ def build_timepoint(
     auto_reference: bool = True,
     qc_dir: str | Path | None = None,
     inherit_from: tuple[str, str, ScanTimepoint, dict[str, str | None]] | None = None,
+    lesion_reviews: tuple[list, dict] | None = None,
+    lesion_policy: str = "REVIEW_REQUIRED",
 ) -> ScanTimepoint:
     """``reference_specs``/``reviews`` are keyed by region (LIVER, BLOOD_POOL);
     ``liver_spec`` is kept for callers that only supply a liver region.
@@ -82,10 +84,17 @@ def build_timepoint(
         tp.uptake_s = res.inputs.decay_interval_s
         tp.weight_kg = res.inputs.patient_weight_kg
         les = [x for x in run.evidence.measured.lesions if x.voxel_count > 0]
-        if les and les[0].suv_peak and les[0].suv_peak.status == "COMPUTED":
-            tp.lesion_suvpeak = les[0].suv_peak.value
-        if les:
-            tp.lesion_suvmax = les[0].suv_max
+        _apply_lesion_gate(tp, run, lesion_reviews, lesion_policy)
+        if lesion_policy == "LEGACY_UNREVIEWED_ALLOWED":  # historical path, verbatim (labelled)
+            if les and les[0].suv_peak and les[0].suv_peak.status == "COMPUTED":
+                tp.lesion_suvpeak = les[0].suv_peak.value
+            if les:
+                tp.lesion_suvmax = les[0].suv_max
+        else:
+            target = next((e for e in tp.lesion_evidence if e.used_as_target), None)
+            if target is not None:
+                tp.lesion_suvpeak = target.candidate.suv_peak
+                tp.lesion_suvmax = target.candidate.suv_max
         act = run.outcome.activity
         tp.pet_content_sha256 = volume_sha256(act.array, act.geometry)  # type: ignore[union-attr]
         for f in SUL_FORMULAS:
@@ -214,6 +223,68 @@ def _auto_proposals(
             )
             images[region] = f"{d.name}/{name}"
     return props, images, work
+
+
+def lesion_candidates(run, subject: str, timepoint: str) -> list:
+    """One LesionCandidate per supplied segment (mask on the PET grid); never modifies files."""
+    import numpy as np
+
+    from voxeltrace.bundle import sha256_file
+    from voxeltrace.trial.lesion_review import LesionCandidate, classify_source, hashes, mask_sha256
+
+    if run.seg is None or not run.seg_masks:
+        return []
+    pet = run.case.get_series(run.pet_series_uid or "")
+    try:
+        h = pydicom.dcmread(run.seg.path, stop_before_pixels=True)
+        desc = str(h.get("SeriesDescription", "")) or None
+        names = {int(it.SegmentNumber): str(it.get("SegmentAlgorithmName", "")) or None
+                 for it in (h.get("SegmentSequence") or [])}  # fmt: skip
+        seg_manufacturer = str(h.get("Manufacturer", "")) or None
+    except Exception:  # noqa: BLE001 - provenance unreadable -> UNKNOWN source
+        desc, names, seg_manufacturer = None, {}, None
+    seg_sha = sha256_file(Path(run.seg.path))
+    info = {s.number: s for s in run.seg.segments}
+    metrics = {m.segment_number: m for m in run.lesions}
+    ids = hashes(pet.study_uid, pet.series_uid, run.seg.series_uid)
+    out = []
+    for num, mask in sorted(run.seg_masks.items()):
+        si = info.get(num)
+        src, why = classify_source(desc, si.algorithm_type if si else None, names.get(num))
+        m = metrics.get(num)
+        label = (si.label if si else None) or (m.segment_label if m else None)
+        peak = m.suv_peak.value if m and m.suv_peak and m.suv_peak.status == "COMPUTED" else None
+        prov = {
+            "basis": why,
+            "seg_series_description": desc,
+            "segment_algorithm_type": si.algorithm_type if si else None,
+            "segment_algorithm_name": names.get(num),
+            "seg_manufacturer": seg_manufacturer,
+            "seg_file": Path(run.seg.path).name,
+        }
+        idx = np.argwhere(np.asarray(mask).astype(bool))
+        out.append(LesionCandidate(
+            subject=subject, timepoint=timepoint, **ids, seg_file_sha256=seg_sha,
+            segment_number=num, segment_label=label,
+            mask_sha256=mask_sha256(mask), source_type=src, source_provenance=prov,
+            voxel_count=int(idx.shape[0]),
+            volume_ml=m.mtv_ml if m else None, mtv_ml=m.mtv_ml if m else None,
+            suv_max=m.suv_max if m else None, suv_mean=m.suv_mean if m else None,
+            suv_peak=peak,
+            tlg=m.tlg if m else None,
+            bbox_kji=[idx.min(0).tolist(), idx.max(0).tolist()] if idx.size else None,
+            centroid_kji=idx.mean(0).round(2).tolist() if idx.size else None,
+        ))  # fmt: skip
+    return out
+
+
+def _apply_lesion_gate(tp: ScanTimepoint, run, lesion_reviews, policy: str) -> None:
+    from voxeltrace.trial.lesion_review import choose_target, resolve
+
+    cands = lesion_candidates(run, tp.subject_id, tp.timepoint)
+    reviews, chain = lesion_reviews or ([], {"status": "NO_FILE"})
+    tp.lesion_evidence = [resolve(c, reviews, chain) for c in cands]
+    _t, tp.lesion_target_status = choose_target(tp.lesion_evidence, policy)  # type: ignore[arg-type]
 
 
 def _pet_frame_cts(case, run) -> list:

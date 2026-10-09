@@ -58,6 +58,9 @@ def main() -> int:
                 "timepoint_order": ["BASELINE", "FOLLOWUP"],
                 "sites": sites,
                 "synthetic_perturbations": synth,
+                # SYNTHETIC fixture: keeps the historical (unreviewed-mask) PERCIST target
+                # explicitly; real-data trials always require lesion review
+                "lesion_evidence_policy": "LEGACY_UNREVIEWED_ALLOWED",
                 "site_flags": {"SITE-A": {"earl_approved_reconstruction": True}},
                 "note": "BASELINE = real public data (read-only links); "
                 "FOLLOWUP = SYNTHETIC_PERTURBATION copies, NOT real follow-up scans.",

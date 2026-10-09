@@ -39,6 +39,7 @@ ReasonCode = Literal[
     "EXTERNAL_RECONSTRUCTION_ATTESTATION",
     "RECONSTRUCTION_ATTESTATION_NOT_USABLE",
     "RECONSTRUCTION_ATTESTATION_CONTRADICTS",
+    "LESION_REVIEW_REQUIRED",
 ]
 Confidence = Literal["CONFIRMED", "PROBABLE", "POSSIBLE", "UNKNOWN"]
 
@@ -248,6 +249,15 @@ CATALOG: dict[str, ReasonInfo] = {
         site_can_fix="YES",
         remediation="supply a hash-bound, scan-bound attestation by an accepted role for both "
         "timepoints, scoped to the rule set, stating every unknown parameter",
+    ),
+    "LESION_REVIEW_REQUIRED": ReasonInfo(
+        code="LESION_REVIEW_REQUIRED",
+        what="lesion segmentations are supplied but none is a human-ACCEPTED target for the "
+        "exact mask (unreviewed, rejected, outdated or invalid review)",
+        why_it_matters="unreviewed masks are never quantitative ground truth",
+        site_can_fix="NO",
+        remediation="a qualified reviewer accepts or rejects each segment on the Lesion Review "
+        "page; a rejected mask needs a replacement segmentation",
     ),
     "RECONSTRUCTION_ATTESTATION_CONTRADICTS": ReasonInfo(
         code="RECONSTRUCTION_ATTESTATION_CONTRADICTS",

@@ -177,7 +177,20 @@ def baseline_measurable(rule: Rule, ctx: PairContext):
     sul = b.sul.get(SUL_FORMULA)
     if r or sul is None or sul.status != "PASS" or b.lesion_suvpeak is None or not b.weight_kg:
         reasons = [r] if r else []
-        if b.lesion_suvpeak is None:
+        if b.lesion_suvpeak is None and (b.lesion_target_status or "").startswith(
+            "LESION_REVIEW_REQUIRED"
+        ):
+            reasons.append(
+                Reason(
+                    code="LESION_REVIEW_REQUIRED",
+                    field="baseline lesion target",
+                    detail="supplied lesion segment(s) not human-ACCEPTED for the exact mask: "
+                    + b.lesion_target_status.split(":", 1)[-1],
+                    confidence="CONFIRMED",
+                    evidence_basis="lesion review gate (trial/lesion_review.py)",
+                )
+            )
+        elif b.lesion_suvpeak is None:
             reasons.append(
                 Reason(
                     code="MISSING_REQUIRED_TAG",
@@ -202,11 +215,15 @@ def baseline_measurable(rule: Rule, ctx: PairContext):
         )
     sulpeak = b.lesion_suvpeak * sul.lbm_kg / b.weight_kg  # type: ignore[operator]
     thr = rule.parameters["factor"] * lv.sul_mean + rule.parameters["sd_factor"] * lv.sul_sd
+    obs = {"baseline_sulpeak": sulpeak, "threshold": thr}
+    if b.lesion_target_status in ("REVIEWED_TARGET", "LEGACY_UNREVIEWED_TARGET"):
+        obs["target_evidence"] = (
+            "HUMAN_REVIEWED"
+            if b.lesion_target_status == "REVIEWED_TARGET"
+            else "UNREVIEWED (legacy synthetic-fixture policy)"
+        )
     return check(
-        rule,
-        "PASS" if sulpeak >= thr else "FAIL",
-        {"baseline_sulpeak": sulpeak, "threshold": thr},
-        "SULpeak >= 1.5 x liver mean + 2 SD",
+        rule, "PASS" if sulpeak >= thr else "FAIL", obs, "SULpeak >= 1.5 x liver mean + 2 SD"
     )
 
 

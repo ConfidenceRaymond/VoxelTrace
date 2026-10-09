@@ -45,6 +45,10 @@ class ScanTimepoint(BaseModel):
     weight_kg: float | None = None
     lesion_suvpeak: float | None = None
     lesion_suvmax: float | None = None
+    # lesion review gate (trial/lesion_review.py); not exported in trial_audit.json timepoints
+    # (exported separately as TrialAudit.lesion_evidence) so historical outputs stay identical
+    lesion_evidence: list[Any] = Field(default_factory=list, exclude=True)
+    lesion_target_status: str | None = Field(default=None, exclude=True)
     pet_content_sha256: str | None = None
     pet_synthetic_label: bool = False
     ct_series_pseudonym: str | None = None

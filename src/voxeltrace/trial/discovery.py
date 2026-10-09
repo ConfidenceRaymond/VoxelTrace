@@ -29,6 +29,10 @@ class TrialLayout(BaseModel):
     )
     reference_proposals: Literal["auto", "off"] = "auto"
     reference_review_file: str | None = None
+    lesion_review_file: str | None = None
+    lesion_evidence_policy: Literal["REVIEW_REQUIRED", "LEGACY_UNREVIEWED_ALLOWED"] = (
+        "REVIEW_REQUIRED"
+    )
     recon_attestation_file: str | None = Field(
         default=None,
         description="explicit only (trial.yaml recon_attestation_file); never picked up by default",
@@ -65,6 +69,8 @@ def discover_trial(root: str | Path, config_path: str | Path | None = None) -> T
         reference_regions=_supplied_regions(raw.get("reference_regions") or {}),
         reference_proposals=raw.get("reference_proposals", "auto"),
         reference_review_file=str(base / raw.get("reference_review_file", "reference_review.yaml")),
+        lesion_review_file=str(base / raw.get("lesion_review_file", "lesion_review.jsonl")),
+        lesion_evidence_policy=raw.get("lesion_evidence_policy", "REVIEW_REQUIRED"),
         recon_attestation_file=(
             str(base / raw["recon_attestation_file"]) if raw.get("recon_attestation_file") else None
         ),
@@ -73,6 +79,11 @@ def discover_trial(root: str | Path, config_path: str | Path | None = None) -> T
             k: v["parent"] for k, v in (raw.get("synthetic_reference_inheritance") or {}).items()
         },
     )
+    if layout.lesion_evidence_policy == "LEGACY_UNREVIEWED_ALLOWED" and not layout.synthetic:
+        raise ValueError(
+            "lesion_evidence_policy LEGACY_UNREVIEWED_ALLOWED is only allowed for trials that "
+            "declare synthetic_perturbations (test fixtures); real data requires REVIEW_REQUIRED"
+        )
     for subj in sorted(p for p in root.iterdir() if p.is_dir()):
         tps = {tp.name: str(tp) for tp in sorted(subj.iterdir()) if tp.is_dir()}
         if tps:
