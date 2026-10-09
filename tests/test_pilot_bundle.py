@@ -334,3 +334,14 @@ def test_old_trial_audit_json_still_readable(bundle):
     for k in ("recon_attestation_file", "recon_attestations"):
         d.pop(k, None)  # files written before these fields existed
     assert TrialAudit.model_validate(d).pairs
+
+
+def test_input_paths_pseudonymized_by_default(tmp_path):
+    from voxeltrace.bundle import inputs_manifest
+
+    root, _ = trial(tmp_path)
+    a = inputs_manifest(root)
+    b = inputs_manifest(root, clear_paths=True)
+    assert a["inputs_sha256"] == b["inputs_sha256"]
+    assert all("path" not in f and len(f["path_sha256"]) == 64 for f in a["files"])
+    assert all("path" in f for f in b["files"]) and not a["paths_in_clear"]

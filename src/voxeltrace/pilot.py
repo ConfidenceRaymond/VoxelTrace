@@ -72,6 +72,7 @@ def run_audit(
     adjudications: str | Path | None = None,
     hash_inputs: bool = True,
     qc_images: bool = False,
+    clear_input_paths: bool = False,
 ) -> dict[str, Any]:
     input_dir, out = Path(input_dir), Path(output_dir)
     bundle = out / "audit_bundle"
@@ -209,7 +210,11 @@ def run_audit(
     )
 
     # 11. inputs + manifest
-    inp = inputs_manifest(input_dir) if hash_inputs else {"skipped": True}
+    inp = (
+        inputs_manifest(input_dir, clear_paths=clear_input_paths)
+        if hash_inputs
+        else {"skipped": True}
+    )
     _json(bundle / "inputs_manifest.json", inp)
     sha, dirty = git_state()
     rb = rule_bundle()

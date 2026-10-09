@@ -37,15 +37,23 @@ def sha256_file(p: Path) -> str:
     return h.hexdigest()
 
 
-def inputs_manifest(root: Path) -> dict[str, Any]:
-    """sha256 + size of every input file (relative paths), and a root hash over them."""
+def inputs_manifest(root: Path, *, clear_paths: bool = False) -> dict[str, Any]:
+    """sha256 + size of every input file and a root hash over them. Paths are recorded only
+    as sha256(relative path) unless ``clear_paths`` (site file names can carry identifiers);
+    the root hash is identical either way, so integrity checks do not need clear paths."""
     files = []
     for p in sorted(x for x in root.rglob("*") if x.is_file()):
-        files.append({"path": str(p.relative_to(root)), "bytes": p.stat().st_size,
-                      "sha256": sha256_file(p)})  # fmt: skip
-    canon = "".join(f"{f['path']}\0{f['sha256']}\n" for f in files)
-    return {"root_label": root.name, "files": files, "file_count": len(files),
-            "total_bytes": sum(f["bytes"] for f in files),
+        rel = str(p.relative_to(root))
+        entry = {"path_sha256": hashlib.sha256(rel.encode()).hexdigest(), "bytes": p.stat().st_size,
+                 "sha256": sha256_file(p), "_rel": rel}  # fmt: skip
+        if clear_paths:
+            entry["path"] = rel
+        files.append(entry)
+    canon = "".join(f"{f['_rel']}\0{f['sha256']}\n" for f in files)
+    for f in files:
+        del f["_rel"]
+    return {"root_label": "input" if not clear_paths else root.name, "paths_in_clear": clear_paths,
+            "files": files, "file_count": len(files), "total_bytes": sum(f["bytes"] for f in files),
             "inputs_sha256": hashlib.sha256(canon.encode()).hexdigest()}  # fmt: skip
 
 

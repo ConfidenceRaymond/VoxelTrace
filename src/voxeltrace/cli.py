@@ -76,6 +76,7 @@ def _audit(a: argparse.Namespace) -> int:
         a.input, a.output, config=a.config, rulesets=tuple(a.ruleset or RULESETS),
         attestations=a.attestations, adjudications=a.adjudications,
         hash_inputs=not a.no_input_hashes, qc_images=a.qc_images,
+        clear_input_paths=a.input_paths_in_clear,
     )  # fmt: skip
     print(DISCLAIMER)
     print(f"bundle: {res['bundle']}")
@@ -265,6 +266,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--adjudications", help="human adjudication log (JSON lines)")
     p.add_argument("--no-input-hashes", action="store_true", help="skip hashing every input file")
     p.add_argument("--qc-images", action="store_true", help="render reference-proposal QC images")
+    p.add_argument(
+        "--input-paths-in-clear",
+        action="store_true",
+        help="record input file paths in clear (default: sha256 of paths only)",
+    )
     p.set_defaults(func=_audit)
 
     p = sub.add_parser("verify-bundle", help="verify an evidence bundle's checksums (tamper check)")
