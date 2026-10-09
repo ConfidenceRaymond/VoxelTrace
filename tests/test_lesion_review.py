@@ -239,3 +239,86 @@ def test_legacy_policy_only_for_synthetic_trials(tmp_path):
     rows = [r for r in a.lesion_evidence if r["used_as_target"]]
     assert rows and all("UNREVIEWED_LEGACY_POLICY" in r["evidence_label"] for r in rows)
     assert json.dumps(a.lesion_evidence_policy) == '"LEGACY_UNREVIEWED_ALLOWED"'
+
+
+def test_context_renders_and_build_review_requires_human_input(ai_scan):
+    from voxeltrace.trial.lesion_review_context import build_review, load_lesion_context
+
+    ctx = load_lesion_context(ai_scan, "S1", "baseline", ([], {"status": "NO_FILE"}))
+    (it,) = ctx["items"]
+    assert ctx["quant_eligible"] and it["png"][:4] == b"\x89PNG" and it["suvmax_kji"] is not None
+    assert it["evidence"].review_status == "UNREVIEWED"
+    with pytest.raises(ValueError):
+        build_review(
+            it["evidence"], reviewer_id=" ", reviewer_role="PET_PHYSICIST", decision="ACCEPT"
+        )
+    with pytest.raises(ValueError):
+        build_review(
+            it["evidence"], reviewer_id="r", reviewer_role="PET_PHYSICIST", decision="ADJUST"
+        )
+    rec = build_review(
+        it["evidence"], reviewer_id="r", reviewer_role="PET_PHYSICIST", decision="ACCEPT"
+    )
+    assert rec.source_type == "AI_GENERATED" and rec.created_via == "HUMAN_UI" and not rec.simulated
+
+
+def test_cli_lesion_qc_and_review(ai_scan, tmp_path):
+    from voxeltrace.cli import main as cli
+
+    out, log = tmp_path / "qc", tmp_path / "lr.jsonl"
+    assert (
+        cli(
+            [
+                "lesion-qc",
+                str(ai_scan),
+                "--subject",
+                "S1",
+                "--timepoint",
+                "baseline",
+                "--out",
+                str(out),
+            ]
+        )
+        == 0
+    )
+    data = json.loads((out / "lesion_candidates.json").read_text())
+    seg = data["segments"][0]
+    assert (
+        seg["review_status"] == "UNREVIEWED"
+        and (out / seg["qc_image"]).exists()
+        and not log.exists()
+    )
+    base = ["lesion-review", str(ai_scan), "--subject", "S1", "--timepoint", "baseline", "--log", str(log),
+            "--reviewer", "me", "--role", "PET_PHYSICIST", "--segment", "1", "--decision", "ACCEPT"]  # fmt: skip
+    assert cli(base) == 2 and not log.exists()  # no --confirm
+    assert cli([*base, "--expect-mask-sha256", "0" * 64, "--confirm"]) == 2  # stale view refused
+    assert cli([*base, "--expect-mask-sha256", seg["mask_sha256"], "--confirm"]) == 0
+    reviews = load_reviews(log)
+    assert reviews[1]["status"] == "OK" and reviews[0][0].created_via == "HUMAN_CLI"
+    tp = tp_of(ai_scan, reviews=reviews)
+    assert tp.lesion_target_status == "REVIEWED_TARGET"
+
+
+def test_lesion_review_page_smoke(tmp_path):
+    pytest.importorskip("streamlit")
+    from streamlit.testing.v1 import AppTest
+
+    root = _trial(tmp_path)
+    at = AppTest.from_file(
+        str(
+            __import__("pathlib").Path(__file__).resolve().parents[1]
+            / "app"
+            / "pages"
+            / "6_Lesion_Review.py"
+        ),
+        default_timeout=120,
+    )
+    at.run()
+    at.sidebar.text_input[0].set_value(str(root)).run()
+    assert not at.exception
+    at.selectbox[0].set_value("S1 / baseline").run()
+    at.selectbox[1].set_value("1").run()
+    assert not at.exception
+    button = at.button[0]
+    assert button.disabled  # nothing chosen, no reviewer: cannot record
+    assert not (root / "lesion_review.jsonl").exists()

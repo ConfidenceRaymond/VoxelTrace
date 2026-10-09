@@ -238,6 +238,60 @@ def _inspect_brain(a: argparse.Namespace) -> int:
     return 0
 
 
+def _lesion_qc(a: argparse.Namespace) -> int:
+    """Render QC images + current review status for every supplied segment (no decision)."""
+    from voxeltrace.trial.lesion_review import load_reviews
+    from voxeltrace.trial.lesion_review_context import load_lesion_context
+
+    out = Path(a.out)
+    out.mkdir(parents=True, exist_ok=True)
+    ctx = load_lesion_context(
+        a.scan_dir,
+        a.subject,
+        a.timepoint,
+        load_reviews(a.log) if a.log else ([], {"status": "NO_FILE"}),
+    )
+    rows = []
+    for it in ctx["items"]:
+        ev = it["evidence"]
+        name = f"{a.subject}_{a.timepoint}_seg{ev.candidate.segment_number}.png"
+        if it["png"]:
+            (out / name).write_bytes(it["png"])
+        rows.append({**ev.candidate.model_dump(mode="json"), "review_status": ev.review_status,
+                     "status_reasons": ev.reasons, "qc_warnings": it["qc_warnings"], "qc_image": name if it["png"] else None})  # fmt: skip
+    (out / "lesion_candidates.json").write_text(json.dumps({"quant_eligible": ctx["quant_eligible"], "unit": ctx["unit"],
+                                                            "ct_note": ctx["ct_note"], "segments": rows}, indent=2) + "\n")  # fmt: skip
+    print(
+        f"{len(rows)} segment(s); images and lesion_candidates.json in {out} (no decision recorded)"
+    )
+    return 0
+
+
+def _lesion_review(a: argparse.Namespace) -> int:
+    """Append ONE human lesion review for one segment (requires --confirm)."""
+    from voxeltrace.trial.lesion_review import append_review, load_reviews
+    from voxeltrace.trial.lesion_review_context import build_review, load_lesion_context
+
+    if not a.confirm:
+        print("refused: lesion review requires --confirm (explicit human action)", file=sys.stderr)
+        return 2
+    ctx = load_lesion_context(a.scan_dir, a.subject, a.timepoint, load_reviews(a.log))
+    it = next(
+        (x for x in ctx["items"] if x["evidence"].candidate.segment_number == a.segment), None
+    )
+    if it is None:
+        print(f"error: segment {a.segment} not found", file=sys.stderr)
+        return 2
+    if a.expect_mask_sha256 and it["evidence"].candidate.mask_sha256 != a.expect_mask_sha256:
+        print("refused: mask hash differs from the one you reviewed", file=sys.stderr)
+        return 2
+    rec = build_review(it["evidence"], reviewer_id=a.reviewer, reviewer_role=a.role, decision=a.decision,
+                       note=a.note or "", created_via="HUMAN_CLI")  # fmt: skip
+    append_review(a.log, rec, confirmed=True)
+    print(f"recorded {a.decision} for segment {a.segment} (mask {rec.mask_sha256[:12]})")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(
         prog="voxeltrace",
@@ -331,6 +385,30 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--package", required=True)
     p.add_argument("--responses")
     p.set_defaults(func=_score_validation)
+
+    p = sub.add_parser(
+        "lesion-qc",
+        help="render QC images + review status of supplied lesion segments (no decision)",
+    )
+    p.add_argument("scan_dir")
+    p.add_argument("--subject", required=True)
+    p.add_argument("--timepoint", required=True)
+    p.add_argument("--out", required=True)
+    p.add_argument("--log", help="lesion review log (JSON lines)")
+    p.set_defaults(func=_lesion_qc)
+
+    p = sub.add_parser("lesion-review", help="append ONE human lesion review (requires --confirm)")
+    p.add_argument("scan_dir")
+    for name in ("subject", "timepoint", "log", "reviewer", "role"):
+        p.add_argument(f"--{name}", required=True)
+    p.add_argument("--segment", type=int, required=True)
+    p.add_argument(
+        "--decision", required=True, choices=["ACCEPT", "REJECT", "REJECT_AND_REPLACE_REQUIRED"]
+    )
+    p.add_argument("--expect-mask-sha256", help="the mask hash shown in the QC you reviewed")
+    p.add_argument("--note")
+    p.add_argument("--confirm", action="store_true", help="I am the named human reviewer")
+    p.set_defaults(func=_lesion_review)
 
     p = sub.add_parser("adjudicate", help="append ONE human pair adjudication (requires --confirm)")
     for name in ("log", "id", "subject", "baseline", "followup", "ruleset", "automated-verdict",
