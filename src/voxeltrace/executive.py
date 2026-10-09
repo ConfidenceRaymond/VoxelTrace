@@ -39,12 +39,12 @@ def top_page(trial_id: str, summary: dict[str, Any], audits: dict[str, Any]) -> 
     pair_codes: dict[str, set[str]] = defaultdict(set)
     code_rulesets: dict[str, set[str]] = defaultdict(set)
     subjects, real_pairs = set(), set()
+    failed_expected: dict[str, str] = {}
     verdicts: dict[str, dict[str, int]] = {}
     for rs, a in audits.items():
         verdicts[rs] = {v: 0 for v in VERDICT_ORDER}
         for p in a.pairs:
             key = f"{p.pair.subject_id}:{p.pair.baseline}->{p.pair.followup}"
-            subjects.add(p.pair.subject_id)
             if not p.synthetic_perturbation:
                 real_pairs.add(key)
             verdicts[rs][p.verdict] = verdicts[rs].get(p.verdict, 0) + 1
@@ -53,10 +53,25 @@ def top_page(trial_id: str, summary: dict[str, Any], audits: dict[str, Any]) -> 
                     for r in c.reasons:
                         pair_codes[key].add(r.code)
                         code_rulesets[r.code].add(rs)
+                    if (
+                        c.status == "FAIL" and not c.reasons
+                    ):  # decided failure without a reason code
+                        code = f"{c.rule_id} FAIL"
+                        pair_codes[key].add(code)
+                        code_rulesets[code].add(rs)
+                        failed_expected[code] = c.expected
+    for a in audits.values():
+        subjects.update(t.subject_id for t in a.timepoints)
     counts = Counter(code for codes in pair_codes.values() for code in codes)
     top = []
     for code, n in sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))[:TOP_N]:
-        rem, fix = _remediation(code)
+        if code in failed_expected:  # the data were decided and do not meet the criterion
+            rem, fix = (
+                f"criterion not met ({failed_expected[code]}); a re-export cannot change measured values",
+                "NO",
+            )
+        else:
+            rem, fix = _remediation(code)
         top.append({"reason_code": code, "pairs_affected": n, "rulesets": sorted(code_rulesets[code]),
                     "site_can_fix": fix, "recommendation": rem})  # fmt: skip
     pf = summary.get("preflight", {})

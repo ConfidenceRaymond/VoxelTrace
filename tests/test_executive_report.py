@@ -69,3 +69,28 @@ def test_version_flag_reports_code_rules_and_schemas(capsys):
         "voxeltrace.lesion-review/1",
     ):
         assert token in out
+
+
+def test_decided_failures_without_reason_codes_are_listed():
+    from types import SimpleNamespace as NS
+
+    from voxeltrace.executive import top_page
+
+    chk = NS(
+        rule_id="QIBA-UPTAKE-WINDOW",
+        impact="blocking",
+        status="FAIL",
+        reasons=[],
+        expected="55-75 min",
+    )
+    pair = NS(pair=NS(subject_id="S1", baseline="b", followup="f"), synthetic_perturbation=None,
+              verdict="NOT_ASSESSABLE", checks=[chk])  # fmt: skip
+    audit = NS(pairs=[pair], timepoints=[NS(subject_id="S1"), NS(subject_id="S2")])
+    page = top_page("T", {"preflight": {"scans": 3}}, {"qiba-fdg-1.14": audit})
+    assert page["subjects"] == 2  # single-timepoint subjects are counted too
+    (t,) = page["top_failure_reasons"]
+    assert (
+        t["reason_code"] == "QIBA-UPTAKE-WINDOW FAIL"
+        and t["site_can_fix"] == "NO"
+        and "55-75 min" in t["recommendation"]
+    )
