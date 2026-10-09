@@ -345,3 +345,19 @@ def test_input_paths_pseudonymized_by_default(tmp_path):
     assert a["inputs_sha256"] == b["inputs_sha256"]
     assert all("path" not in f and len(f["path_sha256"]) == 64 for f in a["files"])
     assert all("path" in f for f in b["files"]) and not a["paths_in_clear"]
+
+
+def test_audit_copies_review_and_adjudication_files_without_qc_images(tmp_path):
+    """Regression: the copies used to fail unless --qc-images had created reviews/ first."""
+    from voxeltrace.bundle import verify_bundle
+
+    root, _ = trial(tmp_path)
+    review = "schema: voxeltrace.reference-review/2\nreviews: {}\n"
+    (root / "reference_review.yaml").write_text(review)
+    adj = tmp_path / "adjudications.jsonl"
+    adj.write_text("")
+    run_audit(root, tmp_path / "out", hash_inputs=False, adjudications=adj)
+    b = tmp_path / "out" / "audit_bundle"
+    assert (b / "reviews" / "reference_review.yaml").exists()
+    assert (b / "adjudications" / "adjudications.jsonl").exists()
+    assert verify_bundle(b)["status"] == "OK"

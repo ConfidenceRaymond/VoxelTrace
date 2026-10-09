@@ -154,6 +154,7 @@ def run_audit(
         "review_file_present": bool(review_file and review_file.exists())
     }
     if review_file and review_file.exists():
+        (bundle / "reviews").mkdir(parents=True, exist_ok=True)
         shutil.copy(review_file, bundle / "reviews" / "reference_review.yaml")
         review_info["review_file_sha256"] = sha256_file(review_file)
     tasks = [
@@ -174,6 +175,7 @@ def run_audit(
         load_adjudications(adjudications) if adjudications else ([], {"status": "NO_FILE"})
     )
     if adjudications and Path(adjudications).exists():
+        (bundle / "adjudications").mkdir(parents=True, exist_ok=True)
         shutil.copy(adjudications, bundle / "adjudications" / "adjudications.jsonl")
     adj_rows = [r for a in audits.values() for r in adjudication_status(a.pairs, adj_records)]
     _csv(bundle / "adjudications" / "adjudication_status.csv", adj_rows)
