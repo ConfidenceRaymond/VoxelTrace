@@ -9,12 +9,13 @@ import plotly.graph_objects as go
 import streamlit as st
 
 import voxeltrace
+from voxeltrace.config import REPO_ROOT
 from voxeltrace.ingest import IngestError, build_case, decode_dicom_seg, load_series_volume
 from voxeltrace.schemas import VoxelTraceCase
 
 st.set_page_config(page_title="VoxelTrace · Ingestion", page_icon="🔬", layout="wide")
 
-DEFAULT_DIR = "/home/dell/voxeltrace_hackathon/data"
+DEFAULT_DIR = str(REPO_ROOT.parent / "data")
 
 st.title("Imaging ingestion")
 st.error(f"**{voxeltrace.DISCLAIMER}**")

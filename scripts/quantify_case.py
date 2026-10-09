@@ -5,7 +5,8 @@ Usage:
     python scripts/quantify_case.py /path/to/case [--subject ID] [--dataset NAME] [--out DIR]
 
 Exit status: 0 = SUV computed, 2 = SUV refused (reasons written), 1 = usage/input error.
-Outputs default to /home/dell/voxeltrace_hackathon/outputs/<subject or directory name>/.
+Outputs default to <project>/outputs/<subject or directory name>/
+(project = parent directory of the repository).
 """
 
 from __future__ import annotations

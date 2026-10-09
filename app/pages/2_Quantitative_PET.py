@@ -9,12 +9,13 @@ import plotly.graph_objects as go
 import streamlit as st
 
 import voxeltrace
+from voxeltrace.config import REPO_ROOT
 from voxeltrace.ingest import build_case
 from voxeltrace.quant.evidence import quantify_case
 
 st.set_page_config(page_title="VoxelTrace · Quantitative PET", page_icon="🔬", layout="wide")
 
-DEFAULT_DIR = "/home/dell/voxeltrace_hackathon/data/fdg_pet_ct_lesions/PETCT_0011f3deaf"
+DEFAULT_DIR = str(REPO_ROOT.parent / "data" / "fdg_pet_ct_lesions" / "PETCT_0011f3deaf")
 
 st.title("Quantitative PET")
 st.error(f"**{voxeltrace.DISCLAIMER}**  \nResearch software only. Not a medical device.")
