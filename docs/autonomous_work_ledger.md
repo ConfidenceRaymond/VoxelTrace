@@ -52,3 +52,34 @@ CURRENT_ASSIGNMENT_COMPLETE = YES
   file is unchanged (6433b89f); frozen evaluation outputs have no newer files.
 - Downloads: 3 pairs, 859,077,842 bytes (budget ≤ 3 pairs, ≤ 2.5 GB), plans frozen before
   download (b06cfd9).
+
+## Design-partner cycle (2026-10-09, from 286c11c)
+
+| # | Workstream | Status | Files | Tests | Commit | Pushed | Limitations | Next dependency |
+|---|---|---|---|---|---|---|---|---|
+| P1 | Lesion evidence review gate, source trust, page, CLI | COMPLETE | trial/lesion_review.py, lesion_review_context.py, visualization/lesion_qc.py, app/pages/6_Lesion_Review.py, cli.py | 25 (test_lesion_review) | 2a3a388, ca9d5eb, 54b8349, 2c9c074, f584c93 | yes | ADJUST not offered (no safe voxel editing) | human reviews |
+| P2 | 168 AI SEG (frozen plan, 225,734 B), imported AI_GENERATED/UNREVIEWED | COMPLETE | configs/.../frozen_plans/*AI_SEG.json | — | 0869831 | yes | not approved (by design) | human review |
+| P3 | PERCIST target ranking + PETCT_97320b0b58 (frozen plan a2d19939, 534 MB) | COMPLETE_WITH_LIMITATION | docs/percist_first_real_case.md, scripts/fetch_zip_member.py | — | 05256af, c9b598b | yes | complete verdict needs human liver + lesion review | reviewer |
+| P4 | PERCIST readiness layers | COMPLETE | trial/layers.py | 4 | c9b598b | yes | reporting only | — |
+| P5 | Blinded validation hardening + scoring + docs; 9-pair real cohort | COMPLETE | expert_validation.py, docs/external_validation/* | 7 | 05ce424 | yes | no forms returned | reviewers |
+| P6 | Vendor matrix + non-Siemens strategy | COMPLETE | docs/vendor_validation_matrix.md, docs/non_siemens_validation_strategy.md | — | 9b46e74 | yes | GE/Philips not quantitatively validated | design partner / phantom |
+| P7 | Report top page, executive summary, reproducible PDF | COMPLETE | executive.py, pdf.py, pilot.py | 4 | e00ed78, 1567002 | yes | text-only PDF | — |
+| P8 | validate-input, data-inventory | COMPLETE | validate_input.py, inventory.py | 13 | 32674ff | yes | — | — |
+| P9 | Versioning 0.3.0, RC proposal, repo + licence audits | COMPLETE | CHANGELOG.md, CITATION.cff, docs/*audit*.md, docs/release_candidate_proposal.md | 1 | 1567002, bf2463d | yes | tag not created (owner decision) | owner |
+| P10 | Design-partner readiness, discovery guides, brain plans | COMPLETE | docs/design_partner_readiness.md, docs/commercial/discovery_*.md, docs/brain_future_validation_plans.md | — | 0e35244 | yes | no partner yet | outreach |
+
+- **Invariants since 286c11c:**
+  - no change to `quant/`, `evaluation/` or `configs/expectations`;
+  - the only rule-module change is `rules/percist.py`: a LESION_REVIEW_REQUIRED reason and a
+    target-evidence label, with an unchanged threshold;
+  - the 168 reference review file is unchanged (6433b89f);
+  - the 168 audits regenerate with identical values, statuses, hashes and verdicts;
+  - the synthetic demo matches its frozen manifest (explicit synthetic-only legacy lesion
+    policy).
+- **Downloads this cycle:**
+  - 168 AI SEG, 225,734 B;
+  - PETCT_97320b0b58, 534,373,170 B;
+  - autoPET `fdg_metadata.csv`, 1.38 MB range-read from a 303.8 GB archive.
+
+  Every series download was planned and committed before the fetch.
+- **No review of any kind was created.** SIMULATED reviews exist only inside tests.

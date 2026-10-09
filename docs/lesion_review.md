@@ -73,3 +73,14 @@ relabelled HUMAN_MANUAL.
 
 Trials without lesion masks produce byte-identical outputs to before the gate (ACRIN 168
 verified).
+
+## Target eligibility
+
+A segment whose DICOM `SegmentedPropertyCategory` is *Anatomical Structure* or *Body
+Substance* (for example the "Lung" organ mask in the ACRIN BAMF AI SEG) is never a PERCIST
+target, even if accepted. Generic categories such as *Tissue* (used by the autoPET manual
+lesion SEGs) stay eligible, and the reviewer decides. Among ACCEPTED, eligible segments, the
+one with the highest SUVpeak is the baseline target.
+
+Single union masks (one segment holding all lesions, as in autoPET) make the target the hottest
+part of the union. The reviewer's ACCEPT must cover that use.
