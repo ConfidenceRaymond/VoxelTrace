@@ -92,3 +92,15 @@ The recipient runs `voxeltrace verify-bundle` on receipt.
 - Bundles contain no pixel data. Input data deletion is the operator's action; VoxelTrace
   deletes nothing.
 - Record the deletion date in the pilot log.
+
+## Report outputs (`reports/` in the bundle)
+
+| File | Content |
+|---|---|
+| `EXECUTIVE_SUMMARY.md`, `executive_summary.json` | Top page: subject, pair, scan and pending-review counts; verdicts per rule set; the 5 most frequent blocking reasons (pairs affected) with their catalogued remediation; fixed-template summary sentences |
+| `AUDIT_PACKAGE_REPORT.md` | The top page, followed by the full per-rule-set report |
+| `AUDIT_PACKAGE_REPORT.pdf` | The same text as a PDF without timestamps or random IDs: identical audits give identical bytes |
+
+Recommendations are not written freely. Each one is the `remediation` text from the reason
+catalogue (`trial/reasons.py`, then `preflight/reasons.py`) of a reason code that occurred.
+They never change a verdict. `voxeltrace summarize <bundle>` prints the executive summary.

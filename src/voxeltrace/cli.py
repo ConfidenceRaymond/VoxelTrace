@@ -104,6 +104,11 @@ def _summarize(a: argparse.Namespace) -> int:
     print(json.dumps({k: v for k, v in s.items() if k != "rulesets"}, indent=2))
     for rs, r in s["rulesets"].items():
         print(f"{rs}: real {r['verdicts_real']}; unresolved {r['unresolved_rules']}")
+    ex = Path(a.bundle) / "reports" / "executive_summary.json"
+    if ex.exists():  # bundles from earlier versions have no executive summary
+        from voxeltrace.executive import executive_summary
+
+        print("\n".join(["", *executive_summary(json.loads(ex.read_text()))]))
     return 0
 
 

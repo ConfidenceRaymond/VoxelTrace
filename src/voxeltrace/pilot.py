@@ -25,6 +25,8 @@ from typing import Any
 import voxeltrace
 from voxeltrace.bundle import finalize_bundle, inputs_manifest, runtime_environment, sha256_file
 from voxeltrace.evidence.fingerprint import build_fingerprint, compare_protocol_fingerprints
+from voxeltrace.executive import top_page, top_page_md
+from voxeltrace.pdf import markdown_to_pdf
 from voxeltrace.preflight import preflight_batch
 from voxeltrace.preflight.export import export_preflight
 from voxeltrace.quant.suv import git_state
@@ -205,8 +207,17 @@ def run_audit(
     # 10. reports
     summary = _summary(pf, audits, drift, tasks, att_rows, adj_rows, fps)
     _json(bundle / "reports" / "summary.json", summary)
-    (bundle / "reports" / "AUDIT_PACKAGE_REPORT.md").write_text(
-        _report_md(layout.config.trial_id, summary, audits, drift, queries)
+    page = top_page(layout.config.trial_id, summary, audits)
+    _json(bundle / "reports" / "executive_summary.json", page)
+    (bundle / "reports" / "EXECUTIVE_SUMMARY.md").write_text(top_page_md(page))
+    report = (
+        top_page_md(page)
+        + "\n---\n\n"
+        + _report_md(layout.config.trial_id, summary, audits, drift, queries)
+    )
+    (bundle / "reports" / "AUDIT_PACKAGE_REPORT.md").write_text(report)
+    (bundle / "reports" / "AUDIT_PACKAGE_REPORT.pdf").write_bytes(
+        markdown_to_pdf(report, title=f"VoxelTrace audit {layout.config.trial_id}")
     )
 
     # 11. inputs + manifest
