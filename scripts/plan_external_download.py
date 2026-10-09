@@ -61,6 +61,10 @@ def main(argv: list[str]) -> int:
             and c["StudyInstanceUID"] == row["StudyInstanceUID"]
             and c["frame_of_reference"] == p["frame_of_reference"]
         ]
+        # a volumetric CT: >= 20 instances (excludes 1-file localizers); smallest of those.
+        # (Plans frozen before 2026-10-09 used "smallest", which picked a localizer for
+        # cmb_mel MSB-07612; those plans are not modified.)
+        match = [c for c in match if int(idx[c["SeriesInstanceUID"]]["instanceCount"]) >= 20]
         if match:
             ct = min(match, key=lambda c: c["series_size_MB"])
             series.append(entry(idx[ct["SeriesInstanceUID"]], tp, "CT"))
