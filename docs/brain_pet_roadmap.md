@@ -105,6 +105,14 @@ the future census step.
 - **PET/MR and NeuroEXPLORER** appear (ds002898/ds003382/ds003397, ds006917). They feed the
   LATER PET/MR stage and United Imaging-adjacent tracking, but only as NIfTI.
 
+## Metadata census and intake tool (2026-10-09)
+
+- [brain_pet_census.md](brain_pet_census.md): 37 OpenNeuro PET datasets with sidecar
+  metadata (tracer family, dynamic/static, blood, MRI, preclinical scanners) and the top 5
+  future datasets.
+- `voxeltrace inspect-brain <path>` gives a read-only BIDS/DICOM inventory and quantifies
+  nothing.
+
 ## User-supplied brain studies
 
 These first undergo a **read-only inventory**, the same as `inventory_recon_metadata.py`:
