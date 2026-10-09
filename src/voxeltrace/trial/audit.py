@@ -56,6 +56,7 @@ def run_trial_audit(
     allow_simulated_reviews: bool = False,
     attestations_file: str | Path | None = None,
     allow_simulated_attestations: bool = False,
+    config_path: str | Path | None = None,
 ) -> TrialAudit:
     """Audit a trial directory. ``ruleset`` overrides trial.yaml (explicit, recorded).
     ``qc_dir`` receives reference-proposal QC renders; ``reviews_file`` overrides the
@@ -64,7 +65,7 @@ def run_trial_audit(
     Reconstruction attestations (LEVEL_C) are read only from ``attestations_file`` or the
     trial's explicit ``recon_attestation_file``; they are validated here and only the QIBA
     rule set consults them. ``allow_simulated_attestations`` exists for tests only."""
-    layout = discover_trial(root)
+    layout = discover_trial(root, config_path)
     review_path = reviews_file or layout.reference_review_file
     reviews = load_reviews(review_path, allow_simulated=allow_simulated_reviews)
     if ruleset is not None:

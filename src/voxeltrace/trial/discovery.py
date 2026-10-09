@@ -43,9 +43,13 @@ class TrialLayout(BaseModel):
     )
 
 
-def discover_trial(root: str | Path) -> TrialLayout:
+def discover_trial(root: str | Path, config_path: str | Path | None = None) -> TrialLayout:
+    """``config_path`` (optional) lets the trial configuration live outside the read-only
+    input folder; relative file references in it resolve against its own directory."""
     root = Path(root)
-    raw: dict[str, Any] = yaml.safe_load((root / "trial.yaml").read_text())
+    cfg_file = Path(config_path) if config_path else root / "trial.yaml"
+    base = cfg_file.parent
+    raw: dict[str, Any] = yaml.safe_load(cfg_file.read_text())
     cfg = TrialConfig.model_validate(
         {
             k: raw[k]
@@ -60,9 +64,9 @@ def discover_trial(root: str | Path) -> TrialLayout:
         sites=raw.get("sites", {}),
         reference_regions=_supplied_regions(raw.get("reference_regions") or {}),
         reference_proposals=raw.get("reference_proposals", "auto"),
-        reference_review_file=str(root / raw.get("reference_review_file", "reference_review.yaml")),
+        reference_review_file=str(base / raw.get("reference_review_file", "reference_review.yaml")),
         recon_attestation_file=(
-            str(root / raw["recon_attestation_file"]) if raw.get("recon_attestation_file") else None
+            str(base / raw["recon_attestation_file"]) if raw.get("recon_attestation_file") else None
         ),
         synthetic=raw.get("synthetic_perturbations", {}) or {},
         synthetic_reference_inheritance={
