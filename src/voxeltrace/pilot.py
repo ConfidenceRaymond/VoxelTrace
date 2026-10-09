@@ -95,7 +95,7 @@ def run_audit(
             input_dir, rs, config_path=config, attestations_file=attestations,
             qc_dir=bundle / "reviews" / "qc" if qc_images and rs == rulesets[0] else None,
         )  # fmt: skip
-        export_audit(audits[rs], bundle / "rules" / rs)
+        export_audit(_path_safe(audits[rs], clear_input_paths), bundle / "rules" / rs)
         _csv(bundle / "pair_verdicts" / f"{rs}.csv", pair_rows(audits[rs]))
     first = audits[rulesets[0]]
 
@@ -252,6 +252,15 @@ def run_audit(
         "disclaimer": voxeltrace.DISCLAIMER,
     })  # fmt: skip
     return {"bundle": str(bundle), "manifest": manifest, "summary": summary}
+
+
+def _path_safe(audit: TrialAudit, clear: bool) -> TrialAudit:
+    """Review / attestation file locations are recorded by file name only (directory names
+    can identify a site or patient), unless the caller asked for paths in clear."""
+    if clear:
+        return audit
+    keys = ("reference_review_file", "lesion_review_file", "recon_attestation_file")
+    return audit.model_copy(update={k: Path(v).name for k in keys if (v := getattr(audit, k))})
 
 
 def _summary(pf, audits, drift, tasks, att_rows, adj_rows, fps) -> dict[str, Any]:

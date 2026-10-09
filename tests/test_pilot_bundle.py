@@ -361,3 +361,25 @@ def test_audit_copies_review_and_adjudication_files_without_qc_images(tmp_path):
     assert (b / "reviews" / "reference_review.yaml").exists()
     assert (b / "adjudications" / "adjudications.jsonl").exists()
     assert verify_bundle(b)["status"] == "OK"
+
+
+def test_bundle_records_review_file_names_not_paths(tmp_path):
+    root, _ = trial(tmp_path)
+    run_audit(root, tmp_path / "o1", hash_inputs=False)
+    ta = json.loads(
+        (
+            tmp_path / "o1" / "audit_bundle" / "rules" / "qiba-fdg-1.14" / "trial_audit.json"
+        ).read_text()
+    )
+    assert ta["reference_review_file"] == "reference_review.yaml"
+    assert (
+        ta.get("lesion_review_file", "lesion_review.jsonl") == "lesion_review.jsonl"
+    )  # omitted when no SEG
+    assert str(tmp_path) not in json.dumps(ta)
+    run_audit(root, tmp_path / "o2", hash_inputs=False, clear_input_paths=True)
+    ta2 = json.loads(
+        (
+            tmp_path / "o2" / "audit_bundle" / "rules" / "qiba-fdg-1.14" / "trial_audit.json"
+        ).read_text()
+    )
+    assert ta2["reference_review_file"].endswith("trial/reference_review.yaml")
