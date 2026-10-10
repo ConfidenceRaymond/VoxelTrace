@@ -5,7 +5,25 @@ change between minor versions. Every rule set, schema and algorithm carries its 
 inside each output, so results remain traceable even within one software version. 1.0 is
 reserved for a release backed by completed external expert validation.
 
-## 0.3.0 (untagged; release-candidate proposal in docs/release_candidate_proposal.md)
+## 0.4.0 (2026-10-09, retrospective pilot hardening; see docs/release_candidate_v040.md)
+
+- One-command pilot: `voxeltrace run-pilot` (validate-input -> init-trial -> audit ->
+  verify-bundle -> pilot acceptance VT-PILOT-ACCEPTANCE-1 -> delivery package).
+- Sanitized delivery package (`deliver`, `verify-delivery`, VT-DELIVERY-1) with a
+  fail-closed privacy scan (VT-PRIVACY-SCAN-1) and package checksums.
+- Partner-drop intake mapping (`intake-map`, VT-INTAKE-MAPPING-1) with explicit PET
+  selection rules and staging; nested-layout detection in `validate-input`.
+- Longitudinal pairing audit (VT-PAIRING-AUDIT-1); site/scanner rollup (VT-SITE-ROLLUP-1);
+  executive summary v2 (VT-EXECUTIVE-SUMMARY-2) first page.
+- Evidence trust trace (`explain-pair`, `pair_evidence_trace.csv`), remediation matrix,
+  `reconstruction_evidence` disclosure (false-safe risk FS-01).
+- Fixes: set-order nondeterminism in per-rule-set site_summary.json; warning-level checks
+  worded as refusals in the trace; hidden/__MACOSX folders treated as subjects;
+  segmentation file names (UIDs) written in clear.
+- No change to SUV/SUL, rule thresholds or verdict logic: the 9-pair real cohort gives
+  byte-identical pair-verdict CSVs to the frozen cohort bundles (audit_v2 and audit_tagcheck_a46526c, checked at release).
+
+## 0.3.0 (tagged v0.3.0-external-validation; release-candidate proposal in docs/release_candidate_proposal.md)
 
 - Lesion evidence review gate (`voxeltrace.lesion-review/1`):
   - six review states, with source trust kept separate from review status;

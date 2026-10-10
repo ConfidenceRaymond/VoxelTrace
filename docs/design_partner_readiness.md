@@ -1,5 +1,8 @@
 # Design-partner readiness (VoxelTrace 0.3.0, 2026-10-09)
 
+> **Superseded 2026-10-09 (0.4.0):** reassessed as RETROSPECTIVE_PILOT_READY with external
+> expert validation still pending; see [pilot/retrospective_pilot_readiness.md](pilot/retrospective_pilot_readiness.md).
+
 VoxelTrace checks, before analysis, whether quantitative FDG PET/CT measurements can be
 compared across timepoints, scanners and sites under QIBA FDG-PET/CT 1.14, EANM FDG 2.0 or
 PERCIST 1.0. It explains every "cannot decide" with a reason code and produces an immutable
