@@ -239,6 +239,18 @@ def _false_safe(pairs: list[tuple[str, str]]) -> dict[str, int]:
     return c
 
 
+def _inter_reviewer(recs: list[dict], rs: str) -> dict[str, Any]:
+    """Reviewer vs reviewer on cases answered by two or more reviewers (analysis plan, C)."""
+    by_case: dict[str, list[str]] = {}
+    for r in recs:
+        v = r["independent_verdicts"].get(rs)
+        if v in VERDICTS:
+            by_case.setdefault(r["case_id"], []).append(v)
+    multi = {c: v for c, v in by_case.items() if len(v) > 1}
+    return {"cases_with_multiple_reviewers": len(multi),
+            "unanimous": sum(len(set(v)) == 1 for v in multi.values())}  # fmt: skip
+
+
 def _ii_agreement(pairs: list[tuple[str, str]]) -> dict[str, Any]:
     """Agreement on INSUFFICIENT_INFORMATION specifically (2x2: VoxelTrace II vs expert II)."""
     both = sum(a == b == "INSUFFICIENT_INFORMATION" for a, b in pairs)
@@ -249,22 +261,117 @@ def _ii_agreement(pairs: list[tuple[str, str]]) -> dict[str, Any]:
             "positive_agreement": round(2 * both / (2 * both + vt_only + ex_only), 4) if either else None}  # fmt: skip
 
 
+ABSTAIN = {"ABSTAIN", "UNABLE_TO_DECIDE", "UNDECIDABLE", "UNKNOWN", "CANNOT_DETERMINE"}
+CONFIDENCE = {"low", "medium", "high"}
+SYNTHETIC_MARK = "SYNTHETIC_TEST_ONLY"
+
+
+def is_synthetic(form: dict) -> bool:
+    """A reviewer form produced for software tests, never a real review."""
+    return bool(form.get("simulated") or form.get("synthetic_test_only")
+                or str(form.get("reviewer_id", "")).startswith(SYNTHETIC_MARK))  # fmt: skip
+
+
+def load_forms(package: Path, rdir: Path, key: dict, rulesets: list[str]) -> dict[str, Any]:
+    """Read and validate every response form. Returns accepted real/synthetic forms plus the
+    rejected, duplicate, conflicting and empty ones with reasons; nothing is silently dropped."""
+    out: dict[str, Any] = {
+        "real": [],
+        "synthetic": [],
+        "rejected": [],
+        "empty": 0,
+        "duplicates": [],
+        "conflicts": [],
+    }
+    seen: dict[tuple[str, str], dict] = {}
+    for p in sorted(rdir.glob("*.response.yaml")):
+        try:
+            r = yaml.safe_load(p.read_text())
+        except yaml.YAMLError as exc:
+            out["rejected"].append(
+                {"file": p.name, "reason": f"MALFORMED_YAML: {str(exc).splitlines()[0]}"}
+            )
+            continue
+        if not isinstance(r, dict):
+            out["rejected"].append({"file": p.name, "reason": "MALFORMED_FORM: not a mapping"})
+            continue
+        verdicts = r.get("independent_verdicts")
+        if not r.get("reviewer_id") or not isinstance(verdicts, dict) or not any(verdicts.values()):
+            out["empty"] += 1  # unfilled form
+            continue
+        problems = []
+        if r.get("schema", SCHEMA) != SCHEMA:
+            problems.append(f"WRONG_SCHEMA {r.get('schema')}")
+        if r.get("case_id") not in key:
+            problems.append(f"UNKNOWN_CASE {r.get('case_id')}")
+        bad = {
+            rs: v
+            for rs, v in verdicts.items()
+            if v and str(v).upper() not in set(VERDICTS) | ABSTAIN
+        }
+        if bad:
+            problems.append(f"INVALID_VERDICT {bad}")
+        unknown_rs = sorted(set(verdicts) - set(rulesets))
+        if unknown_rs:
+            problems.append(f"UNKNOWN_RULESET {unknown_rs}")
+        conf = r.get("confidence")
+        if conf not in (None, "") and str(conf).lower() not in CONFIDENCE:
+            problems.append(f"INVALID_CONFIDENCE {conf}")
+        t = r.get("review_time_min")
+        if t is not None:
+            try:
+                if float(t) < 0:
+                    problems.append("NEGATIVE_REVIEW_TIME")
+            except (TypeError, ValueError):
+                problems.append(f"INVALID_REVIEW_TIME {t}")
+        if problems:
+            out["rejected"].append({"file": p.name, "reason": "; ".join(problems)})
+            continue
+        r = {
+            **r,
+            "independent_verdicts": {rs: str(v).upper() for rs, v in verdicts.items() if v},
+            "_file": p.name,
+        }
+        k = (str(r["reviewer_id"]), r["case_id"])
+        if k in seen:
+            if seen[k]["independent_verdicts"] == r["independent_verdicts"]:
+                out["duplicates"].append({"file": p.name, "duplicate_of": seen[k]["_file"]})
+            else:  # same reviewer, same case, different answers: neither is used
+                out["conflicts"].append(
+                    {"files": [seen[k]["_file"], p.name], "reviewer_id": k[0], "case_id": k[1]}
+                )
+                seen[k]["_conflict"] = True
+            continue
+        seen[k] = r
+    for r in seen.values():
+        if not r.get("_conflict"):
+            out["synthetic" if is_synthetic(r) else "real"].append(r)
+    return out
+
+
 def score_responses(
     package: str | Path, responses: str | Path | None = None, *, allow_simulated: bool = False
 ) -> dict[str, Any]:
+    """Score reviewer forms against the answer key. Real and SYNTHETIC_TEST_ONLY forms are never
+    mixed: by default synthetic forms are excluded; with ``allow_simulated`` (software tests only)
+    real forms must be absent and the whole result is labelled SYNTHETIC_TEST_ONLY."""
     package = Path(package)
     key = json.loads((package / "COORDINATOR_ONLY_answer_key.json").read_text())
     rdir = Path(responses) if responses else package / "responses"
-    recs = []
-    for p in sorted(rdir.glob("*.response.yaml")):
-        r = yaml.safe_load(p.read_text())
-        if not r.get("reviewer_id") or not any(r.get("independent_verdicts", {}).values()):
-            continue  # unfilled form
-        if r.get("simulated") and not allow_simulated:
-            continue
-        recs.append(r)
-    out: dict[str, Any] = {"schema": SCHEMA, "responses_used": len(recs), "rulesets": {}}
     rulesets = sorted({rs for v in key.values() for rs in v["verdicts"]})
+    forms = load_forms(package, rdir, key, rulesets)
+    if allow_simulated and forms["real"]:
+        raise ValueError("refusing to score SYNTHETIC_TEST_ONLY and real reviewer forms together")
+    recs = forms["synthetic"] if allow_simulated else forms["real"]
+    out: dict[str, Any] = {
+        "schema": SCHEMA,
+        "evidence_class": (SYNTHETIC_MARK if allow_simulated else "REAL_REVIEWER_FORMS") if recs else "NONE",
+        "responses_used": len(recs), "rulesets": {},
+        "forms": {"empty": forms["empty"], "rejected": forms["rejected"], "duplicates": forms["duplicates"],
+                  "conflicts": forms["conflicts"],
+                  "synthetic_excluded": 0 if allow_simulated else len(forms["synthetic"])},
+        "missing_cases": sorted(set(key) - {r["case_id"] for r in recs}),
+    }  # fmt: skip
     for rs in rulesets:
         pairs = [(key[r["case_id"]]["verdicts"][rs], r["independent_verdicts"][rs])
                  for r in recs if r["case_id"] in key and r["independent_verdicts"].get(rs) in VERDICTS]  # fmt: skip
@@ -285,14 +392,26 @@ def score_responses(
             "false_safe": _false_safe(pairs),
             "false_unsafe_count": sum(a not in SAFE and b in SAFE for a, b in pairs),
             "ii_agreement": _ii_agreement(pairs),
+            "abstentions": sum(r["independent_verdicts"].get(rs) in ABSTAIN for r in recs if r["case_id"] in key),
+            "agreement_by_confidence": {
+                c: (lambda ps: {"n": len(ps), "raw_agreement": round(sum(a == b for a, b in ps) / len(ps), 4) if ps else None})(
+                    [(key[r["case_id"]]["verdicts"][rs], r["independent_verdicts"][rs]) for r in recs
+                     if r["case_id"] in key and str(r.get("confidence", "")).lower() == c
+                     and r["independent_verdicts"].get(rs) in VERDICTS])
+                for c in sorted(CONFIDENCE)},
+            "inter_reviewer": _inter_reviewer(recs, rs),
         }  # fmt: skip
     out["rule_level_disagreement"] = dict(
         Counter(rule for r in recs for rule in r.get("rules_disagreed") or [])
     )
     times = [float(r["review_time_min"]) for r in recs if r.get("review_time_min") is not None]
     out["review_time_min"] = (
-        {"median": statistics.median(times), "min": min(times), "max": max(times)}
+        {"median": statistics.median(times), "min": min(times), "max": max(times), "n": len(times),
+         "total": round(sum(times), 2)}
         if times
         else None
+    )  # fmt: skip
+    out["confidence_counts"] = dict(
+        Counter(str(r.get("confidence") or "missing").lower() for r in recs)
     )
     return out
