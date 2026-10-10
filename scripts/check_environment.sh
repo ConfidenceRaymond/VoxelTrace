@@ -36,8 +36,9 @@ section "Memory"
 run free -h
 endsec
 
-section "Disk (/home/dell)"
-run df -h /home/dell
+WS="${VOXELTRACE_WORKSPACE:-$(cd "$(dirname "$0")/../.." && pwd)}"
+section "Disk (workspace $WS)"
+run df -h "$WS"
 endsec
 
 section "Python"

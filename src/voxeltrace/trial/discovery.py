@@ -15,6 +15,7 @@ from typing import Any, Literal
 import yaml
 from pydantic import BaseModel, Field
 
+from voxeltrace.preflight.batch import is_ignored_dir
 from voxeltrace.quant.reference_region import ReferenceRegionSpec
 from voxeltrace.rules.trial_overrides import TrialConfig
 
@@ -84,12 +85,12 @@ def discover_trial(root: str | Path, config_path: str | Path | None = None) -> T
             "lesion_evidence_policy LEGACY_UNREVIEWED_ALLOWED is only allowed for trials that "
             "declare synthetic_perturbations (test fixtures); real data requires REVIEW_REQUIRED"
         )
-    # hidden directories (.git, .Trash, ...) are never subjects or timepoints, as in preflight
-    for subj in sorted(p for p in root.iterdir() if p.is_dir() and not p.name.startswith(".")):
+    # hidden folders and __MACOSX are never subjects or timepoints (as in preflight)
+    for subj in sorted(p for p in root.iterdir() if p.is_dir() and not is_ignored_dir(p.name)):
         tps = {
             tp.name: str(tp)
             for tp in sorted(subj.iterdir())
-            if tp.is_dir() and not tp.name.startswith(".")
+            if tp.is_dir() and not is_ignored_dir(tp.name)
         }
         if tps:
             layout.scans[subj.name] = tps

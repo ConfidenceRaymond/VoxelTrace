@@ -82,6 +82,35 @@ def classify_scan(scan: Any) -> dict[str, Any]:
             "reasons": sorted(reasons, key=lambda r: (r["severity"], r["code"]))}  # fmt: skip
 
 
+def _identities_in(d: Path | None) -> tuple[int, int]:
+    """(distinct PatientID values, distinct PET StudyInstanceUIDs) over the first DICOM file of
+    every leaf folder (headers only)."""
+    if d is None:
+        return 0, 0
+    import pydicom
+
+    ids, studies = set(), set()
+    for leaf in sorted(
+        {p.parent for p in d.rglob("*") if p.is_file() and not p.name.startswith(".")}
+    ):
+        if "__MACOSX" in leaf.parts:
+            continue
+        for p in sorted(x for x in leaf.iterdir() if x.is_file()):
+            try:
+                ds = pydicom.dcmread(
+                    p,
+                    stop_before_pixels=True,
+                    specific_tags=["PatientID", "Modality", "StudyInstanceUID"],
+                )
+            except Exception:  # noqa: BLE001 - not DICOM
+                continue
+            ids.add(str(getattr(ds, "PatientID", "") or ""))
+            if getattr(ds, "Modality", None) == "PT":
+                studies.add(str(getattr(ds, "StudyInstanceUID", "") or ""))
+            break
+    return len(ids), len(studies)
+
+
 def validate_input(path: str | Path, config: str | Path | None = None) -> dict[str, Any]:
     """``config``: a trial.yaml kept outside the (read-only) input folder."""
     from voxeltrace.preflight.batch import preflight_batch
@@ -101,7 +130,20 @@ def validate_input(path: str | Path, config: str | Path | None = None) -> dict[s
             out["layout"].append(
                 {"code": "TRIAL_CONFIG_INVALID", "severity": "BLOCKING", "detail": str(exc)}
             )
+    from voxeltrace.preflight.batch import scan_dirs
+
     scans = [classify_scan(sc) for sc in preflight_batch(path).scans]
+    dirs = {(subj, scan): d for subj, scan, d in scan_dirs(path)} if path.is_dir() else {}
+    for s in scans:  # a "scan" folder holding several patients or PET studies: layout misread?
+        n_pat, n_study = _identities_in(dirs.get((s["subject"], s["scan"])))
+        for code, n, what in (("MULTIPLE_PATIENTS_IN_SCAN", n_pat, "patient identifiers"),
+                              ("MULTIPLE_STUDIES_IN_SCAN", n_study, "PET studies")):  # fmt: skip
+            if n > 1:
+                s["reasons"].insert(0, {"code": code, "severity": "BLOCKING", "field": "folder layout",
+                                        "remediation": f"{n} different {what} in one scan folder; if the drop is nested "
+                                        "(site/subject/timepoint), run `voxeltrace intake-map` and stage it; otherwise "
+                                        "supply one visit per timepoint folder"})  # fmt: skip
+                s["decision"] = max(s["decision"], "NEEDS_REEXPORT", key=DECISIONS.index)
     out["scans"] = scans
     decisions = [s["decision"] for s in scans]
     if any(x["severity"] == "BLOCKING" for x in out["layout"]):

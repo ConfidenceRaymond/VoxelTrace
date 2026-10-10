@@ -193,6 +193,35 @@ def _verify_delivery(a: argparse.Namespace) -> int:
     return 0 if r["status"] == "OK" else 1
 
 
+def _intake_map(a: argparse.Namespace) -> int:
+    from voxeltrace.intake import map_intake, stage_intake
+
+    tmap = dict(x.split("=", 1) for x in a.timepoint_map or [])
+    m = map_intake(a.drop, levels=tuple(a.levels.split("/")), timepoint_map=tmap or None)
+    out = Path(a.out)
+    if out.exists():
+        print(f"error: {out} exists (never overwritten)", file=sys.stderr)
+        return 2
+    out.write_text(json.dumps(m, indent=2) + "\n")
+    print(f"{m['drop_label']}: {m['status']} ({len(m['scans'])} scan folder(s), "
+          f"{len(m['ignored_files'])} ignored file(s)); mapping written to {out}")  # fmt: skip
+    for s in m["scans"]:
+        print(f"  {s['staged_subject']}/{s['timepoint_raw']} -> {s['timepoint']}: {s['status']}"
+              f" PET={s['pet_selected']} CT={s['ct_selected']} SEG={s['segmentation_selected']}")  # fmt: skip
+        for f in s["findings"]:
+            print(f"      [{f['severity']}] {f['code']}: {f['detail']}")
+    for f in m["pairing"]["findings"]:
+        print(f"  pairing [{f['severity']}] {f['subject']} {f['code']}: {f['detail']}")
+    if a.stage:
+        if not a.trial_id:
+            print("error: --stage needs --trial-id", file=sys.stderr)
+            return 2
+        r = stage_intake(m, a.drop, a.stage, trial_id=a.trial_id)
+        print(f"staged {len(r['staged'])} scan(s) into {a.stage}; skipped {len(r['skipped'])}: "
+              f"{[x['scan'] for x in r['skipped']]}")  # fmt: skip
+    return 0 if m["status"] in ("MAPPED", "MAPPED_WITH_WARNINGS") else 2
+
+
 def _remediation(a: argparse.Namespace) -> int:
     import csv
 
@@ -539,6 +568,23 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.add_argument("package")
     p.set_defaults(func=_verify_delivery)
+
+    p = sub.add_parser(
+        "intake-map",
+        help="interpret a partner data drop (site/subject/timepoint folders) -> intake_mapping.json",
+        description="Headers only. PET is selected only by the deterministic rules R1 NAC, R2 "
+        "secondary capture, R3 units; ambiguity is NEEDS_REVIEW (exit 2). --stage symlinks the "
+        "selected series of the mapped scans into a trial folder with trial.yaml.",
+    )
+    p.add_argument("drop")
+    p.add_argument("--out", required=True, help="new intake_mapping.json")
+    p.add_argument(
+        "--levels", default="site/subject/timepoint", help="folder levels, e.g. subject/timepoint"
+    )
+    p.add_argument("--timepoint-map", nargs="*", help="raw=canonical, e.g. 'Week 6=followup'")
+    p.add_argument("--stage", help="new trial folder to stage the mapped scans into")
+    p.add_argument("--trial-id")
+    p.set_defaults(func=_intake_map)
 
     p = sub.add_parser(
         "remediation-matrix", help="print every reason code with its remediation routes"

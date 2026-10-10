@@ -74,7 +74,7 @@ def validate_dataset(
     for key in IDENTIFIER_KEYS:
         if f'"{key}"' in blob:
             problems.append(f"identifier key {key} present in dataset")
-    for f in root.rglob("*"):
+    for f in sorted(root.rglob("*")):
         if f.suffix.lower() in (".dcm", ".nii", ".gz", ".nrrd", ".mha"):
             problems.append(f"medical image source file inside export: {f.name}")
     return problems

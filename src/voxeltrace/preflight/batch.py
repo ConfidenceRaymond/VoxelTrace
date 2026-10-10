@@ -16,17 +16,24 @@ from voxeltrace.preflight.schema import BatchPreflight
 from voxeltrace.preflight.subject import preflight_scan_dir
 
 
+def is_ignored_dir(name: str) -> bool:
+    """Hidden folders and macOS archive metadata are never subjects or scans."""
+    return name.startswith(".") or name == "__MACOSX"
+
+
 def _has_files(d: Path) -> bool:
     return any(p.is_file() for p in d.rglob("*"))
 
 
 def scan_dirs(root: Path) -> list[tuple[str | None, str, Path]]:
-    subdirs = sorted(p for p in root.iterdir() if p.is_dir() and not p.name.startswith("."))
+    subdirs = sorted(p for p in root.iterdir() if p.is_dir() and not is_ignored_dir(p.name))
     if not subdirs:
         return [(None, root.name, root)]
     out = []
     for s in subdirs:
-        tps = sorted(p for p in s.iterdir() if p.is_dir() and _has_files(p))
+        tps = sorted(
+            p for p in s.iterdir() if p.is_dir() and not is_ignored_dir(p.name) and _has_files(p)
+        )
         direct = any(p.is_file() for p in s.iterdir())
         if tps and not direct and all(not (t / "trial.yaml").exists() for t in tps):
             # subject/timepoint layout only if the sub-directories look like scans, i.e. not

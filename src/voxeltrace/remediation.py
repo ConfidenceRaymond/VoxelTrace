@@ -108,6 +108,8 @@ _W: dict[str, tuple[str, str, str, str, str]] = {
     "SINGLE_TIMEPOINT_SUBJECTS": ("Some subjects have only one timepoint, so no pair can be formed.", "NO", "NO", "NO", "NO"),
     "TRIAL_CONFIG_INVALID": ("The trial configuration file is invalid.", "NO", "YES", "NO", "NO"),
     "NO_SCANS_FOUND": ("No DICOM files were found.", "YES", "NO", "NO", "NO"),
+    "MULTIPLE_PATIENTS_IN_SCAN": ("One scan folder contains images of several patients; the folder layout was probably misread.", "YES", "YES", "NO", "NO"),
+    "MULTIPLE_STUDIES_IN_SCAN": ("One scan folder contains PET from several studies (visits); the folder layout was probably misread.", "YES", "YES", "NO", "NO"),
     # ---- pairing audit (trial/pairing_audit.py) --------------------------------------
     "DUPLICATE_TIMEPOINT": ("Two timepoint folders of one subject have the same name after normalisation.", "NO", "YES", "YES", "NO"),
     "SAME_SCAN_LINKED_TWICE": ("The same PET scan appears under two timepoints of one subject.", "YES", "YES", "YES", "NO"),
@@ -126,7 +128,9 @@ _INTAKE = {"NON_FDG_TRACER": ("UNSUPPORTED", "the FDG rule sets do not apply; no
            "TRACER_NOT_RECOGNISED": ("BLOCKING", "confirm the tracer or re-export with RadiopharmaceuticalCodeSequence populated"),
            "SINGLE_TIMEPOINT_SUBJECTS": ("WARNING", "supply the missing timepoint if it exists"),
            "TRIAL_CONFIG_INVALID": ("BLOCKING", "correct trial.yaml (voxeltrace init-trial writes a valid starter file)"),
-           "NO_SCANS_FOUND": ("BLOCKING", "supply the DICOM files")}  # fmt: skip
+           "NO_SCANS_FOUND": ("BLOCKING", "supply the DICOM files"),
+           "MULTIPLE_PATIENTS_IN_SCAN": ("BLOCKING", "stage a nested drop with `voxeltrace intake-map`, or supply one patient per subject folder"),
+           "MULTIPLE_STUDIES_IN_SCAN": ("BLOCKING", "stage a nested drop with `voxeltrace intake-map`, or supply one visit per timepoint folder")}  # fmt: skip
 RULE_FAIL = {
     "code": "<RULE_ID> FAIL",
     "source": "pair evaluation",

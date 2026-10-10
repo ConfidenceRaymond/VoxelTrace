@@ -11,6 +11,8 @@ from pathlib import Path
 
 import yaml
 
+from voxeltrace.preflight.batch import is_ignored_dir
+
 RULESETS = ("qiba-fdg-1.14", "eanm-fdg-2.0", "percist-1.0")
 _KNOWN_ORDER = (
     "screening",
@@ -49,8 +51,10 @@ def write_trial_yaml(
         raise FileExistsError(f"{out} exists (never overwritten)")
     if ruleset not in RULESETS:
         raise ValueError(f"ruleset must be one of {RULESETS}")
-    subjects = sorted(p for p in folder.iterdir() if p.is_dir() and not p.name.startswith("."))
-    tps = {t.name for s in subjects for t in s.iterdir() if t.is_dir()}
+    subjects = sorted(p for p in folder.iterdir() if p.is_dir() and not is_ignored_dir(p.name))
+    tps = {
+        t.name for s in subjects for t in s.iterdir() if t.is_dir() and not is_ignored_dir(t.name)
+    }
     if not subjects or not tps:
         raise ValueError("expected <subject>/<timepoint>/<DICOM files> folders")
     order = timepoint_order or _order(tps)

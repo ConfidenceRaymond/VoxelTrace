@@ -60,7 +60,7 @@ REVIEW_REASONS = {
 
 def pet_uid(subject: str, tp: str) -> str:
     """SeriesInstanceUID of the downloaded PET series (read from the files)."""
-    f = next((DATA / subject / tp / "PET").glob("*.dcm"))
+    f = min((DATA / subject / tp / "PET").glob("*.dcm"))  # deterministic; all files share the UID
     return str(pydicom.dcmread(f, stop_before_pixels=True).SeriesInstanceUID)
 
 
