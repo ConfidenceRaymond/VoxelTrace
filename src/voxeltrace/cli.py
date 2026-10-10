@@ -252,6 +252,22 @@ def _explain_pair(a: argparse.Namespace) -> int:
     return 0
 
 
+def _validate_partner_intake(a: argparse.Namespace) -> int:
+    from voxeltrace.partner_intake import EXIT_CODES, validate_partner_intake
+
+    r = validate_partner_intake(a.intake, a.root, check_dicom=not a.no_dicom_check)
+    if a.format == "json":
+        print(json.dumps(r, indent=2))
+    else:
+        print(
+            f"{r['file']}: {r['status']} ({r['entries']} entries, {r['subjects']} subjects; {r['counts'] or 'no findings'})"
+        )
+        for f in r["findings"]:
+            where = f"entry {f['entry']}" if f["entry"] else "file"
+            print(f"  [{f['severity']}] {f['code']} ({where}): {f['detail']}")
+    return EXIT_CODES[r["status"]]
+
+
 def _remediation(a: argparse.Namespace) -> int:
     import csv
 
@@ -615,6 +631,21 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--stage", help="new trial folder to stage the mapped scans into")
     p.add_argument("--trial-id")
     p.set_defaults(func=_intake_map)
+
+    p = sub.add_parser(
+        "validate-partner-intake",
+        help="check a partner_intake.yaml (VT-PARTNER-INTAKE-1) against the transferred files",
+        description="Schema, paths, duplicates, cross-subject/timepoint consistency and declared vs "
+        "DICOM vendor/model/software/date. Never accepts a review decision. Exit 0 valid, "
+        "2 needs review, 3 invalid.",
+    )
+    p.add_argument("intake", help="partner_intake.yaml")
+    p.add_argument(
+        "--root", help="transfer root that the paths are relative to (default: the YAML folder)"
+    )
+    p.add_argument("--no-dicom-check", action="store_true", help="schema and paths only")
+    p.add_argument("--format", choices=["text", "json"], default="text")
+    p.set_defaults(func=_validate_partner_intake)
 
     p = sub.add_parser(
         "explain-pair",

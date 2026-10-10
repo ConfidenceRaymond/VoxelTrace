@@ -1,0 +1,35 @@
+# VoxelTrace partner intake (VT-PARTNER-INTAKE-1). TEMPLATE: replace every <...> value.
+# One entry per subject and timepoint. Paths are RELATIVE to the transfer root (the folder that
+# holds data/ and this file). Use pseudonyms only: no names, MRNs, accession numbers or
+# birth dates. Do NOT add review decisions, acceptances or verdicts: they are recorded by a
+# qualified reviewer in VoxelTrace's review tools and are refused here.
+# Check with:  voxeltrace validate-partner-intake partner_intake.yaml
+schema: VT-PARTNER-INTAKE-1
+organization_id: <ORG-PSEUDONYM>
+study_id: <STUDY-CODE>
+entries:
+  - site_id: <SITE-A>
+    subject_id: <SUBJ-001>
+    timepoint: baseline
+    tracer: FDG
+    expected_vendor: <SIEMENS | GE MEDICAL SYSTEMS | Philips>
+    expected_scanner_model: <e.g. Biograph128_mCT>
+    expected_software_version:                             # optional, e.g. VG60A
+    expected_acquisition_date:                             # optional, YYYY-MM-DD (shifted consistently if de-identified)
+    pet_path: data/<SITE-A>/<SUBJ-001>/baseline/PET
+    ct_path: data/<SITE-A>/<SUBJ-001>/baseline/CT          # optional
+    segmentation_path:                                     # optional
+    protocol_document_path:                                # optional, e.g. documents/<SITE-A>_protocol.pdf
+    partner_review_required: true                          # true if PERCIST review by your physicist is in scope
+    partner_reviewer_role: PET_PHYSICIST                   # a role, never a name or e-mail
+    notes: ""                                              # no identifiers
+  - site_id: <SITE-A>
+    subject_id: <SUBJ-001>
+    timepoint: followup
+    tracer: FDG
+    expected_vendor: <...>
+    expected_scanner_model: <...>
+    pet_path: data/<SITE-A>/<SUBJ-001>/followup/PET
+    partner_review_required: true
+    partner_reviewer_role: PET_PHYSICIST
+    notes: ""

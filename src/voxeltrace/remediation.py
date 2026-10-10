@@ -209,6 +209,14 @@ def remediation_matrix() -> list[dict[str, Any]]:
         rows.append({"code": code, "source": src, "severity": sev, "explanation": expl, "customer_wording": wording,
                      "remediation": rem, "reexport_can_fix": rex, "documentation_can_fix": doc,
                      "human_review_can_fix": rev, "permanent": perm})  # fmt: skip
+    from voxeltrace.partner_intake import PARTNER_CODES
+
+    have = {r["code"] for r in rows}
+    for code, (sev, wording, rem, rex, doc, rev, perm) in sorted(PARTNER_CODES.items()):
+        if code not in have:
+            rows.append({"code": code, "source": "partner intake", "severity": sev, "explanation": wording,
+                         "customer_wording": wording, "remediation": rem, "reexport_can_fix": rex,
+                         "documentation_can_fix": doc, "human_review_can_fix": rev, "permanent": perm})  # fmt: skip
     return rows + [RULE_FAIL]
 
 
@@ -219,6 +227,10 @@ RULE_WARNING_WORDING = (
 
 
 def customer_wording(code: str) -> str:
+    from voxeltrace.partner_intake import PARTNER_CODES
+
+    if code in PARTNER_CODES and code not in _W:
+        return PARTNER_CODES[code][1]
     if code.endswith(" WARNING"):
         return RULE_WARNING_WORDING
     if code.endswith(" FAIL"):

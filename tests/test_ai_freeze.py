@@ -8,7 +8,8 @@ AUDIT_PATH = ["quant", "rules", "trial", "evidence", "preflight", "census", "ing
               "pilot.py", "bundle.py", "cli.py", "expert_validation.py", "versions.py",
               # pilot workflow (0.4.0): intake, acceptance, delivery, trace, reports
               "pilot_run.py", "delivery.py", "intake.py", "trace.py", "remediation.py",
-              "privacy_scan.py", "validate_input.py", "executive.py", "pdf.py"]  # fmt: skip
+              "privacy_scan.py", "validate_input.py", "executive.py", "pdf.py",
+              "partner_intake.py"]  # fmt: skip
 FORBIDDEN = re.compile(
     r"^\s*(from|import)\s+(voxeltrace\.(ai|training|evaluation)|torch|transformers|httpx)\b", re.M
 )
