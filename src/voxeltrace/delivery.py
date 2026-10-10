@@ -82,6 +82,33 @@ def _plain(codes: str) -> str:
     return " | ".join(customer_wording(c) for c in codes.split(";") if c)
 
 
+IMPLIED = ("iterations", "subsets", "time_of_flight", "psf_resolution_modelling")
+RECON = ("reconstruction_method", *IMPLIED, "filter_kernel")
+
+
+def reconstruction_evidence(fps: dict[str, Any], subject: str, baseline: str, followup: str) -> str:
+    """How reconstruction identity is evidenced for a pair (reporting only; false-safe risk
+    FS-01): TEXT_IMPLIED when a parameter is missing on a scan and can only have been judged
+    the same through identical ReconstructionMethod text; else the weakest trust level."""
+    fs = [fps.get(f"{subject}/{tp}", {}).get("fields", {}) for tp in (baseline, followup)]
+    if not all(fs):
+        return "NO_FINGERPRINT"
+    missing = sorted(
+        {f for x in fs for f in IMPLIED if x.get(f, {}).get("trust") in ("NONE", None)}
+    )
+    if missing:
+        return "TEXT_IMPLIED: " + ";".join(missing)
+    trusts = {x.get(f, {}).get("trust") for x in fs for f in RECON}
+    for t, label in (
+        ("LEVEL_U", "UNSUPPORTED"),
+        ("LEVEL_D", "FREE_TEXT (LEVEL_D)"),
+        ("LEVEL_C", "ATTESTED (LEVEL_C)"),
+    ):
+        if t in trusts:
+            return label
+    return "STRUCTURED (LEVEL_A)"
+
+
 def _pair_results(bundle: Path) -> list[dict[str, Any]]:
     from voxeltrace.trial.pairing_audit import pairing_status_by_subject
 
@@ -91,10 +118,13 @@ def _pair_results(bundle: Path) -> list[dict[str, Any]]:
         if pairing_file.exists()
         else {}
     )
+    fp_file = bundle / "protocol" / "fingerprints.json"
+    fps = json.loads(fp_file.read_text()) if fp_file.exists() else {}
     rows = []
     for f in sorted((bundle / "pair_verdicts").glob("*.csv")):
         for r in _read_csv(f):
             rows.append({**r, "ruleset_file": f.stem,
+                         "reconstruction_evidence": reconstruction_evidence(fps, r["subject"], r["baseline"], r["followup"]),
                          "pairing_status": status.get(r["subject"], status.get("*", "OK")) if status else "NOT_RUN",
                          "plain_language_reasons": _plain(r.get("reason_codes", ""))})  # fmt: skip
     return rows
@@ -170,6 +200,9 @@ def methodology_md(manifest: dict[str, Any]) -> str:
         "where vendor timing semantics are not documented.",
         "- No real pair has a complete PERCIST verdict without human reference-region and lesion review.", "",
         "## Limitations", "",
+        "- Reconstruction identity can rest on vendor free text. When iterations, subsets, TOF or PSF are not encoded, "
+        "identical ReconstructionMethod text on both scans is taken as identical reconstruction (reported as TEXT_IMPLIED "
+        "in pair_results.csv). A site that changed a parameter without changing the text would not be detected.",
         "- Integrity checks prove the bundle matches its manifest; they are not a digital signature.",
         "- The privacy scan of this package is a conservative pattern check, not a de-identification "
         "method or a HIPAA/GDPR compliance determination. The sender remains responsible for de-identification.",
@@ -201,7 +234,11 @@ def readme_md(manifest: dict[str, Any], page: dict[str, Any], acc: dict[str, Any
         "2. `unresolved_items.csv`: what is waiting, and who can resolve it.",
         "3. `recommended_site_queries/site_queries.md`: DRAFT queries to send to sites (edit, approve and "
         "send through your own channel; VoxelTrace sends nothing).",
-        "4. `pair_results.csv`: every pair and rule set. `pairing_status` must be OK before a verdict is used.",
+        "4. `pair_results.csv`: every pair and rule set. `pairing_status` must be OK before a verdict is used. "
+        "`reconstruction_evidence` says how reconstruction identity is evidenced: STRUCTURED (DICOM attributes), "
+        "FREE_TEXT (parsed from vendor text), ATTESTED (site attestation), or TEXT_IMPLIED (a parameter such as "
+        "iterations or TOF is not encoded and was judged identical only because the reconstruction text is identical; "
+        "treat such an ASSESSABLE verdict with caution).",
         "   `pair_evidence_trace.csv` answers 'why this verdict?': rule, reason, DICOM field, value, trust level and "
         "source at both timepoints, and the raw-metadata finding behind it.",
         "5. `site_summary.csv`, `scan_preflight.csv`, `protocol_drift.csv`: detail by site, scanner and scan.",
