@@ -591,3 +591,28 @@ def test_warning_level_differences_are_not_worded_as_refusals():
 
     assert "still be interpreted" in customer_wording("QIBA-SAME-SYSTEM WARNING")
     assert "does not meet" in customer_wording("QIBA-UPTAKE-WINDOW FAIL")
+
+
+def test_fixture_reuse_is_info_but_real_duplicates_still_block():
+    rows = [
+        dict(subject="FIX1", timepoint="baseline", pet_series_pseudonym="shared", acquisition_date="2020-01-01"),
+        dict(subject="FIX1", timepoint="followup", pet_series_pseudonym="f1", acquisition_date="2020-02-01", synthetic=True),
+        dict(subject="FIX2", timepoint="baseline", pet_series_pseudonym="shared", acquisition_date="2020-01-01"),
+        dict(subject="FIX2", timepoint="followup", pet_series_pseudonym="f2", acquisition_date="2020-02-01", synthetic=True),
+    ]  # fmt: skip
+    r = audit_pairing(_ids(*rows), ["baseline", "followup"])
+    assert r["status"] == "OK" and r["severity_counts"]["BLOCKING"] == 0
+    rows += [dict(subject="REAL1", timepoint="baseline", pet_series_pseudonym="shared", acquisition_date="2020-01-01"),
+             dict(subject="REAL2", timepoint="baseline", pet_series_pseudonym="shared", acquisition_date="2020-01-01")]  # fmt: skip
+    r = audit_pairing(_ids(*rows), ["baseline", "followup"])
+    assert r["subjects_blocked"] == ["REAL1", "REAL2"]
+
+
+def test_same_day_is_info_only_for_declared_fixtures():
+    real = audit_pairing(_ids(dict(subject="R", timepoint="baseline", acquisition_date="2020-01-01", pet_series_pseudonym="a"),
+                              dict(subject="R", timepoint="followup", acquisition_date="2020-01-01", pet_series_pseudonym="b")),
+                         ["baseline", "followup"])  # fmt: skip
+    fix = audit_pairing(_ids(dict(subject="F", timepoint="baseline", acquisition_date="2020-01-01", pet_series_pseudonym="a"),
+                             dict(subject="F", timepoint="followup", acquisition_date="2020-01-01", pet_series_pseudonym="b", synthetic=True)),
+                        ["baseline", "followup"])  # fmt: skip
+    assert real["status"] == "NEEDS_REVIEW" and fix["status"] == "OK"

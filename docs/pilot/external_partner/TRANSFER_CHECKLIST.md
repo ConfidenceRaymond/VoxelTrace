@@ -26,7 +26,8 @@ institution's policies govern the transfer; where they differ from this list, th
 ```
 <TRANSFER_ID>/
   data/<site>/<subject>/<visit>/...      (or data/<subject>/<visit>/...)
-  mapping.csv                            subject,visit,role(baseline/followup),site
+  partner_intake.yaml                    VT-PARTNER-INTAKE-1 declaration (template provided)
+  mapping.csv                            optional if partner_intake.yaml is complete
   documents/                             optional protocol sheets / attestations (no patient data)
   SHA256SUMS.txt                         see below
 ```

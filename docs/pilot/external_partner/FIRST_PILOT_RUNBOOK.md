@@ -15,11 +15,19 @@ voxeltrace --version                       # record version, rule bundle sha256,
 python -m pytest -q                        # must pass before handling partner data
 ```
 
+Capture the deployment lock once per pilot (refuses a dirty tree) and verify it before every run:
+
+```bash
+voxeltrace deployment-lock capture <WS>/deployment_lock.json
+voxeltrace deployment-lock verify <WS>/deployment_lock.json        # LOCK_MATCH required
+```
+
 ## 1. Receive and verify the transfer
 
 ```bash
 cd <TRANSFER_ID> && sha256sum -c --quiet SHA256SUMS.txt && echo TRANSFER_OK
 chmod -R a-w <TRANSFER_ID>/data            # read-only from here on
+voxeltrace validate-partner-intake <TRANSFER_ID>/partner_intake.yaml   # VALID / VALID_WITH_WARNINGS
 ```
 
 Fill in the transfer confirmation in [TRANSFER_CHECKLIST.md](TRANSFER_CHECKLIST.md).
@@ -55,6 +63,12 @@ voxeltrace init-trial <TRANSFER_ID>/data --trial-id <PILOT-ID> --timepoints base
 
 (this writes `trial.yaml` into the folder; if the folder is read-only, copy the subject folders
 as symlinks into `<WS>/trial` first and run it there), then add `sites: {SUBJ: SITE, ...}`.
+
+## 3c. Preflight (optional detail before the audit)
+
+```bash
+voxeltrace preflight <WS>/trial --out <WS>/preflight      # preflight.csv: READY / DO_NOT_QUANTIFY per scan
+```
 
 ## 4. Run the pilot
 

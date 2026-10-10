@@ -186,33 +186,36 @@ def audit_pairing(
             dates = Counter(s.acquisition_date for s in dated)
             for d, n in sorted(dates.items()):
                 if n > 1:
-                    add("SAME_DAY_TIMEPOINTS", "NEEDS_REVIEW", subj,
+                    fixture = any(s.synthetic for s in items)
+                    add("SAME_DAY_TIMEPOINTS", "INFO" if fixture else "NEEDS_REVIEW", subj,
                         [s.timepoint for s in dated if s.acquisition_date == d],
-                        f"{n} timepoints acquired on {d}: confirm they are distinct visits")  # fmt: skip
-    # cross-subject checks
+                        f"{n} timepoints acquired on {d}: "
+                        + ("declared synthetic fixture" if fixture else "confirm they are distinct visits"))  # fmt: skip
+    # cross-subject checks. A subject with any declared synthetic perturbation is a test
+    # fixture; fixtures may reuse a real scan by design (INFO). Two or more REAL subjects sharing
+    # a scan or a patient identifier keep the catalogued severity, whatever fixtures also share it.
+    fixtures = {s.subject for s in scans if s.synthetic}
     for attr, code, label in (
         ("pet_series_pseudonym", "SCAN_LINKED_TO_MULTIPLE_SUBJECTS", "PET series UID"),
         ("pet_content_sha256", "SCAN_LINKED_TO_MULTIPLE_SUBJECTS", "PET voxel content"),
         ("patient_id_sha256", "SUBJECT_PSEUDONYM_SHARED", "DICOM patient identifier"),
     ):
         owners: dict[str, set[str]] = defaultdict(set)
-        syn: dict[str, bool] = defaultdict(bool)
         for s in scans:
             v = getattr(s, attr)
             if v:
                 owners[v].add(s.subject)
-                syn[v] = syn[v] or s.synthetic
-        for v, subj_set in sorted(owners.items()):
-            if len(subj_set) > 1:
-                sev = (
-                    "INFO"
-                    if syn[v]
-                    else ("BLOCKING" if code.startswith("SCAN") else "NEEDS_REVIEW")
-                )
-                for subj in sorted(subj_set):
-                    add(code, sev, subj, [],
-                        f"same {label} under subjects {sorted(subj_set)}"
-                        + (" (declared synthetic perturbation)" if syn[v] else ""))  # fmt: skip
+        for _, subj_set in sorted(owners.items()):
+            if len(subj_set) < 2:
+                continue
+            real = subj_set - fixtures
+            for subj in sorted(subj_set):
+                if len(real) >= 2 and subj in real:
+                    add(code, PAIRING_CODES[code][0], subj, [], f"same {label} under subjects {sorted(real)}"
+                        + (f" (also reused by declared synthetic fixtures {sorted(subj_set & fixtures)})" if subj_set & fixtures else ""))  # fmt: skip
+                else:
+                    add(code, "INFO", subj, [], f"same {label} under subjects {sorted(subj_set)} "
+                        "(declared synthetic fixture reuse)")  # fmt: skip
     findings.sort(
         key=lambda f: (-SEVERITY_ORDER.index(f.severity), f.subject, f.code, f.timepoints)
     )

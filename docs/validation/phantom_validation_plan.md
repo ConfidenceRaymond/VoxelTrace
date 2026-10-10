@@ -94,7 +94,17 @@ two timepoints (pairing audit BLOCKING); set PatientWeight = 0.
    model/software-specific check backed by the vendor document **and** this phantom result,
    with regression tests; the strict path is never relaxed.
 
-## 10. Output
+## 10. Limitations
+
+- A phantom tests quantitation and provenance handling, not patient-specific timing,
+  anonymizer behaviour on clinical records, or biological variability.
+- Recovery depends on reconstruction; the acceptance tolerances are PROVISIONAL and not EARL or
+  ACR limits.
+- One site and one software version per run; results do not transfer to other versions.
+- A phantom alone can raise a model at most to QUANT_VALIDATED; PAIR_VALIDATED still needs real
+  longitudinal pairs, and EXPERT_VALIDATED needs independent reviewers.
+
+## 11. Output
 
 Per model/software: a one-page result (pass/fail per criterion, measured vs expected), the
 evidence bundle, and an update to `../vendor_validation_matrix.md` (at most QUANT_VALIDATED

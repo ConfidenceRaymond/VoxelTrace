@@ -96,7 +96,18 @@ convention), **unknown**. "Likely" is a judgement from the header pattern, state
   are already in the census. They become useful only together with GE documentation of the
   decay reference.
 
-## 5. Status statement (unchanged)
+## 5. Scanner models that would be most useful
+
+| Priority | Models | Why |
+|---|---|---|
+| 1 | GE Discovery MI, Omni, 690, 710 | current GE fleet; the decay-reference question (DecayFactor/FrameReferenceTime) is unresolved on every GE model seen |
+| 2 | Philips Vereos / Vereos Digital | current Philips fleet; no Philips series has been processed in full |
+| 3 | GE Discovery STE / LS still used in trials | public refusals already characterised; partner exports would test re-export fixes |
+| 4 | Philips GEMINI TF (BQML exports) | older but common in archives; CNTS exports stay unsupported without documentation |
+
+Partner-facing version: `../pilot/external_partner/GE_PHILIPS_DATA_REQUEST.md`.
+
+## 6. Status statement (unchanged)
 
 > GE: ingestion validated on Discovery LS (two scans SUV PASS without an independent
 > cross-check; one correctly refused). Philips: metadata only. No GE or Philips model is

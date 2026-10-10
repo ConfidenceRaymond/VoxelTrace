@@ -9,7 +9,7 @@ and data-use agreement; VoxelTrace does not de-identify data.
 | # | Item | Details | If missing |
 |---|---|---|---|
 | 1 | **De-identified PET DICOM** | one attenuation-corrected PET series per visit, PET Image Storage, `Units = BQML`, all slices | the scan cannot be quantified (`DO_NOT_QUANTIFY`) |
-| 2 | **Subject/timepoint mapping** | a short table: subject pseudonym, visit folder → `baseline` / `followup` (or visit order), site | visits are not paired, or the order is flagged for review |
+| 2 | **Subject/timepoint mapping** | `partner_intake.yaml` (template in this folder; checked with `voxeltrace validate-partner-intake`), or a short table: subject pseudonym, visit folder → `baseline` / `followup`, site | visits are not paired, or the order is flagged for review |
 | 3 | **Scanner / vendor / software** | DICOM `Manufacturer`, `ManufacturerModelName`, `SoftwareVersions` retained (DICOM PS3.15 "Retain Device Identity") | same-system rules become UNKNOWN |
 | 4 | **Radiopharmaceutical metadata** | Radiopharmaceutical Information Sequence: tracer, `RadionuclideTotalDose`, `RadionuclideHalfLife`, `RadiopharmaceuticalStartDateTime` (or StartTime) | SUV refused |
 | 5 | **Quantitative / timing attributes** | `DecayCorrection`, `CorrectedImage`, `RescaleSlope/Intercept`, `DecayFactor`, `FrameReferenceTime`, series and acquisition date/time; injection and scan times on the same clock (dates may be shifted consistently per subject) | SUV refused or decay cross-check unavailable |
