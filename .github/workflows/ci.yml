@@ -11,6 +11,7 @@ permissions:
 
 jobs:
   test:
+    # Floating dependency versions (within pyproject bounds): early warning of drift.
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -18,15 +19,21 @@ jobs:
         python-version: ["3.11", "3.12"]
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2  # the previous commit, for the whitespace check of this commit
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install
-        run: python -m pip install -e ".[dev]"
+        run: |
+          python -m pip install -e ".[dev]"
+          python -m pip install "ruff==0.17.0"   # formatter output is version-specific
       - name: Lint
         run: |
           ruff check .
           ruff format --check .
+      - name: Whitespace (git diff --check on this commit, as before every local push)
+        run: git diff --check HEAD^ HEAD
       - name: Tests (synthetic data only)
         run: python -m pytest -q
       - name: CLI smoke
@@ -34,4 +41,23 @@ jobs:
           voxeltrace --help
           voxeltrace preflight --help
           voxeltrace audit --help
+          voxeltrace run-pilot --help
           voxeltrace verify-bundle --help
+
+  fresh-install-smoke:
+    # Tested dependency set, non-editable install into a clean venv, one synthetic pilot end to end.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Clean venv, non-editable install with the tested constraints
+        run: |
+          python -m venv /tmp/vt-venv
+          /tmp/vt-venv/bin/python -m pip install --upgrade pip
+          /tmp/vt-venv/bin/python -m pip install . -c constraints/tested-py312-x86_64.txt
+      - name: Version
+        run: /tmp/vt-venv/bin/voxeltrace --version
+      - name: Synthetic run-pilot -> verify-delivery
+        run: PATH=/tmp/vt-venv/bin:$PATH /tmp/vt-venv/bin/python scripts/ci_smoke_pilot.py /tmp/vt-smoke
