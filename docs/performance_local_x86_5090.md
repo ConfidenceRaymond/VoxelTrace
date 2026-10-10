@@ -65,3 +65,23 @@ and bundle finalisation together well under 1 %.
 - The obvious optimisation (build timepoints once and apply the three rule sets) would cut the
   audit by roughly 2.5×; it is recorded as technical debt and deliberately not done in this
   session because it touches the validated audit path.
+
+## Additions 2026-10-10 (pilot workflow commands, CPU only; GPU unused by the audit)
+
+| Operation | Data | Wall | Peak RSS |
+|---|---|---|---|
+| `validate-partner-intake` | 16 entries, PET header check | 0.4 s | 194 MB |
+| `validate-input` | nested simulated drop, 16 visit folders | 13.6 s | 408 MB |
+| `intake-map` | same drop, ~7,150 files | 4.3 s | 301 MB |
+| `intake-map --stage` | resolved drop | 4.5 s | 299 MB |
+| `preflight` | 16 staged scans | 11.3 s | 254 MB |
+| single-pair `run-pilot` | PETCT_97320b0b58 | 41–45 s | — |
+| 8-pair `run-pilot` | staged public drop | 188 s | 2.93 GB |
+| 9-subject demonstration `run-pilot` | 7 synthetic pairs + 2 single scans | 6 min 20 s (audit 360 s) | — |
+| delivery package build | 8–9 pairs | 0.3–0.7 s | — |
+| `verify-delivery` / `verify-bundle` | 80-file package / 60-file bundle | 0.9 s / 0.3 s | 200 MB |
+| `deployment-lock capture` / `verify` | 55 packages | 0.3 s each | 195 MB |
+| starter kit build (incl. privacy scan, deterministic ZIP) | 97 files | < 2 s | — |
+
+Disk: inputs are read through symlinks and the page cache; outputs are a few MB per run. The
+optional Qwen explanation smoke test used the GPU only (16.6 GiB) and is not part of the audit.

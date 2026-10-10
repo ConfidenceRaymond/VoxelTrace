@@ -29,3 +29,22 @@ but even with complete deterministic evidence it can mis-summarise a verdict. It
 **explanatory only**, labelled MODEL_GENERATED, never written into an evidence bundle or a
 delivery package, and never used for any verdict, measurement, review or adjudication
 (`docs/ai_policy.md`, `tests/test_ai_freeze.py`).
+
+## Re-run 2026-10-10 (boundary audit)
+
+Evidence: the dry run's `pair_evidence_trace.csv`, Subject007 (source CCTH-B02). Offline flags
+set, local directory, revision `0c351dd`. Load 2.4 s, generation 2.0 s for 113 tokens, peak
+16.6 GiB allocated. Result `outputs/qwen_smoke_x86_20261010/qwen_smoke.json`.
+
+- **Invented numbers:** none. **Verdicts not in the evidence:** none.
+- **Verdict-language drift:** yes. The reply attributes PERCIST INSUFFICIENT_INFORMATION partly
+  to "a software warning", which is not a cause of that verdict, and says baseline SUVpeak should
+  be "recorded in DICOM", which is wrong: it comes from a reviewed lesion segmentation. Flagged
+  by the conservative keyword check (a negated "diagnosis").
+- QIBA (ASSESSABLE, no open rule) was not in the evidence given, so the reply did not mention it.
+
+Conclusion unchanged and reinforced: the model may only produce labelled, optional explanatory
+prose; it is never shipped in a delivery, never used for a verdict, measurement, review or
+adjudication, and tests enforce that the audit path cannot load it (`tests/test_ai_freeze.py`).
+No dev_v4: the failure mode (cause mis-attribution) is already the reason the model is
+explanation-only, and no product feature depends on it.
