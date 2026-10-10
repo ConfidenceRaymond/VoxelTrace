@@ -87,11 +87,11 @@ harmonize images, or make clinical decisions.
 We say exactly where we are.
 
 - Tested on 9 real public longitudinal PET/CT pairs from 4 collections and 6 scanner models,
-  and on synthetic perturbation fixtures. Over 600 automated tests.
-- Comparability checks are validated on several Siemens scanner models. Quantitative checks
+  and on synthetic perturbation fixtures. Over 700 automated tests.
+- Comparability checks have been audited end to end on several Siemens scanner models (public data). Quantitative checks
   on GE and Philips are **not yet validated**.
-- **Independent external expert validation is in progress.** A blinded physicist study is
-  prepared, and no agreement result exists yet. We will publish the method and results when
+- **Independent external expert validation is pending.** A blinded physicist study is
+  prepared but no reviewer has returned a form yet, and no agreement result exists yet. We will publish the method and results when
   complete.
 - Known limitations are documented and shipped with every version.
 

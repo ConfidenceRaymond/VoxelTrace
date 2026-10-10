@@ -42,7 +42,7 @@ query. It runs locally, with no AI in the audit.
 
 **Current validation (as of 2026-10-09).**
 - 9 real public longitudinal pairs (4 collections, 6 scanner models).
-- Several Siemens models validated end to end.
+- Several Siemens models audited end to end on public pairs (software validation; no external expert agreement yet).
 - GE and Philips quantification not yet validated.
 - Blinded external physicist study prepared; **no agreement result yet**.
 

@@ -26,7 +26,7 @@
 | 3:40 | 7. Evidence trace | `pair_checks.csv` row → observed values → preflight/fingerprint field → `manifest.json` versions | "Every verdict traces back to the exact header value, the rule version and the input hash." |
 | 4:15 | 8. PDF / evidence bundle | download the PDF and the bundle zip; run `voxeltrace verify-bundle` | "The PDF is byte-reproducible. The bundle is checksum-verified, so you can prove nothing changed after delivery." |
 | 4:40 | 9. (Optional) local explanation | **not part of the current product workflow**: no page explains results with a model today. If asked: "A local model could later summarise a report in words. It would never change a value or verdict, and nothing leaves your machine." | |
-| 4:50 | Close | validation status | "External physicist validation is in progress; I'll show you exactly what is and isn't validated. Would a retrospective audit of one of your completed studies be useful?" |
+| 4:50 | Close | validation status | "External physicist validation is pending; I'll show you exactly what is and isn't validated. Would a retrospective audit of one of your completed studies be useful?" |
 
 **Do not:**
 - show real patient identifiers;
