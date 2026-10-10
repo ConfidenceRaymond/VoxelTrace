@@ -128,12 +128,34 @@ def _inspect(a: argparse.Namespace) -> int:
 def _audit(a: argparse.Namespace) -> int:
     from voxeltrace.pilot import RULESETS, run_audit
 
-    res = run_audit(
-        a.input, a.output, config=a.config, rulesets=tuple(a.ruleset or RULESETS),
-        attestations=a.attestations, adjudications=a.adjudications,
-        hash_inputs=not a.no_input_hashes, qc_images=a.qc_images,
-        clear_input_paths=a.input_paths_in_clear,
-    )  # fmt: skip
+    cfg = Path(a.config) if a.config else Path(a.input) / "trial.yaml"
+    if not Path(a.input).is_dir():
+        print(
+            f"error: the input folder {a.input} does not exist [INPUT_NOT_FOUND]", file=sys.stderr
+        )
+        return 2
+    if not cfg.exists():
+        print(f"error: no trial configuration at {cfg}. Create one with `voxeltrace init-trial "
+              f"{a.input} --trial-id <ID>` or pass --config, or use `voxeltrace run-pilot`, which "
+              "writes it outside the input [TRIAL_CONFIG_MISSING]", file=sys.stderr)  # fmt: skip
+        return 2
+    try:
+        res = run_audit(
+            a.input, a.output, config=a.config, rulesets=tuple(a.ruleset or RULESETS),
+            attestations=a.attestations, adjudications=a.adjudications,
+            hash_inputs=not a.no_input_hashes, qc_images=a.qc_images,
+            clear_input_paths=a.input_paths_in_clear,
+        )  # fmt: skip
+    except FileExistsError:
+        print(f"error: {a.output} already holds an audit bundle. Bundles are never overwritten; "
+              "choose a new --output folder [BUNDLE_EXISTS]", file=sys.stderr)  # fmt: skip
+        return 2
+    except ValueError as exc:  # invalid trial.yaml content
+        print(
+            f"error: the trial configuration is invalid: {exc} [TRIAL_CONFIG_INVALID]",
+            file=sys.stderr,
+        )
+        return 2
     print(DISCLAIMER)
     print(f"bundle: {res['bundle']}")
     print(json.dumps({k: v for k, v in res["summary"].items() if k != "rulesets"}, indent=2))

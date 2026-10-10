@@ -545,3 +545,42 @@ def test_delivery_contains_evidence_trace(pilot):
     tmp, _, _ = pilot
     p = tmp / "p1" / "delivery_package" / "pair_evidence_trace.csv"
     assert p.exists() and p.read_text().startswith("ruleset,subject")
+
+
+def test_audit_cli_errors_are_actionable(tmp_path, capsys):
+    root = make_trial(tmp_path, subjects=("S1",), config=False)
+    assert cli(["audit", "--input", str(root), "--output", str(tmp_path / "o")]) == 2
+    assert "TRIAL_CONFIG_MISSING" in capsys.readouterr().err
+    assert cli(["audit", "--input", str(tmp_path / "nope"), "--output", str(tmp_path / "o")]) == 2
+    assert "INPUT_NOT_FOUND" in capsys.readouterr().err
+    root2 = make_trial(tmp_path / "b", subjects=("S1",))
+    assert (
+        cli(
+            [
+                "audit",
+                "--input",
+                str(root2),
+                "--output",
+                str(tmp_path / "o2"),
+                "--ruleset",
+                "qiba-fdg-1.14",
+            ]
+        )
+        == 0
+    )
+    capsys.readouterr()
+    assert (
+        cli(
+            [
+                "audit",
+                "--input",
+                str(root2),
+                "--output",
+                str(tmp_path / "o2"),
+                "--ruleset",
+                "qiba-fdg-1.14",
+            ]
+        )
+        == 2
+    )
+    assert "BUNDLE_EXISTS" in capsys.readouterr().err

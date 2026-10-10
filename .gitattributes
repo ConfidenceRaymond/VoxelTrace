@@ -1,0 +1,2 @@
+# generated reports: never diff or whitespace-check as text
+*.pdf binary

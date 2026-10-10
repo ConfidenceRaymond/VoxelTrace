@@ -164,16 +164,29 @@ def validate_input(path: str | Path, config: str | Path | None = None) -> dict[s
 
 
 def format_text(r: dict[str, Any]) -> str:
+    """Plain language first, the reason code and technical field kept beside it."""
+    from voxeltrace.remediation import customer_wording
+
+    meaning = {
+        "ACCEPT_FOR_AUDIT": "ready for the audit",
+        "ACCEPT_WITH_WARNINGS": "can be audited; some evidence is incomplete (see warnings)",
+        "NEEDS_REEXPORT": "some scans cannot be used as exported; a re-export or site records are needed",
+        "UNSUPPORTED": "outside what VoxelTrace audits",
+    }
     L = [
-        f"{r['input']}: {r['decision']}",
+        f"{r['input']}: {r['decision']} ({meaning[r['decision']]})",
         f"  scans: {', '.join(f'{k} {v}' for k, v in r['counts'].items() if v)}",
     ]
     L += [f"  layout {x['severity']} {x['code']}: {x['detail']}" for x in r["layout"]]
     for s in r["scans"]:
         L.append(f"  {s['subject'] or '-'} / {s['scan']}: {s['decision']}")
-        L += [f"      {x['severity']:12} {x['code']}: {x['remediation']}" for x in s["reasons"]
-              if x["severity"] in ("UNSUPPORTED", "BLOCKING", "NEEDS_REVIEW")]  # fmt: skip
+        for x in s["reasons"]:
+            if x["severity"] in ("UNSUPPORTED", "BLOCKING", "NEEDS_REVIEW"):
+                L += [f"      {x['severity']:12} {customer_wording(x['code'])}",
+                      f"      {'':12} what to do: {x['remediation']}",
+                      f"      {'':12} [{x['code']}; {x['field']}]"]  # fmt: skip
         warn = sorted({x["code"] for x in s["reasons"] if x["severity"] == "WARNING"})
         if warn:
             L.append(f"      warnings: {', '.join(warn)}")
+    L.append("  Explanation of every code: voxeltrace remediation-matrix")
     return "\n".join(L)

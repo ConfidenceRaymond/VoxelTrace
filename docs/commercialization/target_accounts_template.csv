@@ -1,0 +1,6 @@
+segment,organization,likely_buyer_role,technical_evaluator_role,pet_modality,current_workflow,why_voxeltrace_may_matter,public_evidence,relationship,outreach_status,interview_ids,evidence_required,next_action,next_action_date,notes
+IMAGING_CORE_LAB,<placeholder - fill from public sources>,<role>,<role>,FDG PET/CT multicentre,unknown,<hypothesis>,<public link>,NONE,NOT_CONTACTED,,<e.g. expert validation>,<one action>,,
+CRO_IMAGING,<placeholder>,<role>,<role>,<modality>,unknown,<hypothesis>,<public link>,NONE,NOT_CONTACTED,,,,,
+RADIOPHARMA,<placeholder>,<role>,<role>,<modality>,unknown,<hypothesis>,<public link>,NONE,NOT_CONTACTED,,,,,
+ACADEMIC_PET_CENTER,<placeholder>,<role>,<role>,<modality>,unknown,<hypothesis>,<public link>,NONE,NOT_CONTACTED,,,,,
+TRIAL_COORDINATING_CENTER,<placeholder>,<role>,<role>,<modality>,unknown,<hypothesis>,<public link>,NONE,NOT_CONTACTED,,,,,

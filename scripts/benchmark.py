@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Performance benchmark on local data (no image duplication: file-level symlinks).
 
-  benchmark.py
+  benchmark.py [out_dir]     (default ../outputs/benchmark; never pass an existing result dir)
 
 Builds ../tmp/benchmark/trial_{1,8}/ (1 subject; all 8 local real subjects: ACRIN 050, 094,
 153, 167, 168 and the 3 external pairs), PET+CT only (SEG excluded), then times in
@@ -23,7 +23,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 DATA = ROOT / "data"
 BENCH = ROOT / "tmp" / "benchmark"
-OUT = ROOT / "outputs" / "benchmark"
+OUT = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / "outputs" / "benchmark"
 SUBJECTS = [
     DATA / "acrin_longitudinal" / s
     for s in ("ACRIN-NSCLC-FDG-PET-168", "ACRIN-NSCLC-FDG-PET-050", "ACRIN-NSCLC-FDG-PET-094",
