@@ -62,7 +62,8 @@ def test_fs01_different_text_is_never_identity_pass(tmp_path):
 
 
 def test_reconstruction_evidence_labels():
-    f = lambda **t: {"fields": {k: {"trust": t.get(k, "LEVEL_A")} for k in  # noqa: E731
+    f = lambda text="OSEM", **t: {"fields": {k: {"trust": t.get(k, "LEVEL_A"),  # noqa: E731
+                                                 "value": text if k == "reconstruction_method" else 1} for k in
                                 ("reconstruction_method", "iterations", "subsets", "time_of_flight",
                                  "psf_resolution_modelling", "filter_kernel")}}  # fmt: skip
     assert (
@@ -74,5 +75,18 @@ def test_reconstruction_evidence_labels():
     assert (
         reconstruction_evidence({"S/a": f(time_of_flight="NONE"), "S/b": f()}, "S", "a", "b")
         == "TEXT_IMPLIED: time_of_flight"
+    )
+    # a missing parameter without identical text is not text-implied: it is simply not established
+    assert (
+        reconstruction_evidence(
+            {"S/a": f(time_of_flight="NONE"), "S/b": f(text="OSEM 2i")}, "S", "a", "b"
+        )
+        == "NOT_ESTABLISHED: time_of_flight"
+    )
+    assert (
+        reconstruction_evidence(
+            {"S/a": f(text=None, time_of_flight="NONE"), "S/b": f(text=None)}, "S", "a", "b"
+        )
+        == "NOT_ESTABLISHED: time_of_flight"
     )
     assert reconstruction_evidence({}, "S", "a", "b") == "NO_FINGERPRINT"

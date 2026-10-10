@@ -88,16 +88,21 @@ RECON = ("reconstruction_method", *IMPLIED, "filter_kernel")
 
 def reconstruction_evidence(fps: dict[str, Any], subject: str, baseline: str, followup: str) -> str:
     """How reconstruction identity is evidenced for a pair (reporting only; false-safe risk
-    FS-01): TEXT_IMPLIED when a parameter is missing on a scan and can only have been judged
-    the same through identical ReconstructionMethod text; else the weakest trust level."""
+    FS-01): TEXT_IMPLIED when a parameter is missing on a scan and the ReconstructionMethod text
+    is identical (the comparison then treats it as SAME); NOT_ESTABLISHED when a parameter is
+    missing and there is no identical text; else the weakest trust level present."""
     fs = [fps.get(f"{subject}/{tp}", {}).get("fields", {}) for tp in (baseline, followup)]
     if not all(fs):
         return "NO_FINGERPRINT"
     missing = sorted(
         {f for x in fs for f in IMPLIED if x.get(f, {}).get("trust") in ("NONE", None)}
     )
-    if missing:
+    texts = [x.get("reconstruction_method", {}).get("value") for x in fs]
+    same_text = all(texts) and len({" ".join(str(t).split()) for t in texts}) == 1
+    if missing and same_text:  # the comparison treats these as SAME only through text identity
         return "TEXT_IMPLIED: " + ";".join(missing)
+    if missing:  # no identical text to lean on: identity cannot rest on these parameters
+        return "NOT_ESTABLISHED: " + ";".join(missing)
     trusts = {x.get(f, {}).get("trust") for x in fs for f in RECON}
     for t, label in (
         ("LEVEL_U", "UNSUPPORTED"),
@@ -238,7 +243,8 @@ def readme_md(manifest: dict[str, Any], page: dict[str, Any], acc: dict[str, Any
         "`reconstruction_evidence` says how reconstruction identity is evidenced: STRUCTURED (DICOM attributes), "
         "FREE_TEXT (parsed from vendor text), ATTESTED (site attestation), or TEXT_IMPLIED (a parameter such as "
         "iterations or TOF is not encoded and was judged identical only because the reconstruction text is identical; "
-        "treat such an ASSESSABLE verdict with caution).",
+        "treat such an ASSESSABLE verdict with caution) or NOT_ESTABLISHED (a parameter is not encoded and there is no "
+        "identical text, so identity is not established).",
         "   `pair_evidence_trace.csv` answers 'why this verdict?': rule, reason, DICOM field, value, trust level and "
         "source at both timepoints, and the raw-metadata finding behind it.",
         "5. `site_summary.csv`, `scan_preflight.csv`, `protocol_drift.csv`: detail by site, scanner and scan.",

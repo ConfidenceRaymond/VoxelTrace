@@ -38,6 +38,7 @@ was established:
 | FREE_TEXT (LEVEL_D) | parsed from vendor text (e.g. `PSF+TOF 2i21s`) | does the text really encode the parameters? |
 | ATTESTED (LEVEL_C) | a signed site attestation (QIBA only, verdict carries a warning) | is the attestation credible and scan-specific? |
 | **TEXT_IMPLIED** | a parameter is not encoded and was judged identical only because the text is identical | **see section 4** |
+| NOT_ESTABLISHED | a parameter is not encoded and there is no identical text; identity is not established (the pair is usually INSUFFICIENT_INFORMATION or NOT_ASSESSABLE) | is the parameter available from the site? |
 
 ## 4. TEXT_IMPLIED cases
 

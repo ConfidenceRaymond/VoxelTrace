@@ -1,7 +1,13 @@
 # TEXT_IMPLIED review packet: first scientific adjudication question
 
-**For:** the partner's PET physicist. **Status:** open question. **Rule behaviour is unchanged**
-by this packet; your answers inform a possible future, separately versioned rule change.
+**For:** the partner's PET physicist. **Status:** open question; no expert answer has been
+received. **Rule behaviour is unchanged** by this packet. Your answers inform a possible future,
+separately versioned rule change.
+
+> **If you are also a reviewer in VoxelTrace's blinded external validation** (package frozen at
+> tag `v0.3.0-external-validation`), complete and return those case forms **before** reading
+> this packet, and do not open Appendix B before answering Part A. Part A shows the evidence
+> only, not VoxelTrace's verdicts.
 
 ## The question
 
@@ -11,76 +17,121 @@ by this packet; your answers inform a possible future, separately versioned rule
 
 ## Current interpretation (VT-PROTOCOL-IDENTITY v1)
 
-- If a parameter is encoded at both timepoints, the values are compared directly.
-- If it is not, and the `ReconstructionMethod` text is identical on both scans, VoxelTrace
-  counts the parameter as SAME (a "text-implied" identity, trust LEVEL_D or lower).
-- Different texts are never treated as identical (a changed text → identity FAIL).
-- The post-filter (`ConvolutionKernel`) must be known; otherwise identity is UNKNOWN.
-- Since 0.4.0 every such pair is labelled `reconstruction_evidence = TEXT_IMPLIED: <parameters>`
-  in `pair_results.csv`, and the limitation is stated in every package's methodology.
-  (Source: `src/voxeltrace/evidence/comparability.py`; risk FS-01 in
-  `docs/validation/false_safe_risk_register.md`; pinned by `tests/test_false_safe_register.py`.)
+- If a parameter is encoded at both timepoints, the values are compared directly. A parameter
+  parsed from the text itself (e.g. `3i24s` → 3 iterations, 24 subsets) counts as encoded, at
+  trust LEVEL_D (vendor free text).
+- If a parameter is not encoded but the `ReconstructionMethod` text is **identical** on both
+  scans, it is counted as SAME. This is the *text-implied* identity.
+- Different texts are never treated as identical; a changed text gives an identity FAIL.
+- The post-filter (`ConvolutionKernel`) must be known on both scans; otherwise identity is
+  UNKNOWN.
+- Since 0.4.0, `pair_results.csv → reconstruction_evidence` reports `TEXT_IMPLIED: <parameters>`
+  for such pairs, and `NOT_ESTABLISHED: <parameters>` when a parameter is missing and there is
+  no identical text.
 
-## Why it matters
+**Why identical text is currently treated as identity evidence.** At a given site, scanner and
+software version, the vendor writes the reconstruction protocol's description into
+`ReconstructionMethod`. When the same protocol is re-used, the description repeats. Identical
+text therefore suggests, but does not prove, that the same protocol was used. The rule was
+written to avoid refusing every pair whose export omits individual parameters. Its limitation
+is recorded in the rule definition ("iterations/subsets/TOF/PSF may come from vendor free
+text") and in the false-safe risk register (FS-01).
 
-The rule protects against comparing SUVs from different reconstructions (iterations, TOF and
-PSF change SUVmax/SUVpeak). If a site changed a parameter without changing the method text, the
-change would be invisible and the pair could be reported `ASSESSABLE`: a **false-safe** result.
-Conversely, refusing every pair with an unencoded parameter would turn many comparable
-pairs into `INSUFFICIENT_INFORMATION` (false-unsafe).
+**Alternative conservative interpretation.** Identical text implies only the parameters the
+text actually encodes; anything else is UNKNOWN unless documented (site protocol,
+attestation, vendor documentation).
 
-How informative the text is depends on the vendor: Siemens texts such as `PSF+TOF 2i21s`
-encode iterations, subsets, PSF and TOF; a generic text such as `OSEM` encodes none of them.
+| | If the current interpretation is wrong | If the conservative interpretation is wrong |
+|---|---|---|
+| Effect | **false-safe**: a site changed TOF/PSF/iterations without changing the text; the pair is reported comparable and an SUV change could be misread | **false-unsafe**: genuinely identical protocols are reported INSUFFICIENT_INFORMATION; more site queries and fewer usable pairs |
+| Visible to the user? | only through the `TEXT_IMPLIED` flag | yes (II with the missing parameter named) |
 
-## Examples from existing validation (real public data)
+## Part A: blinded evidence table (answer before Appendix B)
 
-| Pair | Scanner | Text (both timepoints) | Not encoded | Verdicts | Comment |
+Real public pairs from VoxelTrace's development cohort. Case codes are specific to this packet.
+"Encoded" means present as a standard attribute or parsed from the text; "not encoded" means
+neither.
+
+| Case | Scanner (both timepoints) | ReconstructionMethod (baseline / follow-up) | Encoded | Not encoded | ConvolutionKernel known |
 |---|---|---|---|---|---|
-| **CCTH-B02** (CC-Tumor-Heterogeneity) | Siemens Biograph64, `syngo MI.PET/CT 2011A` (same at both) | `PSF 3i24s` | **time_of_flight** | QIBA `ASSESSABLE`; EANM `ASSESSABLE_WITH_WARNINGS`; PERCIST `INSUFFICIENT_INFORMATION` (review pending) | iterations 3, subsets 24, PSF parsed from the text (LEVEL_D); TOF is absent from the text and from DICOM, and judged SAME only through text identity; filter `XYZ Gauss4.00` structured |
-| PETCT_c2ffda4725 (FDG-PET-CT-Lesions), for contrast | Siemens Biograph128 mCT, VG60A | `PSF+TOF 2i21s` | none | QIBA `ASSESSABLE` | all parameters parsed from the text (`FREE_TEXT`), not text-implied |
-| Synthetic test (FS-01) | GE-like, `OSEM` | `OSEM` | iterations, subsets, TOF, PSF | identity PASS | demonstrates the risk with a generic text; synthetic, not real data |
+| TI-1 | CPS 1080 | `OSEM2D 2i8s` / `OSEM2D 2i8s` | method, iterations, subsets, filter | TOF, PSF | yes |
+| TI-2 | GE Discovery LS | `OSEM` / `OSEM` | method | iterations, subsets, TOF, PSF | **no** |
+| TI-3 | CPS 1023 | `OSEM 2i8s` / `OSEM 2i8s` | method, iterations, subsets | TOF, PSF | **no** |
+| TI-4 | Siemens Biograph64 (`syngo MI.PET/CT 2011A`) | `PSF 3i24s` / `PSF 3i24s` | method, iterations, subsets, PSF, filter | TOF | yes |
+| TI-5 | Siemens Biograph40 mCT | `PSF 3i12s` / `PSF 3i12s` | method, iterations, subsets, PSF, filter | TOF | yes |
 
-In the 9-pair real cohort, 21 of 27 pair × rule-set rows carry TEXT_IMPLIED; only 2 of those
-(CCTH-B02, QIBA and EANM) are `ASSESSABLE*`. The others are already `NOT_ASSESSABLE` or
-`INSUFFICIENT_INFORMATION` for other reasons.
+For contrast (not text-implied): a Siemens Biograph128 mCT pair with `PSF+TOF 2i21s` on both
+scans has every parameter encoded in the text.
 
-## Expert feedback needed
+### Questions for each case (TI-1 … TI-5)
 
-- **Q1.** For CCTH-B02: from your knowledge of the Biograph64 and of `PSF 3i24s` exports, is the
-  TOF state of both scans determined (e.g. the system has no TOF capability, or the text would
-  read `PSF+TOF` if TOF were used)? Would you accept the pair as comparable under QIBA?
-  Yes / No / Need site protocol.
-- **Q2.** For Siemens texts of the form `[PSF][+TOF] <n>i<m>s`: is the absence of `TOF` in the
-  text sufficient evidence that TOF was off? On which systems / software versions?
-- **Q3.** For generic texts (e.g. `OSEM`, `3D IR`, `VPFX`): should identical text ever imply
-  identical iterations/subsets/TOF/PSF? Yes / No / Only with site documentation.
-- **Q4.** Which evidence would you accept instead: site protocol sheet, console screenshot,
-  signed attestation, vendor documentation?
-- **Q5.** In your own datasets, how often do you expect reconstruction parameters to be
-  unencoded, and how often do sites change them between visits?
+For each case:
 
-## Possible future policy outcomes (none adopted)
+- **Q1.** Is reconstruction identity established from this evidence alone? Answer
+  *Yes / No / Only with site documentation*.
+- **Q2.** If not, which document would settle it? Answer *site protocol / console screenshot /
+  signed attestation / vendor documentation*.
+
+### General questions
+
+- **Q3.** For Siemens texts of the form `[PSF][+TOF] <n>i<m>s`, is the absence of `TOF` in the
+  text sufficient evidence that TOF was off? On which systems and software versions?
+- **Q4.** For generic texts (e.g. `OSEM`, `OSEM2D`, `3D IR`, `VPFX`), should identical text ever
+  imply identical iterations, subsets, TOF or PSF?
+- **Q5.** How often do you expect reconstruction parameters to be unencoded in your exports, and
+  how often do sites change them between visits without changing the protocol name?
+- **Q6.** Which policy would you prefer (see below), and why?
+
+### Possible future policies (none adopted)
 
 | Option | Effect |
 |---|---|
-| A. Keep v1, keep the TEXT_IMPLIED flag | current behaviour; physician review of flagged pairs |
-| B. Text implies only parameters the text actually encodes (vendor-specific grammar); otherwise UNKNOWN | fewer false-safe risks; CCTH-B02 would become INSUFFICIENT_INFORMATION unless Q1/Q2 support a documented Siemens rule |
-| C. Text-implied identity downgrades the verdict to `ASSESSABLE_WITH_WARNINGS` | visible caveat without refusing |
-| D. Text-implied identity only with a documented vendor dictionary or site attestation | strictest |
+| A | keep v1 and the TEXT_IMPLIED flag; physicist review of flagged pairs |
+| B | text implies only parameters it encodes, using a vendor-specific grammar where documented; otherwise UNKNOWN |
+| C | a text-implied identity downgrades the verdict to ASSESSABLE_WITH_WARNINGS |
+| D | text-implied identity only with a documented vendor dictionary or a site attestation |
 
-Any change would be a **new rule version** (VT-PROTOCOL-IDENTITY v2) with regression tests,
-introduced after the blinded external validation (the frozen validation package at tag
-`v0.3.0-external-validation` must keep its answers), and announced to partners.
+Any change would be a **new rule version** (VT-PROTOCOL-IDENTITY v2) with regression tests. It
+would be introduced after the blinded external validation, whose frozen package must keep its
+answers, and announced to partners.
 
-## Your answer
+## Your answers
 
-| | Answer | Basis (experience / document / site protocol) |
-|---|---|---|
-| Q1 | | |
-| Q2 | | |
-| Q3 | | |
-| Q4 | | |
-| Q5 | | |
-| Preferred option (A–D or other) | | |
+| Case | Q1 | Q2 | Basis (experience / document / site protocol) |
+|---|---|---|---|
+| TI-1 | | | |
+| TI-2 | | | |
+| TI-3 | | | |
+| TI-4 | | | |
+| TI-5 | | | |
 
-Reviewer role: `<...>` · Date: `<...>`
+| | Answer |
+|---|---|
+| Q3 | |
+| Q4 | |
+| Q5 | |
+| Q6 (preferred option) | |
+
+Reviewer role: `<...>` · Date: `<...>` · Blinded validation forms returned first? yes / no / not a validation reviewer
+
+---
+
+## Appendix B: VoxelTrace's current result (open only after answering Part A)
+
+<details>
+<summary>Show</summary>
+
+| Case | Source pair | QIBA 1.14 | EANM 2.0 | PERCIST 1.0 | Does text-implied identity change the outcome today? |
+|---|---|---|---|---|---|
+| TI-1 | ACRIN-NSCLC-FDG-PET-050 | NOT_ASSESSABLE | NOT_ASSESSABLE | NOT_ASSESSABLE | no: uptake-time criteria fail regardless |
+| TI-2 | ACRIN-NSCLC-FDG-PET-094 | INSUFFICIENT_INFORMATION | INSUFFICIENT_INFORMATION | INSUFFICIENT_INFORMATION | no: post-filter unknown and strict SUV refused |
+| TI-3 | ACRIN-NSCLC-FDG-PET-153 | INSUFFICIENT_INFORMATION | INSUFFICIENT_INFORMATION | INSUFFICIENT_INFORMATION | no: post-filter unknown and strict SUV refused |
+| TI-4 | CCTH-B02 | **ASSESSABLE** | **ASSESSABLE_WITH_WARNINGS** | INSUFFICIENT_INFORMATION (reference review pending; SUL evidence missing) | **yes**: under the conservative interpretation, TOF would be UNKNOWN and QIBA/EANM would become INSUFFICIENT_INFORMATION |
+| TI-5 | MSB-07612 | NOT_ASSESSABLE | NOT_ASSESSABLE | INSUFFICIENT_INFORMATION | no: uptake-time criterion fails regardless |
+
+Source: `voxeltrace run-pilot` on the 9-pair real cohort at release `v0.4.0` (pair verdicts
+byte-identical to the frozen validation bundle). ACRIN-167 and ACRIN-168 (GE Discovery LS, no
+reconstruction text at all) are `NOT_ESTABLISHED`, not text-implied, and are not part of this
+question.
+
+</details>
