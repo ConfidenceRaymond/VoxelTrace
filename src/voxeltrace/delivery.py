@@ -13,6 +13,7 @@ Package contents (no DICOM, no pixel data, no absolute paths, no hidden files):
   protocol_drift.csv              protocol drift events
   unresolved_items.csv            everything waiting on a site or a human reviewer
   remediation_matrix.csv          what each reason code means and what can fix it
+  pair_evidence_trace.csv         verdict -> rule -> reason -> field -> trust/source -> raw metadata
   recommended_site_queries/       DRAFT site queries (never sent by VoxelTrace)
   evidence_bundle/                the immutable audit bundle, byte-for-byte
   verification_report.json        verify-bundle result for evidence_bundle/
@@ -201,6 +202,8 @@ def readme_md(manifest: dict[str, Any], page: dict[str, Any], acc: dict[str, Any
         "3. `recommended_site_queries/site_queries.md`: DRAFT queries to send to sites (edit, approve and "
         "send through your own channel; VoxelTrace sends nothing).",
         "4. `pair_results.csv`: every pair and rule set. `pairing_status` must be OK before a verdict is used.",
+        "   `pair_evidence_trace.csv` answers 'why this verdict?': rule, reason, DICOM field, value, trust level and "
+        "source at both timepoints, and the raw-metadata finding behind it.",
         "5. `site_summary.csv`, `scan_preflight.csv`, `protocol_drift.csv`: detail by site, scanner and scan.",
         "6. `remediation_matrix.csv`: what each reason code means and whether a re-export, a site record or a "
         "human review can fix it.",
@@ -281,6 +284,9 @@ def build_delivery_package(source: str | Path, out: str | Path) -> dict[str, Any
     _write_csv(partial / "unresolved_items.csv", _unresolved(bundle),
                ["type", "subject", "scope", "ruleset", "item", "reason_codes", "resolved_by", "plain_language"])  # fmt: skip
     _write_csv(partial / "remediation_matrix.csv", remediation_matrix())
+    from voxeltrace.trace import evidence_trace
+
+    _write_csv(partial / "pair_evidence_trace.csv", evidence_trace(bundle))
     (partial / "recommended_site_queries").mkdir()
     for name in ("site_queries.md", "site_queries.json"):
         shutil.copy(rep / name, partial / "recommended_site_queries" / name)

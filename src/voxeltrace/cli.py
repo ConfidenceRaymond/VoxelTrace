@@ -222,6 +222,14 @@ def _intake_map(a: argparse.Namespace) -> int:
     return 0 if m["status"] in ("MAPPED", "MAPPED_WITH_WARNINGS") else 2
 
 
+def _explain_pair(a: argparse.Namespace) -> int:
+    from voxeltrace.trace import explain_pair
+
+    print(DISCLAIMER)
+    print(explain_pair(a.bundle, a.subject, a.ruleset))
+    return 0
+
+
 def _remediation(a: argparse.Namespace) -> int:
     import csv
 
@@ -585,6 +593,15 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--stage", help="new trial folder to stage the mapped scans into")
     p.add_argument("--trial-id")
     p.set_defaults(func=_intake_map)
+
+    p = sub.add_parser(
+        "explain-pair",
+        help="why a pair got its verdict: rule -> reason -> field -> trust/source -> raw metadata",
+    )
+    p.add_argument("bundle")
+    p.add_argument("--subject", required=True)
+    p.add_argument("--ruleset", choices=["qiba-fdg-1.14", "eanm-fdg-2.0", "percist-1.0"])
+    p.set_defaults(func=_explain_pair)
 
     p = sub.add_parser(
         "remediation-matrix", help="print every reason code with its remediation routes"

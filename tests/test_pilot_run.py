@@ -507,3 +507,41 @@ def test_run_pilot_cli_exit_codes_and_refusals(tmp_path, capsys):
     assert cli(["remediation-matrix", "--format", "json"]) == 0
     assert cli(["deliver", str(tmp_path / "o"), "--out", str(tmp_path / "pkg")]) == 0
     assert cli(["verify-delivery", str(tmp_path / "pkg")]) == 0
+
+
+# ---------------------------------------------------------------- evidence trust trace
+
+
+def test_evidence_trace_links_verdict_to_field_trust_and_source(tmp_path):
+    from voxeltrace.trace import evidence_trace, explain_pair
+
+    root = tmp_path / "trial"
+    for i, (tp, date) in enumerate((("baseline", "20200101"), ("followup", "20200301"))):
+        ov = {**GOOD, "AcquisitionDate": date, "SeriesDate": date, "PatientID": "P1"}
+        ov.pop("ConvolutionKernel")  # filter unknown -> VT-PROTOCOL-IDENTITY UNKNOWN
+        write_image_series(root / "S1" / tp, modality="PT", study_uid=generate_uid(), slope=2.0 + i / 10,
+                           pet_overrides=ov, rp_overrides={"RadiopharmaceuticalStartDateTime": f"{date}091500"})  # fmt: skip
+    (root / "trial.yaml").write_text(yaml.safe_dump({"trial_id": "T", "ruleset": "qiba-fdg-1.14", "timepoint_order": ["baseline", "followup"],
+                                                     "reference_proposals": "off"}))  # fmt: skip
+    run_audit(root, tmp_path / "out", rulesets=("qiba-fdg-1.14",))
+    b = tmp_path / "out" / "audit_bundle"
+    rows = [r for r in evidence_trace(b) if r["rule_id"] == "VT-PROTOCOL-IDENTITY"]
+    assert rows and rows[0]["verdict"] == "INSUFFICIENT_INFORMATION"
+    assert rows[0]["reason_code"] == "AMBIGUOUS_RECONSTRUCTION"
+    assert (
+        "filter_kernel" in rows[0]["baseline_evidence"]
+        and "trust NONE" in rows[0]["baseline_evidence"]
+    )
+    assert "ConvolutionKernel" in rows[0]["baseline_evidence"]
+    assert rows[0]["plain_language"] and rows[0]["remediation"]
+    text = explain_pair(b, "S1")
+    assert (
+        "VT-PROTOCOL-IDENTITY" in text and "in plain language" in text and "what can fix it" in text
+    )
+    assert "no pair" in explain_pair(b, "NOPE")
+
+
+def test_delivery_contains_evidence_trace(pilot):
+    tmp, _, _ = pilot
+    p = tmp / "p1" / "delivery_package" / "pair_evidence_trace.csv"
+    assert p.exists() and p.read_text().startswith("ruleset,subject")
