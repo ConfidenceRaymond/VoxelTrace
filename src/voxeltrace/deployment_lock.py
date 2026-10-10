@@ -141,6 +141,7 @@ def main_capture(out: str | Path, model_manifest: str | Path | None = None) -> d
     p = Path(out)
     if p.exists():
         raise FileExistsError(f"{p} exists (a lock is never overwritten)")
+    p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(json.dumps(lock, indent=2) + "\n")
     return lock
 

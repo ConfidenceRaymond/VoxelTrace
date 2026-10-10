@@ -46,7 +46,7 @@ def test_other_package_drift_is_a_warning_only():
 
 
 def test_capture_never_overwrites_and_cli(tmp_path, capsys):
-    p = tmp_path / "lock.json"
+    p = tmp_path / "new_folder" / "lock.json"  # parent created on capture
     main_capture(p)
     with pytest.raises(FileExistsError):
         main_capture(p)
