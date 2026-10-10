@@ -26,7 +26,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install
         run: |
-          python -m pip install -e ".[dev]"
+          python -m pip install -e ".[app,dev]"   # [app]: the review-page render tests run too
           python -m pip install "ruff==0.17.0"   # formatter output is version-specific
       - name: Lint
         run: |
