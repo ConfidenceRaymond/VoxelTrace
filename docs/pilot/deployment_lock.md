@@ -8,7 +8,7 @@ without requiring Docker (the audit is pure Python, CPU-only, offline).
 | Item | Locked value for the current release | Where it is recorded |
 |---|---|---|
 | Python | 3.12.x (3.11 supported, tested in CI) | lock `python` |
-| VoxelTrace | 0.4.0 at a tagged, clean commit (`v0.4.0-rc1` or later) | lock `voxeltrace` (version, git commit, dirty flag) |
+| VoxelTrace | 0.4.0 at a tagged, clean commit (`v0.4.0-rc2` or later) | lock `voxeltrace` (version, git commit, dirty flag) |
 | Tested dependency set | `constraints/tested-py312-x86_64.txt` | lock `packages` (every installed package) |
 | Rule bundle | sha256 `413186131a357163959cb161358e9193899c9675278bcc1a8a8c8d194f9d411d` (QIBA FDG 1.14, EANM FDG 2.0, PERCIST 1.0) | lock `rule_bundle_sha256`, `rule_versions`; every bundle manifest |
 | Evidence / report schemas | `voxeltrace --version` → schemas line (e.g. VT-BUNDLE-1, VT-EXECUTIVE-SUMMARY-2, VT-PILOT-ACCEPTANCE-1) | lock `schemas`; every bundle manifest |
@@ -18,7 +18,7 @@ without requiring Docker (the audit is pure Python, CPU-only, offline).
 
 ```bash
 git clone <repository> voxeltrace && cd voxeltrace
-git checkout <release tag>            # e.g. v0.4.0-rc1 or later
+git checkout <release tag>            # e.g. v0.4.0-rc2 or later
 python3.12 -m venv .venv && . .venv/bin/activate
 pip install -e ".[app,dev]" -c constraints/tested-py312-x86_64.txt
 python -m pytest -q                   # must pass before any partner data is touched

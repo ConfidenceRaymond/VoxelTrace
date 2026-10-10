@@ -23,7 +23,7 @@ determination; it checks that the agreed prerequisites exist.
 
 ## C. Software
 
-- [ ] The release used is tagged (`v0.4.0-rc1` or later) and recorded.
+- [ ] The release used is tagged (`v0.4.0-rc2` or later) and recorded; `voxeltrace deployment-lock verify` = LOCK_MATCH.
 - [ ] On the audit machine, at that tag: `pytest`, `ruff check .`, `ruff format --check .` pass.
 - [ ] CI on `main` is green for that commit (all jobs).
 - [ ] A dry run of [FIRST_PILOT_RUNBOOK.md](FIRST_PILOT_RUNBOOK.md) on public data completed
@@ -57,7 +57,7 @@ determination; it checks that the agreed prerequisites exist.
 | A. Agreement and scope | **open**: no partner, no DUA, no scope signed |
 | B. Data handling | **open**: depends on the partner |
 | C. Software | **met** for `main` @ the commit adding this package: tests and lint pass locally; CI green on all three jobs after the fix in `a1cf044` (it had failed on every run since activation: streamlit-dependent tests under a `[dev]`-only install); runbook dry run on public PETCT_97320b0b58 completed 2026-10-10 (`outputs/runbook_dryrun_20261010`, verify-bundle and verify-delivery OK). Re-tick on the release actually used. |
-| D. Scientific scope | **ready** to send; TEXT_IMPLIED packet prepared, unanswered |
+| D. Scientific scope | **ready** to send; TEXT_IMPLIED blinded packet prepared, unanswered; external dry run 2026-10-10 passed (`dry_run_20261010.md`) |
 | E. People | **open** |
 
 Overall: **NO-GO until A, B and E are completed by the owner with a real partner.**

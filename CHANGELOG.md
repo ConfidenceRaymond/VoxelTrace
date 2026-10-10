@@ -5,6 +5,22 @@ change between minor versions. Every rule set, schema and algorithm carries its 
 inside each output, so results remain traceable even within one software version. 1.0 is
 reserved for a release backed by completed external expert validation.
 
+## 0.4.0-rc2 (2026-10-10, partner-pilot preparation; see docs/release_candidate_v040.md)
+
+- `validate-partner-intake` (VT-PARTNER-INTAKE-1): partner declaration checked against the files;
+  review decisions refused.
+- `deployment-lock capture|verify` (VT-DEPLOYMENT-LOCK-1).
+- Intake safety: archives, zero-byte and malformed files, empty visits, duplicated instances, one
+  series in several folders, mixed vendors.
+- Reviewer-form scoring safeguards (malformed/duplicate/conflicting forms, abstentions,
+  inter-reviewer agreement, SYNTHETIC_TEST_ONLY separation).
+- Fixes: synthetic-fixture reference inheritance failed after workspace relocation (synthetic
+  fixtures only, fail-safe); pairing audit fixture handling (demo no longer AUDIT_BLOCKED; two real
+  subjects sharing a scan always block); `reconstruction_evidence` NOT_ESTABLISHED vs TEXT_IMPLIED.
+- Partner packet, starter kit, dry run, paid-pilot gate, outreach, website, demo, operations.
+- No change to SUV/SUL, thresholds or rule logic; real-cohort verdicts byte-identical to the frozen
+  tag-check bundle.
+
 ## 0.4.0 (2026-10-09, retrospective pilot hardening; see docs/release_candidate_v040.md)
 
 - One-command pilot: `voxeltrace run-pilot` (validate-input -> init-trial -> audit ->

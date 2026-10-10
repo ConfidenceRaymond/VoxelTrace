@@ -8,7 +8,7 @@ real evidence. State as of 2026-10-10.
 
 | # | Section | Requirement | Status | Evidence / what is missing | Owner |
 |---|---|---|---|---|---|
-| 1 | Scientific validation | deterministic core tested; real-data cohort audited reproducibly | **PASS** | 741 tests; 9 real pairs; byte-identical verdicts across machines and to the frozen bundle (`../validation/reproducibility.md`) | — |
+| 1 | Scientific validation | deterministic core tested; real-data cohort audited reproducibly | **PASS** | 744 tests (CI, Python 3.11 and 3.12); 9 real pairs; byte-identical verdicts across machines and to the frozen bundle (`../validation/reproducibility.md`) | — |
 | 2 | Expert agreement | ≥ 2 independent PET physicists return the blinded forms; agreement scored with the locked plan | **BLOCKED** | 0 of 9 forms returned; needs reviewers to be recruited (`../external_validation_pending.md`) | user + external physicists |
 | 3 | False-safe analysis | register complete; 0 CRITICAL false-safe in expert comparison | **PENDING** (register PASS; comparison BLOCKED by #2) | `../validation/false_safe_risk_register.md`; FS-01 TEXT_IMPLIED open (`../pilot/external_partner/TEXT_IMPLIED_REVIEW_PACKET.md`) | external physicists |
 | 4 | False-unsafe analysis | register complete; rate measured against experts | **PENDING** (register PASS; measurement BLOCKED by #2) | `../validation/false_unsafe_risk_register.md` | external physicists |
@@ -22,7 +22,7 @@ real evidence. State as of 2026-10-10.
 | 12 | Deployment locking | tagged release, constraints file, captured and verified lock | **PASS** | `../pilot/deployment_lock.md`, `voxeltrace deployment-lock`; clean install verified | — |
 | 13 | Support process | named contact, response times, issue log | **PENDING** | described in `../pilot/first_real_pilot_operations.md`; no staffing commitment | user |
 | 14 | Incident process | privacy/security incident and wrong-result incident procedures | **PENDING** | draft steps in `../pilot/first_real_pilot_operations.md` §incident; not reviewed by counsel | user + legal counsel |
-| 15 | Version freeze | the pilot runs on one tagged release, unchanged during the pilot | **PASS** (mechanism) | tags `v0.4.0-rc1` (and later), deployment lock | — |
+| 15 | Version freeze | the pilot runs on one tagged release, unchanged during the pilot | **PASS** (mechanism) | tags `v0.4.0-rc1`, `v0.4.0-rc2`; deployment lock | — |
 | 16 | Release provenance | every output names version, commit, rule bundle and schemas; bundles verify | **PASS** | bundle manifests; `verify-bundle`; `verify-delivery` | — |
 | 17 | Deliverable acceptance | partner accepts a delivered package against agreed criteria | **BLOCKED** | no partner; criteria template exists (`../pilot/pilot_success_scorecard.md`) | partner |
 

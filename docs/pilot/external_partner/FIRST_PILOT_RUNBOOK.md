@@ -7,7 +7,7 @@ overwritten. No AI model is used.
 ## 0. Environment (once)
 
 ```bash
-cd <repo>                                  # VoxelTrace at tag v0.4.0-rc1 or later
+cd <repo>                                  # VoxelTrace at tag v0.4.0-rc2 or later
 git describe --tags                        # record in the pilot log
 python3.12 -m venv .venv && . .venv/bin/activate
 pip install -e ".[app,dev]" -c constraints/tested-py312-x86_64.txt

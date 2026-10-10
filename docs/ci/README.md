@@ -1,16 +1,12 @@
-# Proposed CI hardening (not yet active)
+# CI status
 
-`ci_proposed.yml` is the hardened workflow prepared on 2026-10-09: ruff pinned to 0.17.0,
-`git diff --check` on each commit, and a `fresh-install-smoke` job (non-editable install with
-`constraints/tested-py312-x86_64.txt`, then `scripts/ci_smoke_pilot.py`: synthetic run-pilot ->
-verify-delivery). It could not be pushed from the development session because the GitHub
-token lacks the `workflow` scope.
+**Active** (`.github/workflows/ci.yml`; activated by the owner in `edc8f82`, extended in
+`7c58dfe`). Jobs on every push and pull request:
 
-To activate (repository owner):
+| Job | What |
+|---|---|
+| `test (3.11)`, `test (3.12)` | `pip install -e ".[app,dev]"`, ruff 0.17.0 pinned, `ruff check`, `ruff format --check`, `git diff --check HEAD^ HEAD`, `pytest` (744 tests, none skipped), CLI help smoke |
+| `fresh-install-smoke` | Python 3.12, clean venv, non-editable install with `constraints/tested-py312-x86_64.txt`, `voxeltrace --version`, synthetic `run-pilot` → `verify-delivery` (`scripts/ci_smoke_pilot.py`) |
 
-```bash
-cp docs/ci/ci_proposed.yml .github/workflows/ci.yml
-git commit -am "ci: fresh-install smoke and whitespace check" && git push
-```
-
-The smoke script and the constraints file were verified locally (`SMOKE OK AUDIT_COMPLETE`).
+No model downloads, no GPU, no real DICOM. `ci_proposed.yml` is the historical proposal that the
+active workflow was created from.
