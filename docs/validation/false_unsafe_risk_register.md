@@ -48,6 +48,9 @@ or a missing reference region): this is by design and resolves with review, not 
 | FU-15 | Anonymizer shifts times inconsistently → NEGATIVE/IMPLAUSIBLE_DECAY_INTERVAL | some GE public sets | re-export keeping times on one clock | Medium |
 | FU-16 | Site not declared → spurious "drift" | any trial without `sites:` | warning on the first page; `intake-map --stage` writes sites | reporting only |
 
+| FU-17 | Intake holds archives, zero-byte or malformed files, empty visits and duplicated series as NEEDS_REVIEW | messy transfers | one question to the data contact; never auto-resolved | Low (time) |
+| FU-18 | Workspace relocation made synthetic-fixture inheritance fail (fixed 2026-10-10) | demonstration / test fixtures only | relocation-tolerant parent match; content hashes still required | none after the fix |
+
 ## What reduces false-unsafe results without reducing safety
 
 1. The GE/Philips partner data request (`ge_philips_partner_data_request.md`): BQML export,

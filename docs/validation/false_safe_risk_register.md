@@ -37,6 +37,10 @@ physicist.
 | FS-22 | Synthetic data reported as real | L |
 | FS-23 | Duplicate scan with new UIDs and re-reconstructed voxels | L |
 | FS-24 | Human adjudication silently changing a verdict | L |
+| FS-25 | Report reconciliation bug (site rollup disagrees with pair results) | L |
+| FS-26 | Missing correction evidence (CorrectedImage absent) | M |
+| FS-27 | Synthetic data or synthetic reviewer forms mistaken for real | L |
+| FS-28 | Partner intake declaration trusted over DICOM | L |
 
 ## Entries
 
@@ -179,6 +183,44 @@ Neither UID nor voxel hash matches; SAME_DAY_TIMEPOINTS catches same-date duplic
 ### FS-24 Adjudication changing a verdict — residual L
 Control: adjudications are appended, hash-chained and reported separately; automated verdicts
 are never modified. Test: `test_pilot_bundle.py`.
+
+### FS-25 Report reconciliation bug — residual L
+- **Cause:** a site/scanner rollup that does not add up to the pair results would mislead a
+  core-lab director.
+- **Control:** `check_rollup()` reconciles every SITE and SCANNER row with the pair and scan
+  counts; on any mismatch the audit aborts rather than delivering.
+- **Test:** `test_pilot_run.py::test_bundle_has_pairing_and_site_rollup`, `test_check_rollup_detects_inconsistency`.
+
+### FS-26 Missing correction evidence — residual M
+- **Cause:** `CorrectedImage` absent: strict SUV continues with `CORRECTIONS_NOT_DECLARED`
+  (warning) because the attribute is often stripped; a non-attenuation-corrected series that also
+  lacks `CorrectedImage` would not be caught by this attribute alone.
+- **Control:** present-but-missing-ATTN is BLOCKING (`MISSING_CORRECTION`); intake rule R1 excludes
+  NAC copies; `Units` must be BQML; the warning is shown per scan.
+- **Next:** physicist view on whether absent `CorrectedImage` should block.
+
+### FS-27 Synthetic data or synthetic reviewer forms mistaken for real — residual L
+- **Control:** synthetic perturbations only via explicit `synthetic_perturbations`; pairing
+  downgrades for declared fixtures only, and two real subjects sharing a scan always block
+  (fixed 2026-10-10); reviewer-form scoring refuses to mix SYNTHETIC_TEST_ONLY and real forms and
+  labels synthetic results.
+- **Test:** `test_validation_scoring_safeguards.py`, `test_pilot_run.py::test_fixture_reuse_is_info_but_real_duplicates_still_block`.
+
+### FS-28 Partner intake declaration trusted over DICOM — residual L
+- **Control:** `validate-partner-intake` compares declared vendor/model/software/date with the
+  DICOM header and reports mismatches; the audit reads only DICOM; review decisions in the intake
+  file are refused.
+- **Test:** `test_partner_intake.py`.
+
+## Changes 2026-10-10
+
+- FS-01 label made precise: `TEXT_IMPLIED` only when the reconstruction text is identical;
+  otherwise `NOT_ESTABLISHED`. Real cohort: 5 text-implied pairs, 1 with usable verdicts
+  (CCTH-B02). Blinded question packet: `../pilot/external_partner/TEXT_IMPLIED_REVIEW_PACKET.md`.
+- Path-portability defect in synthetic-fixture reference inheritance found and fixed; it was
+  fail-safe (refusal), affected synthetic fixtures only and no real-data verdict.
+- Intake now flags archives, zero-byte and malformed files, empty visits, duplicated instances and
+  series in several folders (`test_intake.py`), reducing wrong-series and duplicated-scan risk (FS-06, FS-07).
 
 ## Known critical false-safe bug?
 
