@@ -49,7 +49,8 @@ def test_init_trial_rejects_flat_folder(tmp_path):
 
 @pytest.mark.parametrize("page", ["app/Home.py", "app/pages/0_Intake_and_Audit.py"])
 def test_product_pages_render(page, tmp_path, monkeypatch):
-    from streamlit.testing.v1 import AppTest
+    # the review UI is the optional [app] extra; CI installs [dev] only
+    AppTest = pytest.importorskip("streamlit.testing.v1").AppTest
 
     monkeypatch.setenv("VOXELTRACE_WORKSPACE", str(tmp_path))
     at = AppTest.from_file(str(Path(__file__).parents[1] / page), default_timeout=60).run()
