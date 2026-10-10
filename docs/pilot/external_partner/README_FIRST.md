@@ -4,12 +4,13 @@
 software. It has no regulatory clearance and must not be used for patient care.
 
 This folder is the intake package for a first retrospective pilot with an external design
-partner. Read it in this order:
+partner. Full list with descriptions: [PARTNER_PACKET_INDEX.md](PARTNER_PACKET_INDEX.md). Read it in this order:
 
 | # | Document | For |
 |---|---|---|
 | 1 | this file | everyone |
-| 2 | [DATA_REQUIREMENTS.md](DATA_REQUIREMENTS.md) | the person preparing the export |
+| 2 | [DATA_REQUIREMENTS.md](DATA_REQUIREMENTS.md), [partner_intake.yaml](partner_intake.yaml) | the person preparing the export |
+| 2b | [GE_PHILIPS_DATA_REQUEST.md](GE_PHILIPS_DATA_REQUEST.md) | partners with GE or Philips scanners |
 | 3 | [TRANSFER_CHECKLIST.md](TRANSFER_CHECKLIST.md) | data manager / IT |
 | 4 | [PILOT_SCOPE_TEMPLATE.md](PILOT_SCOPE_TEMPLATE.md) | both parties, signed off before transfer |
 | 5 | [PARTNER_REVIEW_GUIDE.md](PARTNER_REVIEW_GUIDE.md) | the partner's PET physicist |
