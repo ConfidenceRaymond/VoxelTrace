@@ -159,3 +159,81 @@ def test_intake_map_cli(drop, tmp_path, capsys):
     assert by(m, "Subject004", "week 6")["timepoint"] == "followup"
     assert (tmp_path / "st" / "Subject004" / "followup" / "PET").is_dir()
     assert cli(["intake-map", str(drop), "--out", str(tmp_path / "m.json")]) == 2  # never overwrite
+
+
+# ---------------------------------------------------------------- intake safety (P4)
+
+
+def codes_of(m, subject=None, tp=None):
+    return {f["code"] for s in m["scans"] if (subject is None or s["subject"] == subject)
+            and (tp is None or s["timepoint_raw"] == tp) for f in s["findings"]}  # fmt: skip
+
+
+def test_archives_zero_byte_malformed_and_empty_folders(tmp_path):
+    r = tmp_path / "d"
+    pet(r / "A" / "S1" / "baseline" / "pet", "P1", "20200101")
+    pet(r / "A" / "S1" / "followup" / "pet", "P1", "20200301")
+    (r / "A" / "S1" / "followup" / "pet" / "zero.dcm").write_bytes(b"")
+    (r / "A" / "S1" / "followup" / "pet" / "broken.dcm").write_bytes(
+        b"\0" * 128 + b"DICM" + b"\x02\x00garbage"
+    )
+    (r / "A" / "S2" / "baseline").mkdir(parents=True)  # empty visit folder
+    pet(r / "A" / "S2" / "followup" / "pet", "P2", "20200301")
+    (r / "A" / "more_data.zip").write_bytes(b"PK\x03\x04")
+    m = map_intake(r)
+    assert m["status"] == "NEEDS_REVIEW"
+    assert {f["code"] for f in m["drop_findings"]} == {"ARCHIVE_NOT_EXTRACTED"}
+    assert {"ZERO_BYTE_FILE", "MALFORMED_DICOM"} <= codes_of(m, "S1", "followup")
+    assert (
+        by(m, "S1", "followup")["status"] == "NEEDS_REVIEW"
+        and by(m, "S1", "baseline")["status"] != "NEEDS_REVIEW"
+    )
+    assert (
+        "EMPTY_SCAN_FOLDER" in codes_of(m, "S2", "baseline")
+        and by(m, "S2", "baseline")["status"] == "NEEDS_REVIEW"
+    )
+
+
+def test_duplicate_instances_series_in_two_folders_and_mixed_vendor(tmp_path):
+    import shutil
+
+    r = tmp_path / "d"
+    pet(r / "A" / "S1" / "baseline" / "pet", "P1", "20200101")
+    pet(r / "A" / "S1" / "followup" / "pet", "P1", "20200301", Manufacturer="GE MEDICAL SYSTEMS")
+    shutil.copytree(
+        r / "A" / "S1" / "baseline" / "pet", r / "A" / "S1" / "baseline" / "pet_copy"
+    )  # same files twice
+    shutil.copytree(
+        r / "A" / "S1" / "followup" / "pet", r / "A" / "S9" / "baseline" / "pet"
+    )  # one scan, two subjects
+    m = map_intake(r)
+    assert "DUPLICATE_INSTANCES" in codes_of(m, "S1", "baseline")
+    assert "SERIES_IN_MULTIPLE_FOLDERS" in codes_of(
+        m, "S1", "followup"
+    ) and "SERIES_IN_MULTIPLE_FOLDERS" in codes_of(m, "S9")
+    assert by(m, "S9", "baseline")["status"] == "NEEDS_REVIEW"
+    assert "MIXED_VENDOR" in codes_of(m, "S1", "baseline")
+    staged = (
+        stage_intake(m, r, tmp_path / "st", trial_id="X")
+        if any(s["status"] != "NEEDS_REVIEW" for s in m["scans"])
+        else None
+    )
+    if staged:
+        assert all(
+            not x.startswith("S9/") for x in staged["staged"]
+        )  # ambiguous scans are never staged
+
+
+def test_nested_duplicate_folder_is_flagged(tmp_path):
+    r = tmp_path / "Drop"
+    pet(r / "Drop" / "S1" / "baseline" / "pet", "P1", "20200101")
+    m = map_intake(r)
+    assert any(f["code"] == "NESTED_DUPLICATE_FOLDER" for f in m["drop_findings"])
+
+
+def test_every_intake_code_has_a_remediation_entry():
+    from voxeltrace.intake import INTAKE_CODES
+    from voxeltrace.remediation import remediation_matrix
+
+    codes = {r["code"] for r in remediation_matrix()}
+    assert set(INTAKE_CODES) <= codes, set(INTAKE_CODES) - codes

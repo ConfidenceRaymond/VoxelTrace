@@ -40,10 +40,22 @@ from pathlib import Path
 from typing import Any
 
 INTAKE_MAPPING_SCHEMA = "VT-INTAKE-MAPPING-1"
+ARCHIVE_SUFFIXES = (".zip", ".tar", ".tgz", ".gz", ".bz2", ".xz", ".7z", ".rar")
+# every finding this module can emit -> severity (remediation text lives in remediation.py)
+INTAKE_CODES = {
+    "TIMEPOINT_NAME_UNRECOGNISED": "NEEDS_REVIEW", "NO_PET_SERIES": "NEEDS_REVIEW",
+    "MULTIPLE_PET_CANDIDATES": "NEEDS_REVIEW", "NO_QUANTITATIVE_PET": "NEEDS_REVIEW",
+    "CT_NOT_SELECTED": "WARNING", "SEGMENTATION_AMBIGUOUS": "WARNING",
+    "MIXED_PATIENT_IN_SCAN": "NEEDS_REVIEW", "DUPLICATE_TIMEPOINT": "NEEDS_REVIEW",
+    "MALFORMED_DICOM": "NEEDS_REVIEW", "ZERO_BYTE_FILE": "NEEDS_REVIEW",
+    "DUPLICATE_INSTANCES": "NEEDS_REVIEW", "SERIES_IN_MULTIPLE_FOLDERS": "NEEDS_REVIEW",
+    "MIXED_VENDOR": "WARNING", "ARCHIVE_NOT_EXTRACTED": "NEEDS_REVIEW",
+    "NESTED_DUPLICATE_FOLDER": "WARNING", "EMPTY_SCAN_FOLDER": "NEEDS_REVIEW",
+}  # fmt: skip
 SC_PREFIX = "1.2.840.10008.5.1.4.1.1.7"
 _TAGS = ["Modality", "SeriesInstanceUID", "StudyInstanceUID", "SOPClassUID", "SeriesDescription",
          "ImageType", "CorrectedImage", "Units", "FrameOfReferenceUID", "PatientID",
-         "AcquisitionDate", "SeriesDate", "RadiopharmaceuticalInformationSequence"]  # fmt: skip
+         "AcquisitionDate", "SeriesDate", "RadiopharmaceuticalInformationSequence", "SOPInstanceUID", "Manufacturer"]  # fmt: skip
 BASELINE = {
     "baseline",
     "bl",
@@ -104,6 +116,7 @@ def _series_info(files: list[tuple[str, Any]]) -> dict[str, Any]:
     tracer = str(getattr(rp[0], "Radiopharmaceutical", "") or "") or None if rp else None
     date = str(getattr(ds, "AcquisitionDate", "") or getattr(ds, "SeriesDate", "") or "")
     pids = {str(getattr(d, "PatientID", "") or "") for _, d in files}
+    sops = [str(getattr(d, "SOPInstanceUID", "") or "") for _, d in files]
     return {
         "modality": str(getattr(ds, "Modality", "") or ""),
         "series_pseudonym": "s_" + (_h(str(getattr(ds, "SeriesInstanceUID", ""))) or "none"),
@@ -120,6 +133,8 @@ def _series_info(files: list[tuple[str, Any]]) -> dict[str, Any]:
         "acquisition_date": f"{date[:4]}-{date[4:6]}-{date[6:8]}" if len(date) == 8 else None,
         "patient_id_sha256": [hashlib.sha256(p.encode()).hexdigest() for p in sorted(pids) if p],
         "instances": len(files),
+        "duplicate_instances": len(sops) - len(set(sops)) if all(sops) else 0,
+        "manufacturer": str(getattr(ds, "Manufacturer", "") or "") or None,
         "files": sorted(rel for rel, _ in files),
     }
 
@@ -158,10 +173,24 @@ def map_intake(
         raise ValueError("levels must include 'subject' and 'timepoint'")
     depth = len(levels)
     ignored: list[dict[str, str]] = []
+    drop_findings: list[dict[str, str]] = []
+    scan_extra: dict[tuple[str, ...], list[dict[str, str]]] = defaultdict(list)
     groups: dict[tuple[str, ...], dict[str, list]] = defaultdict(lambda: defaultdict(list))
     for root, dirs, files in os.walk(drop, followlinks=True):
         dirs[:] = sorted(d for d in dirs)
         rel_root = Path(root).relative_to(drop)
+        rp = rel_root.parts
+        chain = (drop.name, *rp)
+        if any(a == b for a, b in zip(chain, chain[1:], strict=False)):
+            drop_findings.append({"code": "NESTED_DUPLICATE_FOLDER", "severity": "WARNING", "path": rel_root.as_posix(),
+                                  "detail": "a folder contains a folder of the same name (often a double-extracted archive); "
+                                  "check that the folder levels are what you expect"})  # fmt: skip
+        if not dirs and not files and 0 < len(rp) <= len(levels):
+            if len(rp) == len(levels):
+                scan_extra[tuple(rp)].append({"code": "EMPTY_SCAN_FOLDER", "severity": "NEEDS_REVIEW",
+                                              "detail": "the visit folder is empty: the scan is missing or failed to transfer"})  # fmt: skip
+            else:
+                ignored.append({"path": rel_root.as_posix() + "/", "reason": "empty folder"})
         for d in list(dirs):
             if d.startswith(".") or d == "__MACOSX":
                 ignored.append(
@@ -177,6 +206,18 @@ def map_intake(
             if f.startswith("."):
                 ignored.append({"path": rel, "reason": "hidden file"})
                 continue
+            if f.lower().endswith(ARCHIVE_SUFFIXES):
+                drop_findings.append({"code": "ARCHIVE_NOT_EXTRACTED", "severity": "NEEDS_REVIEW", "path": rel,
+                                      "detail": "an archive inside the drop is not opened by VoxelTrace; extract it "
+                                      "(or confirm it is not needed) and map again"})  # fmt: skip
+                continue
+            if (drop / rel).stat().st_size == 0:
+                f0 = {"code": "ZERO_BYTE_FILE", "severity": "NEEDS_REVIEW",
+                      "detail": f"{rel} is empty (truncated or failed transfer?)"}  # fmt: skip
+                (scan_extra[tuple(parts[:depth])] if len(parts) > depth else drop_findings).append(
+                    {**f0, "path": rel} if len(parts) <= depth else f0
+                )
+                continue
             if len(parts) <= depth:
                 ignored.append(
                     {
@@ -187,6 +228,10 @@ def map_intake(
                 continue
             ds = _read(drop / rel)
             if ds is None or not getattr(ds, "Modality", None):
+                if _has_preamble(drop / rel):  # claims to be DICOM but cannot be read
+                    scan_extra[tuple(parts[:depth])].append({"code": "MALFORMED_DICOM", "severity": "NEEDS_REVIEW",
+                                                             "detail": f"{rel} has a DICOM preamble but no readable header"})  # fmt: skip
+                    continue
                 ignored.append(
                     {
                         "path": rel,
@@ -198,12 +243,19 @@ def map_intake(
             groups[key][str(getattr(ds, "SeriesInstanceUID", rel))].append((rel, ds))
 
     scans = []
+    for key in scan_extra:
+        groups.setdefault(key, defaultdict(list))
     for key in sorted(groups):
         lab = dict(zip(levels, key, strict=True))
         series = sorted(
             (_series_info(v) for v in groups[key].values()), key=lambda s: s["series_pseudonym"]
         )
-        findings: list[dict[str, str]] = []
+        findings: list[dict[str, str]] = list(scan_extra.get(key, []))
+        for sr in series:
+            if sr["duplicate_instances"]:
+                findings.append({"code": "DUPLICATE_INSTANCES", "severity": "NEEDS_REVIEW",
+                                 "detail": f"series {sr['series_pseudonym']} ({sr['modality']}) has {sr['duplicate_instances']} "
+                                 "file(s) repeating an image already present (copied twice?)"})  # fmt: skip
         tp = canonical_timepoint(lab["timepoint"], timepoint_map)
         if tp is None:
             findings.append({"code": "TIMEPOINT_NAME_UNRECOGNISED", "severity": "NEEDS_REVIEW",
@@ -251,6 +303,7 @@ def map_intake(
             "series": series,
             "findings": findings,
         })  # fmt: skip
+    _cross_scan_checks(scans)
     _subject_checks(scans, levels)
     from voxeltrace.trial.pairing_audit import ScanIdentity, audit_pairing
 
@@ -265,6 +318,8 @@ def map_intake(
     order = sorted({i.timepoint for i in ids}, key=_order_key)
     pairing = audit_pairing(ids, order)
     statuses = [s["status"] for s in scans]
+    if any(f["severity"] == "NEEDS_REVIEW" for f in drop_findings):
+        statuses.append("NEEDS_REVIEW")
     status = ("NO_SCANS" if not scans else "NEEDS_REVIEW" if "NEEDS_REVIEW" in statuses
               or pairing["status"] != "OK" else "MAPPED_WITH_WARNINGS" if "MAPPED_WITH_WARNINGS" in statuses
               else "MAPPED")  # fmt: skip
@@ -277,10 +332,51 @@ def map_intake(
         "timepoint_order": order,
         "scans": scans,
         "ignored_files": ignored,
+        "drop_findings": drop_findings,
         "pairing": pairing,
         "note": "OPERATOR ARTEFACT (contains source-relative paths and series descriptions); "
         "not for delivery. Headers only; the drop is not modified.",
     }
+
+
+def _has_preamble(p: Path) -> bool:
+    try:
+        with p.open("rb") as fh:
+            fh.seek(128)
+            return fh.read(4) == b"DICM"
+    except OSError:
+        return False
+
+
+def _cross_scan_checks(scans: list[dict[str, Any]]) -> None:
+    """One series in several scan folders (copied visit, or one scan under two subjects), and
+    PET from different vendors within a subject. Never chooses; flags only."""
+    where: dict[str, list[dict]] = defaultdict(list)
+    for s in scans:
+        for sr in s["series"]:
+            where[sr["series_pseudonym"]].append(s)
+    for ps, owners in sorted(where.items()):
+        if len(owners) > 1:
+            labels = sorted(
+                "/".join(str(o.get(k)) for k in ("site", "subject", "timepoint_raw") if o.get(k))
+                for o in owners
+            )
+            for o in owners:
+                o["findings"].append({"code": "SERIES_IN_MULTIPLE_FOLDERS", "severity": "NEEDS_REVIEW",
+                                      "detail": f"series {ps} appears in {labels}"})  # fmt: skip
+                o["status"] = "NEEDS_REVIEW"
+    vendors: dict[str, set] = defaultdict(set)
+    for s in scans:
+        pet = next((x for x in s["series"] if x["series_pseudonym"] == s.get("pet_selected")), None)
+        if pet and pet.get("manufacturer"):
+            vendors[s["subject"]].add(pet["manufacturer"].upper())
+    for s in scans:
+        if len(vendors.get(s["subject"], ())) > 1:
+            s["findings"].append({"code": "MIXED_VENDOR", "severity": "WARNING",
+                                  "detail": f"PET vendors differ within the subject: {sorted(vendors[s['subject']])} "
+                                  "(the pair rules will judge comparability)"})  # fmt: skip
+            if s["status"] == "MAPPED":
+                s["status"] = "MAPPED_WITH_WARNINGS"
 
 
 def _subject_checks(scans: list[dict[str, Any]], levels: tuple[str, ...]) -> None:

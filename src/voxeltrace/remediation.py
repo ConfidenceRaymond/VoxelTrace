@@ -110,6 +110,21 @@ _W: dict[str, tuple[str, str, str, str, str]] = {
     "NO_SCANS_FOUND": ("No DICOM files were found.", "YES", "NO", "NO", "NO"),
     "MULTIPLE_PATIENTS_IN_SCAN": ("One scan folder contains images of several patients; the folder layout was probably misread.", "YES", "YES", "NO", "NO"),
     "MULTIPLE_STUDIES_IN_SCAN": ("One scan folder contains PET from several studies (visits); the folder layout was probably misread.", "YES", "YES", "NO", "NO"),
+    # ---- partner-drop intake mapping (intake.py) --------------------------------------
+    "TIMEPOINT_NAME_UNRECOGNISED": ("A visit folder name is not recognised as baseline or follow-up.", "NO", "YES", "NO", "NO"),
+    "MULTIPLE_PET_CANDIDATES": ("Several attenuation-corrected PET series remain for one visit; VoxelTrace will not choose between them.", "YES", "YES", "YES", "NO"),
+    "NO_QUANTITATIVE_PET": ("PET series exist but none is an attenuation-corrected, quantitative original.", "YES", "NO", "NO", "NO"),
+    "CT_NOT_SELECTED": ("No single volumetric CT shares the PET frame of reference; reference-region proposals will be unavailable.", "YES", "NO", "YES", "NO"),
+    "SEGMENTATION_AMBIGUOUS": ("Several segmentations were supplied for one visit; none is selected.", "YES", "YES", "YES", "NO"),
+    "MIXED_PATIENT_IN_SCAN": ("One visit folder contains images of more than one patient identifier.", "YES", "YES", "YES", "NO"),
+    "MALFORMED_DICOM": ("A file looks like DICOM but its header cannot be read (damaged or truncated).", "YES", "NO", "NO", "NO"),
+    "ZERO_BYTE_FILE": ("A file is empty, which suggests a truncated or failed transfer.", "YES", "NO", "NO", "NO"),
+    "DUPLICATE_INSTANCES": ("The same image appears more than once in a series (files copied twice?).", "YES", "NO", "YES", "NO"),
+    "SERIES_IN_MULTIPLE_FOLDERS": ("The same series appears in more than one visit or subject folder.", "YES", "YES", "YES", "NO"),
+    "MIXED_VENDOR": ("PET scanners of different vendors are used within one subject; the pair rules will judge comparability.", "NO", "NO", "NO", "NO"),
+    "ARCHIVE_NOT_EXTRACTED": ("An archive (zip/tar) inside the transfer was not opened; its contents are not audited.", "YES", "NO", "YES", "NO"),
+    "NESTED_DUPLICATE_FOLDER": ("A folder contains a folder of the same name (often a double-extracted archive).", "NO", "NO", "YES", "NO"),
+    "EMPTY_SCAN_FOLDER": ("A visit folder is empty: the scan is missing or failed to transfer.", "YES", "NO", "NO", "NO"),
     # ---- pairing audit (trial/pairing_audit.py) --------------------------------------
     "DUPLICATE_TIMEPOINT": ("Two timepoint folders of one subject have the same name after normalisation.", "NO", "YES", "YES", "NO"),
     "SAME_SCAN_LINKED_TWICE": ("The same PET scan appears under two timepoints of one subject.", "YES", "YES", "YES", "NO"),
@@ -131,6 +146,23 @@ _INTAKE = {"NON_FDG_TRACER": ("UNSUPPORTED", "the FDG rule sets do not apply; no
            "NO_SCANS_FOUND": ("BLOCKING", "supply the DICOM files"),
            "MULTIPLE_PATIENTS_IN_SCAN": ("BLOCKING", "stage a nested drop with `voxeltrace intake-map`, or supply one patient per subject folder"),
            "MULTIPLE_STUDIES_IN_SCAN": ("BLOCKING", "stage a nested drop with `voxeltrace intake-map`, or supply one visit per timepoint folder")}  # fmt: skip
+_MAP_REM = {
+    "TIMEPOINT_NAME_UNRECOGNISED": "supply a timepoint map (intake-map --timepoint-map 'name=followup') from the site's visit list",
+    "NO_PET_SERIES": "supply the attenuation-corrected PET series for this visit",
+    "MULTIPLE_PET_CANDIDATES": "the site states which series is the trial PET, or removes the others, then map again",
+    "NO_QUANTITATIVE_PET": "supply the original attenuation-corrected BQML PET series",
+    "CT_NOT_SELECTED": "supply exactly one volumetric CT acquired with the PET (only needed for PERCIST reference regions)",
+    "SEGMENTATION_AMBIGUOUS": "supply exactly one segmentation per visit, or state which one applies",
+    "MIXED_PATIENT_IN_SCAN": "the site confirms which images belong to the subject and re-sends the visit",
+    "MALFORMED_DICOM": "re-transfer the file; verify the transfer checksums",
+    "ZERO_BYTE_FILE": "re-transfer the file; verify the transfer checksums",
+    "DUPLICATE_INSTANCES": "remove the duplicated copy (or re-export the series) and map again",
+    "SERIES_IN_MULTIPLE_FOLDERS": "the site confirms where the series belongs; remove it from the other folder",
+    "MIXED_VENDOR": NONE_ESTABLISHED,
+    "ARCHIVE_NOT_EXTRACTED": "extract the archive (or confirm it is not needed) and map again",
+    "NESTED_DUPLICATE_FOLDER": "point intake-map at the inner folder, or confirm the folder levels",
+    "EMPTY_SCAN_FOLDER": "re-send the visit, or confirm it does not exist and remove the folder",
+}  # fmt: skip
 RULE_FAIL = {
     "code": "<RULE_ID> FAIL",
     "source": "pair evaluation",
@@ -143,6 +175,7 @@ RULE_FAIL = {
 
 
 def remediation_matrix() -> list[dict[str, Any]]:
+    from voxeltrace.intake import INTAKE_CODES
     from voxeltrace.preflight.reasons import CATALOG as PF
     from voxeltrace.trial.pairing_audit import PAIRING_CODES
     from voxeltrace.trial.reasons import CATALOG as TR
@@ -166,6 +199,9 @@ def remediation_matrix() -> list[dict[str, Any]]:
             )
         elif code in _INTAKE:
             src, (sev, rem), expl = "intake", _INTAKE[code], wording
+        elif code in INTAKE_CODES and code not in PAIRING_CODES:
+            src, sev, expl = "intake mapping", INTAKE_CODES[code], wording
+            rem = _MAP_REM.get(code, NONE_ESTABLISHED)
         else:
             src, (sev, rem), expl = "pairing audit", PAIRING_CODES[code], wording
         if rem.strip().lower().startswith("none"):
