@@ -88,7 +88,10 @@ def evidence_trace(bundle: str | Path) -> list[dict[str, Any]]:
                     fields = [PROTO_TO_FP.get(k, k) for k, v in observed.items() if v != "SAME"]
                 else:
                     fields = rule_fields.get(c["rule_id"], [])
-                for r in c.get("reasons") or [{"code": f"{c['rule_id']} {c['status']}", "field": "", "detail": "",
+                # a decided criterion without a reason code: blocking -> "<rule> FAIL"; a warning-impact
+                # difference -> "<rule> WARNING" (never worded as a refusal)
+                tag = "FAIL" if c["impact"] == "blocking" else "WARNING"
+                for r in c.get("reasons") or [{"code": f"{c['rule_id']} {tag}", "field": "", "detail": "",
                                                "evidence_basis": "decided measurement", "confidence": ""}]:  # fmt: skip
                     raw = [f"{tp}: {f['reason_code']} {f['field']}: {f['evidence']} ({f['source']})"
                            for tp in (bl, fu) for f in findings.get((subj, tp), [])

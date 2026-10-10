@@ -176,7 +176,15 @@ def remediation_matrix() -> list[dict[str, Any]]:
     return rows + [RULE_FAIL]
 
 
+RULE_WARNING_WORDING = (
+    "A warning-level criterion is not met (for example a different scanner software version); "
+    "the pair can still be interpreted, with this caveat stated."
+)
+
+
 def customer_wording(code: str) -> str:
+    if code.endswith(" WARNING"):
+        return RULE_WARNING_WORDING
     if code.endswith(" FAIL"):
         return RULE_FAIL["customer_wording"]
     return _W.get(code, (f"{code}: see the technical detail.",))[0]

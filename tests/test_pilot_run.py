@@ -584,3 +584,10 @@ def test_audit_cli_errors_are_actionable(tmp_path, capsys):
         == 2
     )
     assert "BUNDLE_EXISTS" in capsys.readouterr().err
+
+
+def test_warning_level_differences_are_not_worded_as_refusals():
+    from voxeltrace.remediation import customer_wording
+
+    assert "still be interpreted" in customer_wording("QIBA-SAME-SYSTEM WARNING")
+    assert "does not meet" in customer_wording("QIBA-UPTAKE-WINDOW FAIL")
