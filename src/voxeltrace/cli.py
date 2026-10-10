@@ -268,6 +268,24 @@ def _validate_partner_intake(a: argparse.Namespace) -> int:
     return EXIT_CODES[r["status"]]
 
 
+def _deployment_lock(a: argparse.Namespace) -> int:
+    from voxeltrace.deployment_lock import main_capture, verify
+
+    if a.action == "capture":
+        try:
+            lock = main_capture(a.path, a.model_manifest)
+        except FileExistsError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 2
+        print(f"wrote {a.path}: voxeltrace {lock['voxeltrace']['version']} @ {lock['voxeltrace']['git_commit']}"
+              f"{' (DIRTY TREE: not a valid pilot lock)' if lock['voxeltrace']['git_dirty'] else ''}, "
+              f"{len(lock['packages'])} packages, rule bundle {lock['rule_bundle_sha256'][:12]}")  # fmt: skip
+        return 1 if lock["voxeltrace"]["git_dirty"] else 0
+    r = verify(json.loads(Path(a.path).read_text()))
+    print(json.dumps(r, indent=2))
+    return 0 if r["status"] != "LOCK_MISMATCH" else 1
+
+
 def _remediation(a: argparse.Namespace) -> int:
     import csv
 
@@ -646,6 +664,18 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--no-dicom-check", action="store_true", help="schema and paths only")
     p.add_argument("--format", choices=["text", "json"], default="text")
     p.set_defaults(func=_validate_partner_intake)
+
+    p = sub.add_parser(
+        "deployment-lock",
+        help="capture or verify the exact pilot environment (VT-DEPLOYMENT-LOCK-1)",
+        description="capture: write a lock (Python, VoxelTrace version and commit, rule bundle, schemas, "
+        "every installed package). verify: compare the current environment with a lock; exit 1 on any "
+        "result-relevant mismatch.",
+    )
+    p.add_argument("action", choices=["capture", "verify"])
+    p.add_argument("path", help="lock file to write (capture) or read (verify)")
+    p.add_argument("--model-manifest", help="optional local model manifest (provenance only)")
+    p.set_defaults(func=_deployment_lock)
 
     p = sub.add_parser(
         "explain-pair",

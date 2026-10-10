@@ -21,6 +21,7 @@ Every exported artefact names the schema it was written with (`src/voxeltrace/ve
 | Delivery package | `VT-DELIVERY-1` | `delivery.py` | sanitized package + `DELIVERY_CHECKSUMS.sha256` |
 | Privacy scan | `VT-PRIVACY-SCAN-1` | `privacy_scan.py` | conservative pattern scan; not a de-identification method |
 | Partner intake | `VT-PARTNER-INTAKE-1` (input) / `VT-PARTNER-INTAKE-REPORT-1` | `partner_intake.py` | `voxeltrace validate-partner-intake`; never accepts review decisions |
+| Deployment lock | `VT-DEPLOYMENT-LOCK-1` | `deployment_lock.py` | `voxeltrace deployment-lock capture/verify` |
 | Remediation matrix | `VT-REMEDIATION-MATRIX-1` | `remediation.py` | documentation layer; never changes a verdict |
 | Reference review | `voxeltrace.reference-review/2` | `trial/reference.py` | hash-bound human decisions |
 
