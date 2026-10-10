@@ -84,8 +84,13 @@ def discover_trial(root: str | Path, config_path: str | Path | None = None) -> T
             "lesion_evidence_policy LEGACY_UNREVIEWED_ALLOWED is only allowed for trials that "
             "declare synthetic_perturbations (test fixtures); real data requires REVIEW_REQUIRED"
         )
-    for subj in sorted(p for p in root.iterdir() if p.is_dir()):
-        tps = {tp.name: str(tp) for tp in sorted(subj.iterdir()) if tp.is_dir()}
+    # hidden directories (.git, .Trash, ...) are never subjects or timepoints, as in preflight
+    for subj in sorted(p for p in root.iterdir() if p.is_dir() and not p.name.startswith(".")):
+        tps = {
+            tp.name: str(tp)
+            for tp in sorted(subj.iterdir())
+            if tp.is_dir() and not tp.name.startswith(".")
+        }
         if tps:
             layout.scans[subj.name] = tps
     return layout

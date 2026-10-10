@@ -3,6 +3,8 @@
 voxeltrace preflight <path> [--out DIR] [--format text|json|csv]
 voxeltrace inspect <path>
 voxeltrace audit --input DIR [--config trial.yaml] --output DIR [--ruleset ID ...]
+voxeltrace run-pilot --input DIR --output DIR [--trial-id ID]   (one command, see pilot_run.py)
+voxeltrace deliver <pilot-or-bundle> --out DIR / verify-delivery <package>
 voxeltrace verify-bundle <bundle>
 voxeltrace summarize <bundle>
 voxeltrace list-reviews <bundle>
@@ -137,6 +139,72 @@ def _audit(a: argparse.Namespace) -> int:
     print(json.dumps({k: v for k, v in res["summary"].items() if k != "rulesets"}, indent=2))
     for rs, r in res["summary"]["rulesets"].items():
         print(f"{rs}: real {r['verdicts_real']} synthetic {r['verdicts_synthetic']}")
+    return 0
+
+
+def _run_pilot(a: argparse.Namespace) -> int:
+    from voxeltrace.pilot_run import EXIT_CODES, acceptance_md, run_pilot
+
+    try:
+        res = run_pilot(
+            a.input, a.output, trial_id=a.trial_id, config=a.config, timepoints=a.timepoints,
+            rulesets=tuple(a.ruleset) if a.ruleset else None, attestations=a.attestations,
+            adjudications=a.adjudications, strict_intake=a.strict_intake, delivery=not a.no_delivery,
+        )  # fmt: skip
+    except (FileExistsError, FileNotFoundError, ValueError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    acc = res["acceptance"]
+    if a.format == "json":
+        print(
+            json.dumps(
+                {"acceptance": acc, "delivery": res["delivery"], "steps": res["steps"]}, indent=2
+            )
+        )
+    else:
+        print(acceptance_md(acc))
+        print(f"outputs: {res['output']}")
+        if res["delivery"]:
+            print(
+                f"delivery package: {res['delivery']['status']} {res['delivery'].get('package', '')}"
+            )
+        for s in res["steps"]:
+            print(f"  {s['step']}: {s['seconds']} s")
+    return EXIT_CODES[acc["status"]]
+
+
+def _deliver(a: argparse.Namespace) -> int:
+    from voxeltrace.delivery import build_delivery_package
+
+    try:
+        r = build_delivery_package(a.source, a.out)
+    except (FileExistsError, FileNotFoundError, ValueError) as exc:
+        print(f"refused: {exc}", file=sys.stderr)
+        return 2
+    print(json.dumps(r, indent=2))
+    return 0 if r["status"] == "OK" else 1
+
+
+def _verify_delivery(a: argparse.Namespace) -> int:
+    from voxeltrace.delivery import verify_delivery
+
+    r = verify_delivery(a.package)
+    print(json.dumps(r, indent=2))
+    return 0 if r["status"] == "OK" else 1
+
+
+def _remediation(a: argparse.Namespace) -> int:
+    import csv
+
+    from voxeltrace.remediation import remediation_matrix
+
+    rows = remediation_matrix()
+    if a.format == "json":
+        print(json.dumps(rows, indent=2))
+        return 0
+    w = csv.DictWriter(sys.stdout, fieldnames=list(rows[0]), lineterminator="\n")
+    w.writeheader()
+    w.writerows(rows)
     return 0
 
 
@@ -434,6 +502,49 @@ def build_parser() -> argparse.ArgumentParser:
         help="record input file paths in clear (default: sha256 of paths only)",
     )
     p.set_defaults(func=_audit)
+
+    p = sub.add_parser(
+        "run-pilot",
+        help="validate-input -> (init-trial) -> audit -> verify-bundle -> acceptance -> delivery package",
+        description="One-command retrospective pilot. Writes pilot_acceptance.json "
+        "(VT-PILOT-ACCEPTANCE-1). Exit 0 = AUDIT_COMPLETE[_WITH_REVIEW_PENDING], 1 = AUDIT_BLOCKED, "
+        "2 = NEEDS_REEXPORT (or usage error), 3 = UNSUPPORTED.",
+    )
+    p.add_argument("--input", required=True, help="trial folder: <subject>/<timepoint>/<DICOM>")
+    p.add_argument("--output", required=True, help="new (or empty) output directory")
+    p.add_argument("--trial-id", help="needed when the input has no trial.yaml and no --config")
+    p.add_argument("--config", help="trial.yaml (default: <input>/trial.yaml)")
+    p.add_argument("--timepoints", nargs="+", help="timepoint folder names in chronological order")
+    p.add_argument(
+        "--ruleset", action="append", choices=["qiba-fdg-1.14", "eanm-fdg-2.0", "percist-1.0"]
+    )
+    p.add_argument("--attestations")
+    p.add_argument("--adjudications")
+    p.add_argument(
+        "--strict-intake", action="store_true", help="audit only if intake accepts the folder"
+    )
+    p.add_argument("--no-delivery", action="store_true", help="skip the delivery package")
+    p.add_argument("--format", choices=["text", "json"], default="text")
+    p.set_defaults(func=_run_pilot)
+
+    p = sub.add_parser(
+        "deliver", help="build a sanitized design-partner delivery package from a pilot or bundle"
+    )
+    p.add_argument("source", help="run-pilot output folder or audit_bundle directory")
+    p.add_argument("--out", required=True, help="new package directory (never overwritten)")
+    p.set_defaults(func=_deliver)
+
+    p = sub.add_parser(
+        "verify-delivery", help="verify a delivery package (checksums, bundle, privacy scan)"
+    )
+    p.add_argument("package")
+    p.set_defaults(func=_verify_delivery)
+
+    p = sub.add_parser(
+        "remediation-matrix", help="print every reason code with its remediation routes"
+    )
+    p.add_argument("--format", choices=["csv", "json"], default="csv")
+    p.set_defaults(func=_remediation)
 
     p = sub.add_parser("verify-bundle", help="verify an evidence bundle's checksums (tamper check)")
     p.add_argument("bundle")

@@ -15,6 +15,7 @@ by the audit) and UNRESOLVED evidence. Automated verdicts are never modified.
 from __future__ import annotations
 
 import csv
+import hashlib
 import json
 import shutil
 from collections import Counter
@@ -36,6 +37,8 @@ from voxeltrace.trial.discovery import discover_trial
 from voxeltrace.trial.drift import ScanRecord, detect_drift
 from voxeltrace.trial.export import export_audit
 from voxeltrace.trial.layers import assessability_layers
+from voxeltrace.trial.pairing_audit import audit_pairing, scan_identities_from_audit
+from voxeltrace.trial.rollup import check_rollup, site_rollup
 from voxeltrace.trial.site_queries import site_queries, site_queries_md
 from voxeltrace.trial.summary import attestation_rows, pair_rows
 from voxeltrace.versions import AUDIT_PACKAGE_SCHEMA, BUNDLE_SCHEMA, SCHEMAS, rule_bundle
@@ -137,6 +140,19 @@ def run_audit(
     _json(bundle / "protocol" / "drift.json", drift.model_dump(mode="json"))
     _csv(bundle / "protocol" / "drift_events.csv", [e.model_dump() for e in drift.events])
 
+    # 4b. longitudinal pairing safety (reporting only; pairs and verdicts unchanged)
+    pairing = audit_pairing(scan_identities_from_audit(first, layout), layout.timepoint_order)
+    _json(bundle / "pairing" / "pairing_audit.json", pairing)
+    _csv(bundle / "pairing" / "pairing_findings.csv",
+         [{**f, "timepoints": ";".join(f["timepoints"])} for f in pairing["findings"]])  # fmt: skip
+
+    # 4c. site / scanner rollup (counts reconcile with the subject-level outputs)
+    rollup = site_rollup(layout.sites, pf, audits, fps, drift)
+    errs = check_rollup(rollup, pf, audits)
+    if errs:  # a reporting bug must never be delivered silently
+        raise RuntimeError(f"site rollup does not reconcile: {errs}")
+    _csv(bundle / "reports" / "site_summary.csv", rollup)
+
     # 5. quantitative evidence (status only; numbers stay in rules/<rs>/trial_audit.json)
     quant = [
         {"subject": t.subject_id, "timepoint": t.timepoint,
@@ -209,7 +225,7 @@ def run_audit(
     # 10. reports
     summary = _summary(pf, audits, drift, tasks, att_rows, adj_rows, fps)
     _json(bundle / "reports" / "summary.json", summary)
-    page = top_page(layout.config.trial_id, summary, audits)
+    page = top_page(layout.config.trial_id, summary, audits, rollup=rollup, pairing=pairing)
     _json(bundle / "reports" / "executive_summary.json", page)
     (bundle / "reports" / "EXECUTIVE_SUMMARY.md").write_text(top_page_md(page))
     report = (
@@ -260,7 +276,20 @@ def _path_safe(audit: TrialAudit, clear: bool) -> TrialAudit:
     if clear:
         return audit
     keys = ("reference_review_file", "lesion_review_file", "recon_attestation_file")
-    return audit.model_copy(update={k: Path(v).name for k in keys if (v := getattr(audit, k))})
+    upd: dict[str, Any] = {k: Path(v).name for k in keys if (v := getattr(audit, k))}
+    # segmentation file names are often SOP Instance UIDs: keep only a hash of the name (the
+    # file content is already bound by seg_file_sha256)
+    upd["lesion_evidence"] = [_hide_seg_name(e) for e in audit.lesion_evidence]
+    return audit.model_copy(update=upd)
+
+
+def _hide_seg_name(e: dict) -> dict:
+    prov = e.get("source_provenance") or {}
+    if not prov.get("seg_file"):
+        return e
+    name = str(prov["seg_file"])
+    prov = {**prov, "seg_file": "sha256:" + hashlib.sha256(name.encode()).hexdigest()}
+    return {**e, "source_provenance": prov}
 
 
 def _summary(pf, audits, drift, tasks, att_rows, adj_rows, fps) -> dict[str, Any]:

@@ -14,6 +14,13 @@ Every exported artefact names the schema it was written with (`src/voxeltrace/ve
 | Pair adjudication | `VT-ADJUDICATION-1` | `trial/adjudication.py` | append-only, hash-chained JSON lines |
 | Evidence bundle | `VT-BUNDLE-1` | `bundle.py` | manifest + checksums.sha256 |
 | Site queries | `VT-SITE-QUERY-1` | `trial/site_queries.py` | DRAFT only, never sent |
+| Pairing audit | `VT-PAIRING-AUDIT-1` | `trial/pairing_audit.py` | `pairing/pairing_audit.json`; reporting only, never re-pairs |
+| Site rollup | `VT-SITE-ROLLUP-1` | `trial/rollup.py` | `reports/site_summary.csv`; reconciles with pair results |
+| Executive summary | `VT-EXECUTIVE-SUMMARY-2` | `executive.py` | v2 adds readiness, comparability, sites requiring action, pairing status, unresolved review; v1 pages remain readable |
+| Pilot acceptance | `VT-PILOT-ACCEPTANCE-1` | `pilot_run.py` | `pilot_acceptance.json` from `voxeltrace run-pilot` |
+| Delivery package | `VT-DELIVERY-1` | `delivery.py` | sanitized package + `DELIVERY_CHECKSUMS.sha256` |
+| Privacy scan | `VT-PRIVACY-SCAN-1` | `privacy_scan.py` | conservative pattern scan; not a de-identification method |
+| Remediation matrix | `VT-REMEDIATION-MATRIX-1` | `remediation.py` | documentation layer; never changes a verdict |
 | Reference review | `voxeltrace.reference-review/2` | `trial/reference.py` | hash-bound human decisions |
 
 **Rule bundle.** `versions.rule_bundle()` lists every rule set's rules with id, version, impact
@@ -46,7 +53,7 @@ changes the hash, and the bundle manifest records it.
 | Evidence | VT-EVIDENCE-1, VT-PROTOCOL-FP-1, VT-PREFLIGHT-1, `voxeltrace.recon-attestation/2` |
 | Review logs | `voxeltrace.lesion-review/1` (lesions), hash-bound reference reviews (proposal algorithm `vt-refauto-1`), VT-ADJUDICATION-1 |
 | Audit outputs | VT-TRIAL-AUDIT-1, VT-AUDIT-PACKAGE-1, VT-BUNDLE-1, VT-DRIFT-1, VT-SITE-QUERY-1 |
-| Reports | VT-EXECUTIVE-SUMMARY-1 (`reports/executive_summary.json`; Markdown and PDF have the same content) |
+| Reports | VT-EXECUTIVE-SUMMARY-2 (`reports/executive_summary.json`; Markdown and PDF have the same content; bundles before 0.4.0 carry VT-EXECUTIVE-SUMMARY-1) |
 | Other tools | VT-EXPERT-VALIDATION-1, VT-VALIDATE-INPUT-1, VT-DATA-INVENTORY-1, VT-BRAIN-INTAKE-1 |
 
 **Strategy:**

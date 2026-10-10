@@ -65,7 +65,7 @@ def test_version_flag_reports_code_rules_and_schemas(capsys):
     for token in (
         "percist-1.0",
         "rule bundle sha256",
-        "VT-EXECUTIVE-SUMMARY-1",
+        "VT-EXECUTIVE-SUMMARY-2",
         "voxeltrace.lesion-review/1",
     ):
         assert token in out

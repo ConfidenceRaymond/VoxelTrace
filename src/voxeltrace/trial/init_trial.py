@@ -40,9 +40,11 @@ def write_trial_yaml(
     trial_id: str,
     ruleset: str = "qiba-fdg-1.14",
     timepoint_order: list[str] | None = None,
+    out: str | Path | None = None,
 ) -> Path:
+    """``out``: write the file elsewhere (e.g. next to a read-only input folder)."""
     folder = Path(folder)
-    out = folder / "trial.yaml"
+    out = Path(out) if out else folder / "trial.yaml"
     if out.exists():
         raise FileExistsError(f"{out} exists (never overwritten)")
     if ruleset not in RULESETS:
@@ -68,8 +70,9 @@ def write_trial_yaml(
         "# Starter configuration written by `voxeltrace init-trial`.\n"
         "# Optional: add `sites: {<subject>: <site>}` for site-level rollup; never guessed.\n"
     )
+    out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(header + yaml.safe_dump(doc, sort_keys=False))
     from voxeltrace.trial.discovery import discover_trial
 
-    discover_trial(folder)  # fail loudly if the written file is not usable
+    discover_trial(folder, out)  # fail loudly if the written file is not usable
     return out

@@ -82,16 +82,17 @@ def classify_scan(scan: Any) -> dict[str, Any]:
             "reasons": sorted(reasons, key=lambda r: (r["severity"], r["code"]))}  # fmt: skip
 
 
-def validate_input(path: str | Path) -> dict[str, Any]:
+def validate_input(path: str | Path, config: str | Path | None = None) -> dict[str, Any]:
+    """``config``: a trial.yaml kept outside the (read-only) input folder."""
     from voxeltrace.preflight.batch import preflight_batch
 
     path = Path(path)
     out: dict[str, Any] = {"schema": "VT-VALIDATE-INPUT-1", "input": path.name, "layout": []}
-    if (path / "trial.yaml").exists():
+    if config is not None or (path / "trial.yaml").exists():
         from voxeltrace.trial.discovery import discover_trial
 
         try:
-            layout = discover_trial(path)
+            layout = discover_trial(path, config)
             single = sorted(s for s, tps in layout.scans.items() if len(tps) < 2)
             if single:
                 out["layout"].append({"code": "SINGLE_TIMEPOINT_SUBJECTS", "severity": "WARNING",

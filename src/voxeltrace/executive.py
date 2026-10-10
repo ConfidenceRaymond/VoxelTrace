@@ -33,9 +33,17 @@ def _remediation(code: str) -> tuple[str, str]:
     return "no catalogued remediation; see the pair checks for the exact evidence", "UNKNOWN"
 
 
-def top_page(trial_id: str, summary: dict[str, Any], audits: dict[str, Any]) -> dict[str, Any]:
+def top_page(
+    trial_id: str,
+    summary: dict[str, Any],
+    audits: dict[str, Any],
+    *,
+    rollup: list[dict[str, Any]] | None = None,
+    pairing: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     """Counts, verdict distribution per rule set, and the most frequent blocking reasons,
-    counted once per pair (subject) across rule sets."""
+    counted once per pair (subject) across rule sets. With ``rollup`` / ``pairing`` (audit
+    package outputs) the page also lists the sites requiring action and the pairing status."""
     pair_codes: dict[str, set[str]] = defaultdict(set)
     code_rulesets: dict[str, set[str]] = defaultdict(set)
     subjects, real_pairs = set(), set()
@@ -76,9 +84,35 @@ def top_page(trial_id: str, summary: dict[str, Any], audits: dict[str, Any]) -> 
                     "site_can_fix": fix, "recommendation": rem})  # fmt: skip
     pf = summary.get("preflight", {})
     pf_codes = pf.get("reason_codes", {})
+    from voxeltrace.trial.rollup import sites_requiring_action
     from voxeltrace.versions import EXECUTIVE_SUMMARY_SCHEMA
 
+    states = pf.get("scan_states", {})
+    ready = states.get("READY_TO_QUANTIFY", 0) + states.get("READY_WITH_WARNINGS", 0)
+    lesion_pending = sorted(
+        {key for key, codes in pair_codes.items() if "LESION_REVIEW_REQUIRED" in codes}
+    )
+    first_rs = next(iter(audits), None)
+    extra = {
+        "quantitative_readiness": {"scans": pf.get("scans", 0), "ready": ready,
+                                   "not_ready": pf.get("scans", 0) - ready},
+        "comparability": {rs: {"pairs": sum(v.values()),
+                               "usable": v.get("ASSESSABLE", 0) + v.get("ASSESSABLE_WITH_WARNINGS", 0)}
+                          for rs, v in verdicts.items()},
+        "sites_requiring_action": sites_requiring_action(rollup, first_rs) if rollup and first_rs else [],
+        "sites_ruleset": first_rs,
+        "unresolved_human_review": {
+            "reference_region_reviews_pending": summary.get("review_tasks_pending", 0),
+            "pairs_awaiting_lesion_review": len(lesion_pending),
+            "pairing_items_needing_review": (pairing or {}).get("severity_counts", {}).get("NEEDS_REVIEW", 0),
+        },
+        "unassigned_site_scans": sum(r["scans_total"] for r in rollup or [] if r["level"] == "SITE" and r["site"] == "UNASSIGNED" and r["ruleset"] == first_rs),
+        "pairing_status": (pairing or {}).get("status", "NOT_RUN"),
+        "pairing_subjects_blocked": (pairing or {}).get("subjects_blocked", []),
+    }  # fmt: skip
+
     return {
+        **extra,
         "schema": EXECUTIVE_SUMMARY_SCHEMA,
         "trial_id": trial_id,
         "subjects": len(subjects),
@@ -119,11 +153,42 @@ def executive_summary(page: dict[str, Any]) -> list[str]:
     return L
 
 
+def _at_a_glance(page: dict[str, Any]) -> list[str]:
+    """First-page block (VT-EXECUTIVE-SUMMARY-2): readiness, comparability, sites, reviews."""
+    if "quantitative_readiness" not in page:  # VT-EXECUTIVE-SUMMARY-1 pages
+        return []
+    q, u = page["quantitative_readiness"], page["unresolved_human_review"]
+    L = ["## At a glance", "",
+         f"- Quantitative readiness: {q['ready']} of {q['scans']} scan(s) can be quantified as exported; "
+         f"{q['not_ready']} cannot (DO_NOT_QUANTIFY or NEEDS_REVIEW).",
+         "- Comparability (pairs usable for SUV-change interpretation = ASSESSABLE or ASSESSABLE_WITH_WARNINGS):"]  # fmt: skip
+    L += [f"  - {rs}: {c['usable']} of {c['pairs']}" for rs, c in page["comparability"].items()]
+    L.append(f"- Longitudinal pairing check: {page['pairing_status']}"
+             + (f"; subjects blocked: {', '.join(page['pairing_subjects_blocked'])}" if page["pairing_subjects_blocked"] else ""))  # fmt: skip
+    L.append(f"- Unresolved human review: {u['reference_region_reviews_pending']} reference-region proposal(s), "
+             f"{u['pairs_awaiting_lesion_review']} pair(s) awaiting lesion review, "
+             f"{u['pairing_items_needing_review']} pairing item(s).")  # fmt: skip
+    if page.get("unassigned_site_scans"):
+        L.append(f"- Sites: {page['unassigned_site_scans']} scan(s) have no declared site (UNASSIGNED). Declare "
+                 "`sites:` in trial.yaml; until then UNASSIGNED drift events compare different centres and are not site drift.")  # fmt: skip
+    sites = page["sites_requiring_action"]
+    L += ["", f"### Sites requiring action ({page['sites_ruleset']})", ""]
+    if sites:
+        L += [
+            "| Site | Scans not ready | Pairs not usable | Pairs | Top reasons |",
+            "|---|---|---|---|---|",
+        ]
+        L += [f"| {x['site']} | {x['scans_not_ready']} | {x['pairs_not_usable']} | {x['pairs_total']} | {x['top_reasons'] or '-'} |" for x in sites]  # fmt: skip
+    else:
+        L.append("none")
+    return L + [""]
+
+
 def top_page_md(page: dict[str, Any]) -> str:
     L = [f"# Audit summary: {page['trial_id']}", "", f"{voxeltrace.DISCLAIMER}", "",
          "| Subjects | Pairs | Real pairs | Scans | Pending reference reviews |", "|---|---|---|---|---|",
          f"| {page['subjects']} | {page['pairs']} | {page['real_pairs']} | {page['scans']} | {page['pending_reference_reviews']} |",
-         "", "## Verdicts", "", "| Rule set | " + " | ".join(VERDICT_ORDER) + " |",
+         "", *_at_a_glance(page), "## Verdicts", "", "| Rule set | " + " | ".join(VERDICT_ORDER) + " |",
          "|---|" + "---|" * len(VERDICT_ORDER)]  # fmt: skip
     for rs, v in page["verdicts"].items():
         L.append(f"| {rs} | " + " | ".join(str(v.get(k, 0)) for k in VERDICT_ORDER) + " |")

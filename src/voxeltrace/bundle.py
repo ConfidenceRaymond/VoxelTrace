@@ -25,7 +25,7 @@ from typing import Any
 
 BUNDLE_DIRS = (
     "preflight", "protocol", "quantitative", "rules", "pair_verdicts", "reviews",
-    "attestations", "adjudications", "reports",
+    "attestations", "adjudications", "reports", "pairing",
 )  # fmt: skip
 
 
