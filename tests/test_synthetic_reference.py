@@ -277,3 +277,21 @@ def test_production_review_file_untouched(trial):
     audit(t)
     assert sha(local) == local_before  # auditing never writes reviews
     assert (sha(prod_file) if prod_file.exists() else None) == before
+
+
+def test_fixture_parent_matches_after_workspace_relocation(tmp_path):
+    """Regression (2026-10-10): fixture manifests record absolute parent paths; after the
+    workspace moved machines, inheritance was refused. Same workspace-relative location
+    matches; any other location does not."""
+    from voxeltrace.trial.synthetic_reference import same_case_dir
+
+    ws = tmp_path / "ws"
+    parent = ws / "data" / "coll" / "CASE1" / "dicom"
+    parent.mkdir(parents=True)
+    assert same_case_dir(parent, parent, ws)
+    assert same_case_dir("/home/olduser/old_ws/data/coll/CASE1/dicom", parent, ws)
+    assert not same_case_dir("/home/olduser/old_ws/data/coll/CASE2/dicom", parent, ws)
+    assert not same_case_dir("/home/olduser/old_ws/other/coll/CASE1/dicom", parent, ws)
+    outside = tmp_path / "elsewhere" / "dicom"
+    outside.mkdir(parents=True)
+    assert not same_case_dir("/x/elsewhere/dicom", outside, ws)

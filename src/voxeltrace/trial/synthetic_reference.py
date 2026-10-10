@@ -91,6 +91,29 @@ class InheritanceRequest(BaseModel):
     parent_fixture_match: bool
 
 
+def same_case_dir(
+    recorded: str | Path, actual: str | Path, workspace: str | Path | None = None
+) -> bool:
+    """Is the fixture's recorded parent directory the actual parent directory?
+
+    Identical resolved paths match. Fixture manifests store absolute paths, so after the
+    workspace moves to another machine or home directory, the same directory is also
+    accepted when the recorded path ENDS WITH the actual directory's path relative to the
+    current workspace (same location inside the workspace, different workspace root). Content
+    and CT hashes are still checked separately; this never matches a different relative path."""
+    from voxeltrace.config import workspace_root
+
+    rec, act = Path(recorded), Path(actual).resolve()
+    if rec.resolve() == act:
+        return True
+    ws = Path(workspace).resolve() if workspace else workspace_root()
+    try:
+        rel = act.relative_to(ws).parts
+    except ValueError:
+        return False
+    return len(rel) >= 2 and rec.parts[-len(rel) :] == rel
+
+
 def refusal_reason(req: InheritanceRequest) -> str | None:
     """None if inheritance is allowed, else why not (checks 1-4 of the module doc)."""
     if not req.declared_synthetic:

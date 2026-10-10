@@ -28,6 +28,7 @@ from voxeltrace.trial.synthetic_reference import (
     SyntheticFixtureManifest,
     geometry_sha256,
     inherit_region,
+    same_case_dir,
     volume_sha256,
 )
 
@@ -131,7 +132,7 @@ def build_timepoint(
                 child_ct_geometry_sha256=tp.ct_geometry_sha256,
                 child_ct_pixel_sha256=tp.ct_pixel_sha256,
                 parent_fixture_match=fixture is not None
-                and Path(fixture.parent_case_dir).resolve() == Path(parent_dir).resolve(),
+                and same_case_dir(fixture.parent_case_dir, parent_dir),
             )
             for region in REGIONS:
                 if region not in specs:
