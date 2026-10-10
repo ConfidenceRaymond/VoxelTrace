@@ -93,3 +93,41 @@ def test_bundle_checksums_do_not_depend_on_listing_order(tree, tmp_path, monkeyp
     assert a.keys() == b.keys()
     diff = [k for k in a if a[k] != b[k]]
     assert diff == [], diff
+
+
+_SEED_SCRIPT = r"""
+import sys, json, pathlib
+sys.path.insert(0, sys.argv[3])
+from pydicom.uid import UID
+from dicom_factory import write_image_series
+from voxeltrace.pilot import run_audit
+root, out = pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2])
+if not root.exists():
+    for i, (tp, date) in enumerate((("baseline", "20200101"), ("followup", "20200301"))):
+        # no PatientSize/PatientSex and no reference regions: several reason codes per pair
+        write_image_series(root / "S1" / tp, modality="PT", study_uid=UID(f"1.2.3.4.{i}"), series_uid=UID(f"1.2.3.5.{i}"),
+                           for_uid=UID(f"1.2.3.6.{i}"), slope=1.5 + i / 10,
+                           pet_overrides={"AcquisitionDate": date, "SeriesDate": date},
+                           rp_overrides={"RadiopharmaceuticalStartDateTime": f"{date}091500"})
+    (root / "trial.yaml").write_text("trial_id: T\nruleset: percist-1.0\ntimepoint_order: [baseline, followup]\nreference_proposals: 'off'\n")
+run_audit(root, out)
+b = out / "audit_bundle"
+print(json.dumps({p.relative_to(b).as_posix(): p.read_text(errors="replace") for p in sorted(b.rglob("*"))
+                  if p.is_file() and p.name != "manifest.json" and p.suffix != ".pdf"}))
+"""
+
+
+def test_outputs_do_not_depend_on_python_hash_seed(tmp_path):
+    """Set iteration order depends on PYTHONHASHSEED; it once leaked into site_summary.json."""
+    import subprocess
+    import sys
+
+    tests_dir = str(Path(__file__).parent)
+    runs = []
+    for seed in ("1", "2"):
+        env = {**os.environ, "PYTHONHASHSEED": seed}
+        r = subprocess.run([sys.executable, "-c", _SEED_SCRIPT, str(tmp_path / "trial"), str(tmp_path / f"o{seed}"),
+                            tests_dir], env=env, capture_output=True, text=True, check=True)  # fmt: skip
+        runs.append(json.loads(r.stdout))
+    diff = [k for k in runs[0] if runs[0][k] != runs[1].get(k)]
+    assert runs[0].keys() == runs[1].keys() and diff == [], diff

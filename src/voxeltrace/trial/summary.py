@@ -71,7 +71,7 @@ def site_summary(audit: TrialAudit) -> dict[str, Any]:
     reasons: Counter = Counter()
     failures: Counter = Counter()
     for p in audit.pairs:
-        for code in {r.code for r in p.reasons}:
+        for code in sorted({r.code for r in p.reasons}):  # sorted: set order varies per process
             reasons[code] += 1
         for c in p.checks:
             if c.status == "FAIL":
